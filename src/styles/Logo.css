@@ -1,0 +1,15 @@
+/* Logo.css */
+.logo {
+  text-align: center;
+  font-family: var(--fuente-titulos);
+  color: var(--azul-oscuro);
+}
+.logo h1 {
+  font-size: 3rem;
+  margin: 0;
+}
+.logo p {
+  font-size: 1rem;
+  letter-spacing: 2px;
+  color: var(--gris-elegante);
+}
