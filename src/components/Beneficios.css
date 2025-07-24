@@ -1,0 +1,44 @@
+/* src/components/Beneficios.css */
+.beneficios {
+  padding: 3rem 2rem;
+  background-color: var(--blanco);
+  text-align: center;
+}
+
+.beneficios h2 {
+  font-family: var(--fuente-titulos);
+  font-size: 2rem;
+  color: var(--azul-oscuro);
+  margin-bottom: 2rem;
+}
+
+.beneficio-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.beneficio {
+  background-color: var(--azul-claro);
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 280px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease;
+}
+
+.beneficio:hover {
+  transform: translateY(-5px);
+}
+
+.beneficio h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.8rem;
+  color: var(--azul-oscuro);
+}
+
+.beneficio p {
+  font-size: 0.95rem;
+  color: var(--gris-elegante);
+}

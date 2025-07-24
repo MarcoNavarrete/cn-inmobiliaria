@@ -1,0 +1,88 @@
+/* src/components/PropiedadesDestacadas.css */
+
+@media screen and (max-width: 768px) {
+  .tarjetas {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero h1 {
+    font-size: 2.2rem;
+  }
+}
+
+
+.propiedades {
+  padding: 3rem 2rem;
+  background-color: var(--azul-claro);
+  text-align: center;
+}
+
+.propiedades h2 {
+  font-family: var(--fuente-titulos);
+  font-size: 2.2rem;
+  margin-bottom: 2rem;
+  color: var(--azul-oscuro);
+}
+
+.tarjetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.tarjeta {
+  background-color: var(--blanco);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  width: 300px;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.tarjeta:hover {
+  transform: translateY(-5px);
+}
+
+.tarjeta img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.tarjeta h3 {
+  font-size: 1.1rem;
+  margin: 1rem 0 0.5rem;
+  color: var(--azul-oscuro);
+}
+
+.precio {
+  font-weight: bold;
+  color: var(--dorado-suave);
+  margin-bottom: 0.5rem;
+}
+
+.ubicacion {
+  font-size: 0.95rem;
+  color: var(--gris-elegante);
+  margin-bottom: 1rem;
+}
+
+.btn-mas {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  background-color: var(--azul-oscuro);
+  color: var(--blanco);
+  border-radius: 4px;
+  text-decoration: none;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.btn-mas:hover {
+  background-color: var(--dorado-suave);
+  transform: scale(1.05);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+}

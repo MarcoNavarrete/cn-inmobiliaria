@@ -1,0 +1,17 @@
+/* src/components/Footer.css */
+.footer {
+  background-color: var(--azul-oscuro);
+  color: var(--blanco);
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.footer-contenido p {
+  margin: 0.4rem 0;
+  font-family: var(--fuente-textos);
+}
+
+.footer-contenido p:last-child {
+  color: var(--dorado-suave);
+}

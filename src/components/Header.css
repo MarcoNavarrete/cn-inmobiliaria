@@ -1,0 +1,27 @@
+/* src/components/Header.css */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--azul-oscuro);
+  padding: 1rem 2rem;
+  color: var(--blanco);
+}
+
+.logo {
+  font-size: 2rem;
+  font-weight: bold;
+  font-family: var(--fuente-titulos);
+}
+
+.nav a {
+  margin-left: 1rem;
+  text-decoration: none;
+  color: var(--blanco);
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.nav a:hover {
+  color: var(--dorado-suave);
+}

@@ -1,0 +1,41 @@
+.whatsapp-flotante {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999;
+}
+
+.whatsapp-icono {
+  position: relative;
+  display: inline-block;
+}
+
+.whatsapp-icono img {
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.whatsapp-icono:hover img {
+  transform: scale(1.1);
+}
+
+.tooltip {
+  position: absolute;
+  right: 70px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--azul-oscuro);
+  color: var(--blanco);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.whatsapp-icono:hover .tooltip {
+  opacity: 1;
+}

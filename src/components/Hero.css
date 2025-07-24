@@ -1,0 +1,46 @@
+/* src/components/Hero.css */
+.hero {
+  background-image: url('../assets/hero.jpg'); /* Asegúrate de tener una imagen atractiva aquí */
+  background-size: cover;
+  background-position: center;
+  height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.hero-overlay {
+  background-color: rgba(26, 61, 124, 0.65); /* Azul profundo semitransparente */
+  padding: 3rem;
+  border-radius: 12px;
+  text-align: center;
+  color: var(--blanco);
+}
+
+.hero h1 {
+  font-family: var(--fuente-titulos);
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  font-size: 1.3rem;
+  color: var(--dorado-suave);
+  margin-bottom: 2rem;
+}
+
+.hero-btn {
+  background-color: var(--dorado-suave);
+  color: var(--blanco);
+  padding: 0.8rem 2rem;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.hero-btn:hover {
+  background-color: var(--blanco);
+  color: var(--azul-oscuro);
+}
