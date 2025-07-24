@@ -10,12 +10,12 @@ const propiedades = [
     caracteristica2: '2 baños completos',
     caracteristica3: 'Jardín privado',
     imagenes: [
-      '/assets/casa1.jpg',
-      '/assets/casa1_2.jpg',
-      '/assets/casa1_3.jpg',
-      '/assets/casa1_4.jpg',
-      '/assets/casa1_5.jpg',
-      '/assets/casa1_6.jpg',
+      './assets/casa1.jpg',
+      './assets/casa1_2.jpg',
+      './assets/casa1_3.jpg',
+      './assets/casa1_4.jpg',
+      './assets/casa1_5.jpg',
+      './assets/casa1_6.jpg',
     ],
   },
   {

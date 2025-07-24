@@ -14,7 +14,7 @@ export default function WhatsAppFlotante() {
         className="whatsapp-icono"
       >
         <span className="tooltip">Tu nuevo hogar está a un mensaje de distancia</span>
-        <img src="/assets/whatsapp.png" alt="WhatsApp" />
+        <img src="./assets/whatsapp.png" alt="WhatsApp" />
       </a>
     </div>
   );
