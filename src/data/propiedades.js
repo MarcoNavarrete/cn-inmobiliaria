@@ -32,9 +32,12 @@ const propiedades = [
       '9 m2 de construcción.',
     ],
     imagenes: [
-      '/assets/casa2.jpg',
-      '/assets/casa2_2.jpg',
-      '/assets/casa2_3.jpg',
+      './assets/casa2.jpg',
+      './assets/casa2_2.jpg',
+      './assets/casa2_3.jpg',
+      './assets/casa2_4.jpg',
+      './assets/casa2_5.jpg',
+      './assets/casa2_6.jpg',
     ],
   },
   {
@@ -49,9 +52,9 @@ const propiedades = [
       '600 m² de terreno.',
       '484 m² de construcción',],
     imagenes: [
-      '/assets/casa3.jpg',
-      '/assets/casa3_2.jpg',
-      '/assets/casa3_3.jpg',
+      './assets/casa3.jpg',
+      './assets/casa3_2.jpg',
+      './assets/casa3_3.jpg',
     ],
   }
   // Agrega más propiedades

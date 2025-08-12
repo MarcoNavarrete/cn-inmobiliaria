@@ -9,7 +9,7 @@ export default function Header() {
     <header className="header">
       <div className="logo">
         <Link to="/">
-          <img src="./assets/logo.png" alt="CN Inmobiliaria" />
+          <img src="./assets/logo.png" alt="CN Inmobiliaria" width="300px" />
         </Link>
       </div>
 
