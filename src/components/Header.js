@@ -6,12 +6,14 @@ import { Link } from 'react-router-dom';
 export default function Header() {
   return (
     <header className="header">
-      <div className="logo">CN</div>
+      <div className="logo">
+        <Link to="/">
+          <img src="./assets/logo.png" alt="CN Inmobiliaria" />
+        </Link>
+      </div>
+
       <nav className='nav'>
-        {/* <a href="/">Inicio</a>
-        <a href="/propiedades">Propiedades</a>
-        <a href="/nosotros">Nosotros</a>
-        <a href="/contacto">Contacto</a> */}
+
         <Link to="/">Inicio</Link>
         <Link to="/propiedades">Propiedades</Link>
         <Link to="/nosotros">Nosotros</Link>

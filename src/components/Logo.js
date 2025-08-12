@@ -5,7 +5,7 @@ import './Logo.css';
 export default function Logo() {
   return (
     <div className="logo">
-      <h1>CN</h1>
+      <img src="" alt={prop.titulo} />
       <p>INMOBILIARIA</p>
     </div>
   );
