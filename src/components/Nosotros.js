@@ -19,7 +19,7 @@ export default function Nosotros() {
           </p>
         </div>
         <div className="imagen">
-          <img src="/assets/equipo.jpg" alt="Equipo CN INMOBILIARIA" />
+          <img src="./assets/equipo.jpg" alt="Equipo CN INMOBILIARIA" />
         </div>
       </div>
     </section>
