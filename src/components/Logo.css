@@ -14,8 +14,8 @@
   color: var(--gris-elegante);
 }
 .logo img {
-  height: 50px;
-  width: auto;
+  height: auto;
+  width: 300px;
   object-fit: contain;
   vertical-align: middle;
 }
