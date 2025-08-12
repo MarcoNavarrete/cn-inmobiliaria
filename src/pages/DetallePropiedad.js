@@ -37,9 +37,9 @@ export default function DetallePropiedad() {
         <p className="descripcion">{propiedad.descripcion}</p>
 
         <ul className="caracteristicas">
-          <li>✅ {propiedad.caracteristica1}</li>
-          <li>✅ {propiedad.caracteristica2}</li>
-          <li>✅ {propiedad.caracteristica3}</li>
+          {propiedad.caracteristicas.map((carac, index) => (
+            <li key={index}>✅ {carac}</li>
+          ))}
         </ul>
 
         <a href="/contacto" className="btn-contacto">Quiero más información</a>
