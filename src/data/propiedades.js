@@ -40,22 +40,22 @@ const propiedades = [
       './assets/casa2_6.jpg',
     ],
   },
-  {
-    id: '3',
-    titulo: 'Departamento céntrico remodelado',
-    precio: '$1,780,000 MXN',
-    ubicacion: 'Centro, Pachuca',
-    descripcion: 'Espacios amplios, cocina equipada, zona tranquila.',
-    caracteristicas: [
-      '54 años de antigüedad',
-      '10 viviendas, 8 locales, 1 salón y estacionamiento',
-      '600 m² de terreno.',
-      '484 m² de construcción',],
-    imagenes: [
-      './assets/casa3.jpg',
-      './assets/casa3_2.jpg',
-      './assets/casa3_3.jpg',
-    ],
+  // {
+  //   id: '3',
+  //   titulo: 'Departamento céntrico remodelado',
+  //   precio: '$1,780,000 MXN',
+  //   ubicacion: 'Centro, Pachuca',
+  //   descripcion: 'Espacios amplios, cocina equipada, zona tranquila.',
+  //   caracteristicas: [
+  //     '54 años de antigüedad',
+  //     '10 viviendas, 8 locales, 1 salón y estacionamiento',
+  //     '600 m² de terreno.',
+  //     '484 m² de construcción',],
+  //   imagenes: [
+  //     './assets/casa3.jpg',
+  //     './assets/casa3_2.jpg',
+  //     './assets/casa3_3.jpg',
+  //   ],
   }
   // Agrega más propiedades
 ];
