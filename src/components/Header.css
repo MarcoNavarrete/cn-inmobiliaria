@@ -45,17 +45,21 @@
     display: block;
   }
 
-  .nav {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: var(--azul-oscuro);
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 1rem 2rem;
-    display: none;
-  }
+.nav {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--azul-oscuro);
+  padding: 1rem 2rem;
+  display: none;
+  flex-direction: column;
+  z-index: 9999; /* 👈 Esto lo pone encima de todo */
+  width: 100%;
+  transition: max-height 0.3s ease-in-out;
+  overflow: hidden;
+}
+
 
   .nav.open {
     display: flex;
@@ -67,8 +71,4 @@
   }
 }
 
-.nav {
-  transition: max-height 0.3s ease-in-out;
-  overflow: hidden;
-}
 
