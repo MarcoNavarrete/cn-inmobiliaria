@@ -39,7 +39,7 @@ const propiedades = [
       './assets/casa2_5.jpg',
       './assets/casa2_6.jpg',
     ],
-  },
+  }
   // {
   //   id: '3',
   //   titulo: 'Departamento céntrico remodelado',
@@ -56,7 +56,7 @@ const propiedades = [
   //     './assets/casa3_2.jpg',
   //     './assets/casa3_3.jpg',
   //   ],
-  }
+  //}
   // Agrega más propiedades
 ];
 
