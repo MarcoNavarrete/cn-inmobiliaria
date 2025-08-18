@@ -1,77 +1,46 @@
-/* src/components/Header.css */
-
-.header {
+/* src/components/Hero.css */
+.hero {
+  background-image: url('../assets/hero.jpg'); /* Asegúrate de tener una imagen atractiva aquí */
+  background-size: cover;
+  background-position: center;
+  height: 85vh;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background-color: var(--azul-oscuro);
-  color: var(--blanco);
+  justify-content: center;
   position: relative;
 }
 
-.logo img {
-  height: 50px;
-  width: auto;
-}
-
-.hamburger {
-  display: none;
-  font-size: 2rem;
-  background: none;
-  border: none;
+.hero-overlay {
+  background-color: rgba(26, 61, 124, 0.65); /* Azul profundo semitransparente */
+  padding: 3rem;
+  border-radius: 12px;
+  text-align: center;
   color: var(--blanco);
-  cursor: pointer;
 }
 
-.nav {
-  display: flex;
-  gap: 1.5rem;
+.hero h1 {
+  font-family: var(--fuente-titulos);
+  font-size: 3rem;
+  margin-bottom: 1rem;
 }
 
-.nav a {
-  color: var(--blanco);
-  text-decoration: none;
-  font-weight: bold;
-}
-
-.nav a:hover {
+.hero p {
+  font-size: 1.3rem;
   color: var(--dorado-suave);
+  margin-bottom: 2rem;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .hamburger {
-    display: block;
-  }
-
-  .nav {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: var(--azul-oscuro);
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 1rem 2rem;
-    display: none;
-  }
-
-  .nav.open {
-    display: flex;
-  }
-
-  .nav a {
-    padding: 0.5rem 0;
-    width: 100%;
-  }
+.hero-btn {
+  background-color: var(--dorado-suave);
+  color: var(--blanco);
+  padding: 0.8rem 2rem;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
 }
 
-.nav {
-  transition: max-height 0.3s ease-in-out;
-  overflow: hidden;
-}
-
-[data-aos^="fade"].aos-animate {
-  opacity: 0.1 !important;
+.hero-btn:hover {
+  background-color: var(--blanco);
+  color: var(--azul-oscuro);
 }

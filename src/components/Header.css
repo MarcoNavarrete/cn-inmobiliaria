@@ -1,27 +1,74 @@
 /* src/components/Header.css */
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--azul-oscuro);
   padding: 1rem 2rem;
+  background-color: var(--azul-oscuro);
   color: var(--blanco);
+  position: relative;
 }
 
-.logo {
+.logo img {
+  height: 50px;
+  width: auto;
+}
+
+.hamburger {
+  display: none;
   font-size: 2rem;
-  font-weight: bold;
-  font-family: var(--fuente-titulos);
+  background: none;
+  border: none;
+  color: var(--blanco);
+  cursor: pointer;
+}
+
+.nav {
+  display: flex;
+  gap: 1.5rem;
 }
 
 .nav a {
-  margin-left: 1rem;
-  text-decoration: none;
   color: var(--blanco);
-  font-weight: 500;
-  transition: color 0.3s ease;
+  text-decoration: none;
+  font-weight: bold;
 }
 
 .nav a:hover {
   color: var(--dorado-suave);
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hamburger {
+    display: block;
+  }
+
+  .nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--azul-oscuro);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem 2rem;
+    display: none;
+  }
+
+  .nav.open {
+    display: flex;
+  }
+
+  .nav a {
+    padding: 0.5rem 0;
+    width: 100%;
+  }
+}
+
+.nav {
+  transition: max-height 0.3s ease-in-out;
+  overflow: hidden;
+}
+
