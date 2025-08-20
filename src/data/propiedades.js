@@ -44,16 +44,16 @@ const propiedades = [
     id: '3',
     titulo: 'Casa habitacional en venta',
     precio: '$1,454,000 MXN',
-    ubicacion: 'Paseo Qvalta, 43845 Zempoala, Hgo.',
+    ubicacion: 'Privada oporto, 43845 Zempoala, Hgo.',
     descripcion: 'Opción de ampliación frontal como trasera, opción a recámara en planta baja, equipada y con cisterna.',
     caracteristicas: [
       '90m² de terreno',
       '68m² de construcción',
       '2 Recámaras',
       '1 y 1/2 baños',],
-    video: "./assets/Areni/video1.mp4",
+    video: "./assets/areni/video1.mp4",
     imagenes: [
-      './assets/Areni/imagen1.jpg'
+      './assets/areni/imagen1.jpg'
     ],
   }
   // Agrega más propiedades
