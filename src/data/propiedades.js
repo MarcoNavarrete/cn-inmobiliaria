@@ -39,7 +39,7 @@ const propiedades = [
       './assets/casa2_5.jpg',
       './assets/casa2_6.jpg',
     ],
-  }
+  },
   {
     id: '3',
     titulo: 'Casa habitacional en venta',
