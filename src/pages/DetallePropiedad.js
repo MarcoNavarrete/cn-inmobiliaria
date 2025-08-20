@@ -21,6 +21,14 @@ export default function DetallePropiedad() {
 
   return (
     <section className="detalle">
+      {propiedad.video && (
+        <div className="video">
+          <video controls width="100%">
+            <source src={propiedad.video} type="video/mp4" />
+            Tu navegador no soporta el video.
+          </video>
+        </div>
+      )}
       <div className="carrusel">
         <ImageGallery
           items={galeriaFormateada}
@@ -41,6 +49,18 @@ export default function DetallePropiedad() {
             <li key={index}>✅ {carac}</li>
           ))}
         </ul>
+
+        <div className="mapa">
+        <iframe
+          title="Ubicación"
+          src={`https://www.google.com/maps?q=${encodeURIComponent(propiedad.ubicacion)}&output=embed`}
+          width="100%"
+          height="300"
+          style={{ border: 0 }}
+          allowFullScreen=""
+          loading="lazy"
+        ></iframe>
+      </div>
 
         <a href="/contacto" className="btn-contacto">Quiero más información</a>
       </div>
