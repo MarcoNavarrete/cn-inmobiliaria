@@ -100,3 +100,14 @@
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+
+.subcaracteristicas {
+  list-style: none;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.subcaracteristicas li {
+  margin-left: 1rem;
+  font-size: 0.95rem;
+}

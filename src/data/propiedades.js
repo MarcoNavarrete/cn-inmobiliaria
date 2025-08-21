@@ -187,9 +187,25 @@ const propiedades = [
     { tipo: 'simple', texto: 'Ubicada dentro de una privada con excelentes amenidades' },
     { tipo: 'simple', texto: 'a solo 40 min de CDMX y 25 del AIFA' },
   ],
-  video: "./assets/malvasia/video1.mp4",
   imagenes: [
-    './assets/malvasia/imagen1.jpg'
+    './assets/malvasia/imagen1.jpg',
+    './assets/malvasia/imagen2.jpg',
+    './assets/malvasia/imagen3.jpg',
+    './assets/malvasia/imagen4.jpg',
+    './assets/malvasia/imagen5.jpg',
+    './assets/malvasia/imagen6.jpg',
+    './assets/malvasia/imagen7.jpg',
+    './assets/malvasia/imagen8.jpg',
+    './assets/malvasia/imagen9.jpg',
+    './assets/malvasia/imagen10.jpg',
+    './assets/malvasia/imagen11.jpg',
+    './assets/malvasia/imagen12.jpg',
+    './assets/malvasia/imagen13.jpg',
+    './assets/malvasia/imagen14.jpg',
+    './assets/malvasia/imagen15.jpg',
+    './assets/malvasia/imagen16.jpg',
+    './assets/malvasia/imagen17.jpg',
+    './assets/malvasia/imagen18.jpg',
   ],
 }
   
