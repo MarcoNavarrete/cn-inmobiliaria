@@ -1,16 +1,17 @@
 // src/data/propiedades.js
 const propiedades = [
-  {
+    {
     id: '1',
     titulo: 'Venta de Casa Habitación y Locales comerciales',
     precio: '$18,000,000 MXN',
     ubicacion: 'Av. Santa Cecilia #10 Col. La Purisima Tenayuca, Tlanepantla, Estado de México.',
     descripcion: 'Casa habitación y locales comerciales de dos niveles planta baja y planta alta más 8 locales y un salón de 200 metros cuadrados en planta alta. Con excelente ubicación y todos los servicios (Cuenta con Licencias comerciales, de Vinos y licores, Pulcata, Cantina, y Consultorio dental). Zona arqueológica (pirámides y museo). Transporte público importante: metrobús Tenayuca 10 minutos caminando. suburbano Ceylan 10 minutos en carro.',
     caracteristicas: [
-      '54 años de antigüedad',
-      '10 viviendas, 8 locales, 1 salón y estacionamiento',
-      '600 m² de terreno.',
-      '484 m² de construcción',],
+      { tipo: 'simple', texto: '54 años de antigüedad' },
+      { tipo: 'simple', texto: '10 viviendas, 8 locales, 1 salón y estacionamiento' },
+      { tipo: 'simple', texto: '600 m² de terreno' },
+      { tipo: 'simple', texto: '484 m² de construcción' },
+    ],
     imagenes: [
       './assets/casa1.jpg',
       './assets/casa1_2.jpg',
@@ -25,11 +26,11 @@ const propiedades = [
     titulo: 'Terreno en venta',
     precio: '$3,200,000 MXN',
     ubicacion: 'Calle Portezuelo S/N, Vizcaínas, 42136 Mineral del Monte, Hgo.',
-    descripcion: '¿Quieres vivir rodeado de árboles, aire puro y tranquilidad? \n Descubre Monte Real, Un terreno con vista tipo mirador a la ciudad de Pachuca y al pueblo mágico Real del Monte. Ideal para construcción de cabaña u hotel, ideal para construir tu casa de descanso o vivir permanentemente en contacto con la naturaleza. Ubicación privilegiada cerca de Mineral del Monte, con fácil acceso desde Pachuca y CDMX. Cuenta con escrituras y todos los servicios. Entorno 100% natural y arbolado Senderos, áreas verdes y ambiente familiar Solo efectivo, y transferencias y en dos partes. \n 1- firma del Contrato. 2- firma de escrituras Ideal para quienes buscan privacidad, tranquilidad y plusvalía.',
+    descripcion: '¿Quieres vivir rodeado de árboles, aire puro y tranquilidad?\nDescubre Monte Real, un terreno con vista tipo mirador a la ciudad de Pachuca y al pueblo mágico Real del Monte. Ideal para construcción de cabaña u hotel, ideal para construir tu casa de descanso o vivir permanentemente en contacto con la naturaleza.\nUbicación privilegiada cerca de Mineral del Monte, con fácil acceso desde Pachuca y CDMX. Cuenta con escrituras y todos los servicios.\nEntorno 100% natural y arbolado. Senderos, áreas verdes y ambiente familiar.\nSolo efectivo, y transferencias en dos partes:\n1- firma del Contrato\n2- firma de escrituras\nIdeal para quienes buscan privacidad, tranquilidad y plusvalía.',
     caracteristicas: [
-      '1,198.24 m² de superficie.',
-      'A 7 minutos de distancia del centro.',
-      '9 m² de construcción.',
+      { tipo: 'simple', texto: '1,198.24 m² de superficie' },
+      { tipo: 'simple', texto: 'A 7 minutos de distancia del centro' },
+      { tipo: 'simple', texto: '9 m² de construcción' },
     ],
     imagenes: [
       './assets/casa2.jpg',
@@ -42,20 +43,156 @@ const propiedades = [
   },
   {
     id: '3',
-    titulo: 'Casa habitacional en venta',
+    titulo: 'Casa habitacional en venta Modelo Areni',
     precio: '$1,454,000 MXN',
     ubicacion: 'Privada oporto, 43845 Zempoala, Hgo.',
     descripcion: 'Opción de ampliación frontal como trasera, opción a recámara en planta baja, equipada y con cisterna.',
     caracteristicas: [
-      '90m² de terreno',
-      '68m² de construcción',
-      '2 Recámaras',
-      '1 y 1/2 baños',],
-    video: "./assets/areni/video1.mp4",
-    imagenes: [
-      './assets/areni/imagen1.jpg'
+      { tipo: 'simple', texto: '90m² de terreno' },
+      { tipo: 'simple', texto: '68m² de construcción' },
+      { tipo: 'simple', texto: '2 Recámaras' },
+      { tipo: 'simple', texto: '1 y 1/2 baños' },
     ],
-  }
+    video: "./assets/areni/video1.mp4",
+    imagenes: ['./assets/areni/imagen1.jpg'],
+  },
+  {
+    id: '4',
+    titulo: 'Casa habitacional en venta Modelo Brachetto',
+    precio: '$1,737,000 MXN',
+    ubicacion: 'Privada oporto, 43845 Zempoala, Hgo.',
+    descripcion: 'Con opción a un proyecto de ampliación, equipada y con cisterna.',
+    caracteristicas: [
+      { tipo: 'simple', texto: '105m² de terreno' },
+      { tipo: 'simple', texto: '78m² de construcción' },
+      { tipo: 'simple', texto: '3 Recámaras' },
+      { tipo: 'simple', texto: '1 y 1/2 baños' },
+    ],
+    video: "./assets/brachetto/video1.mp4",
+    imagenes: ['./assets/brachetto/imagen1.jpg'],
+  },
+  {
+    id: '5',
+    titulo: 'Casa habitacional en venta Modelo Moscatel',
+    precio: '$1,810,000 MXN',
+    ubicacion: 'Privada ardenza, 43845 Zempoala, Hgo.',
+    descripcion: 'Opción de ampliación frontal como trasera, opción a recámara en planta baja, equipada y con cisterna.',
+    caracteristicas: [
+      { tipo: 'simple', texto: '105m² de terreno' },
+      { tipo: 'simple', texto: '91m² de construcción' },
+      { tipo: 'simple', texto: '3 Recámaras' },
+      { tipo: 'simple', texto: '1 y 1/2 baños' },
+    ],
+    video: "./assets/moscatel/video1.mp4",
+    imagenes: ['./assets/moscatel/imagen1.jpg'],
+  },
+  {
+    id: '6',
+    titulo: 'Casa habitacional en venta Modelo Carlina',
+    precio: '$1,926,000 MXN',
+    ubicacion: 'Privada ardenza, 43845 Zempoala, Hgo.',
+    descripcion: 'Con opción de ampliación, equipada y con cisterna.',
+    caracteristicas: [
+      { tipo: 'simple', texto: '105m² de terreno' },
+      { tipo: 'simple', texto: '113m² de construcción' },
+      { tipo: 'simple', texto: '3 recámaras, recámara principal con vestidor y baño completo' },
+      { tipo: 'simple', texto: '2 y 1/2 baños' },
+    ],
+    video: "./assets/carlina/video1.mp4",
+    imagenes: ['./assets/carlina/imagen1.jpg'],
+  },
+  {
+    id: '7',
+    titulo: 'Casa habitacional en venta Modelo Ruché',
+    precio: '$2,539,000 MXN',
+    ubicacion: 'Privada ardanza, 43845 Zempoala, Hgo.',
+    descripcion: 'Cochera techada para 2 automóviles, pasillo lateral de 1 metro de distancia, muros independientes, con cisterna y equipada.',
+    caracteristicas: [
+      { tipo: 'simple', texto: '155m² de terreno' },
+      { tipo: 'simple', texto: '105m² de construcción' },
+      { tipo: 'simple', texto: '3 recámaras, recámara principal con vestidor y baño completo' },
+      { tipo: 'simple', texto: '2 y 1/2 baños' },
+    ],
+    video: "./assets/ruche/video1.mp4",
+    imagenes: ['./assets/ruche/imagen1.jpg'],
+  },
+  {
+    id: '8',
+    titulo: 'Casa habitacional en venta Modelo Loureira',
+    precio: '$2,920,000 MXN',
+    ubicacion: 'Privada sorento, 43845 Zempoala, Hgo.',
+    descripcion: 'Con opción a ampliación con RoofGarden, equipada y con cisterna.',
+    caracteristicas: [
+      { tipo: 'simple', texto: '122.5m² de terreno' },
+      { tipo: 'simple', texto: '168m² de construcción' },
+      { tipo: 'simple', texto: '3 recámaras en planta alta, cada una con baño completo' },
+      { tipo: 'simple', texto: 'Recámara principal con vestidor y terraza' },
+      { tipo: 'simple', texto: '1/2 baño en planta baja' },
+    ],
+    video: "./assets/loureira/video1.mp4",
+    imagenes: ['./assets/loureira/imagen1.jpg'],
+  },
+  {
+    id: '9',
+    titulo: 'Casa habitacional en venta Modelo Gracciano',
+    precio: '$3,326,000 MXN',
+    ubicacion: 'Privada sorento, 43845 Zempoala, Hgo.',
+    descripcion: 'Con opción a roofgarden, equipada y con cisterna.',
+    caracteristicas: [
+      { tipo: 'simple', texto: '140m² de terreno' },
+      { tipo: 'simple', texto: '199m² de construcción' },
+      { tipo: 'simple', texto: 'Oficina en planta baja' },
+      { tipo: 'simple', texto: '3 recamaras en planta alta, cada una con baño completo' },
+      { tipo: 'simple', texto: 'Recámara principal con vestidor y terraza'},
+      { tipo: 'simple', texto: 'Sala'},
+      { tipo: 'simple', texto: 'Comedor'},
+      { tipo: 'simple', texto: 'Cocina'},
+      { tipo: 'simple', texto: 'Cuarto de lavado al interior con patio trasero oculto'}],
+    video: "./assets/gracciano/video1.mp4",
+    imagenes: ['./assets/gracciano/imagen1.jpg'],
+  },
+  {
+  id: '10',
+  titulo: 'Casa habitacional en venta Modelo Malvasia',
+  precio: '$4,100,000 MXN',
+    ubicacion: 'Privada sorento, 43845 Zempoala, Hgo.',
+    descripcion: '¡Amplitud, confort y estilo en cada rincón!',
+  caracteristicas: [
+    { tipo: 'simple', texto: '175m² de terreno' },
+    { tipo: 'simple', texto: '242.63m² de construcción' },
+    {
+      tipo: 'grupo',
+      titulo: 'Planta Baja',
+      opciones: [
+        'Estudio o recámara con baño completo',
+        'Medio baño para visitas',
+        'Sala - comedor de gran tamaño',
+        'Cocina',
+        'Cuarto de lavado',
+        'Pasillo lateral',
+        'Patio posterior',
+      ],
+    },
+    {
+      tipo: 'grupo',
+      titulo: 'Planta Alta',
+      opciones: [
+        'Recámara principal con vestidor, tina y baño completo',
+        '2 recámaras junior con baño completo',
+        '1 recámara adicional con estancia familiar',
+        'Terraza con excelente vista',
+      ],
+    },
+    { tipo: 'simple', texto: 'Aceptamos crédito Infonavit, Fovissste, Bancario y pago de contado' },
+    { tipo: 'simple', texto: 'Ubicada dentro de una privada con excelentes amenidades' },
+    { tipo: 'simple', texto: 'a solo 40 min de CDMX y 25 del AIFA' },
+  ],
+  video: "./assets/malvasia/video1.mp4",
+  imagenes: [
+    './assets/malvasia/imagen1.jpg'
+  ],
+}
+  
   // Agrega más propiedades
 ];
 

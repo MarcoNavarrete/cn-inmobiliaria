@@ -51,10 +51,52 @@
   border-radius: 6px;
   text-decoration: none;
   font-weight: bold;
-  display: inline-block;
   transition: background-color 0.3s ease;
 }
 
 .btn-contacto:hover {
   background-color: var(--dorado-suave);
+}
+
+.boton-contacto {
+  display: flex;
+  justify-content: flex-start; /* Alineado a la izquierda en desktop */
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .boton-contacto {
+    justify-content: center;
+  }
+}
+
+.btn-ver {
+  background-color: var(--azul-oscuro);
+  color: var(--blanco);
+  padding: 0.8rem 1.4rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+.btn-ver:hover {
+  background-color: var(--dorado-suave);
+}
+.boton-ver {
+  display: flex;
+  justify-content: flex-end; /* Alineado a la izquierda en desktop */
+  margin-top: 1rem;
+}
+/* Centrado en móviles */
+@media (max-width: 768px) {
+  .boton-ver {
+    justify-content: center;
+  }
+}
+
+.mapa {
+  margin-top: 2rem;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }

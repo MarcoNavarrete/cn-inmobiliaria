@@ -5,10 +5,35 @@ import propiedades from '../data/propiedades';
 import ImageGallery from 'react-image-gallery';
 import 'react-image-gallery/styles/css/image-gallery.css';
 import './DetallePropiedad.css';
+import { Link } from 'react-router-dom';
 
 export default function DetallePropiedad() {
   const { id } = useParams();
   const propiedad = propiedades.find((p) => p.id === id);
+
+  const obtenerIcono = (texto) => {
+    const lower = texto.toLowerCase();
+    if (lower.includes('terreno')) return '📐';
+    if (lower.includes('construcción')) return '🏗';
+    if (lower.includes('recámara')) return '🛏';
+    if (lower.includes('recámaras')) return '🛏';
+    if (lower.includes('baño')) return '🛁';
+    if (lower.includes('estudio')) return '🧠';
+    if (lower.includes('sala') || lower.includes('comedor')) return '🛋';
+    if (lower.includes('cocina')) return '🍽';
+    if (lower.includes('terraza')) return '🌅';
+    if (lower.includes('oficina')) return '💼';
+    if (lower.includes('vestidor')) return '👗';
+    if (lower.includes('cisterna')) return '🚰';
+    if (lower.includes('roofgarden')) return '🌿';
+    if (lower.includes('crédito')) return '💳';
+    if (lower.includes('min de')) return '🚗';
+    if (texto.toLowerCase().includes('lavado')) return '🧺';
+    if (texto.toLowerCase().includes('pasillo')) return '🚪';
+    if (texto.toLowerCase().includes('patio')) return '🌿';
+    if (texto.toLowerCase().includes('amenidades')) return '🏊';
+    return '🔹';
+  };
 
   if (!propiedad) {
     return <p>Propiedad no encontrada</p>;
@@ -45,9 +70,25 @@ export default function DetallePropiedad() {
         <p className="descripcion">{propiedad.descripcion}</p>
 
         <ul className="caracteristicas">
-          {propiedad.caracteristicas.map((carac, index) => (
-            <li key={index}>✅ {carac}</li>
-          ))}
+          {propiedad.caracteristicas.map((carac, index) => {
+            if (carac.tipo === 'simple') {
+              const icono = obtenerIcono(carac.texto);
+              return <li key={index}>{icono} {carac.texto}</li>;
+            }
+            if (carac.tipo === 'grupo') {
+              return (
+                <li key={index}>
+                  ✅ <strong>{carac.titulo}:</strong>
+                  <ul className="subcaracteristicas">
+                    {carac.opciones.map((opcion, subIndex) => (
+                      <li key={subIndex}>{obtenerIcono(opcion)} {opcion}</li>
+                    ))}
+                  </ul>
+                </li>
+              );
+            }
+            return null;
+          })}
         </ul>
 
         <div className="mapa">
@@ -62,7 +103,15 @@ export default function DetallePropiedad() {
         ></iframe>
       </div>
 
-        <a href="/contacto" className="btn-contacto">Quiero más información</a>
+          <div className="boton-contacto">
+        {/* <a href="/contacto" className="btn-contacto">Quiero más información</a> */}
+        <Link to="/contacto" className="btn-contacto">Quiero más información</Link>
+        </div>
+
+        <div className="boton-ver">
+        {/* <a href="/Inicio" className="btn-ver">Ver más propiedades</a> */}
+        <Link to="/propiedades" className="btn-ver">Ver más propiedades</Link>
+      </div>
       </div>
     </section>
   );
