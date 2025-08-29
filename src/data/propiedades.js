@@ -5,6 +5,8 @@ const propiedades = [
     titulo: 'Venta de Casa Habitación y Locales comerciales',
     precio: '$18,000,000 MXN',
     ubicacion: 'Av. Santa Cecilia #10 Col. La Purisima Tenayuca, Tlanepantla, Estado de México.',
+    latitud: 19.533526,
+    longitud: -99.167685,
     descripcion: 'Casa habitación y locales comerciales de dos niveles planta baja y planta alta más 8 locales y un salón de 200 metros cuadrados en planta alta. Con excelente ubicación y todos los servicios (Cuenta con Licencias comerciales, de Vinos y licores, Pulcata, Cantina, y Consultorio dental). Zona arqueológica (pirámides y museo). Transporte público importante: metrobús Tenayuca 10 minutos caminando. suburbano Ceylan 10 minutos en carro.',
     caracteristicas: [
       { tipo: 'simple', texto: '54 años de antigüedad' },
@@ -26,6 +28,8 @@ const propiedades = [
     titulo: 'Terreno en venta',
     precio: '$3,200,000 MXN',
     ubicacion: 'Calle Portezuelo S/N, Vizcaínas, 42136 Mineral del Monte, Hgo.',
+    latitud: 20.137347,
+    longitud: -98.684010,
     descripcion: '¿Quieres vivir rodeado de árboles, aire puro y tranquilidad?\nDescubre Monte Real, un terreno con vista tipo mirador a la ciudad de Pachuca y al pueblo mágico Real del Monte. Ideal para construcción de cabaña u hotel, ideal para construir tu casa de descanso o vivir permanentemente en contacto con la naturaleza.\nUbicación privilegiada cerca de Mineral del Monte, con fácil acceso desde Pachuca y CDMX. Cuenta con escrituras y todos los servicios.\nEntorno 100% natural y arbolado. Senderos, áreas verdes y ambiente familiar.\nSolo efectivo, y transferencias en dos partes:\n1- firma del Contrato\n2- firma de escrituras\nIdeal para quienes buscan privacidad, tranquilidad y plusvalía.',
     caracteristicas: [
       { tipo: 'simple', texto: '1,198.24 m² de superficie' },
@@ -46,6 +50,8 @@ const propiedades = [
     titulo: 'Casa habitacional en venta Modelo Areni',
     precio: '$1,454,000 MXN',
     ubicacion: 'Privada oporto, 43845 Zempoala, Hgo.',
+    latitud: 20.011955,
+    longitud: -98.775101,
     descripcion: 'Opción de ampliación frontal como trasera, opción a recámara en planta baja, equipada y con cisterna.',
     caracteristicas: [
       { tipo: 'simple', texto: '90m² de terreno' },
@@ -61,6 +67,8 @@ const propiedades = [
     titulo: 'Casa habitacional en venta Modelo Brachetto',
     precio: '$1,737,000 MXN',
     ubicacion: 'Privada oporto, 43845 Zempoala, Hgo.',
+    latitud: 20.011955,
+    longitud: -98.775101,
     descripcion: 'Con opción a un proyecto de ampliación, equipada y con cisterna.',
     caracteristicas: [
       { tipo: 'simple', texto: '105m² de terreno' },
@@ -76,6 +84,8 @@ const propiedades = [
     titulo: 'Casa habitacional en venta Modelo Moscatel',
     precio: '$1,810,000 MXN',
     ubicacion: 'Privada ardenza, 43845 Zempoala, Hgo.',
+    latitud: 20.009483,
+    longitud: -98.773788,
     descripcion: 'Opción de ampliación frontal como trasera, opción a recámara en planta baja, equipada y con cisterna.',
     caracteristicas: [
       { tipo: 'simple', texto: '105m² de terreno' },
@@ -91,6 +101,8 @@ const propiedades = [
     titulo: 'Casa habitacional en venta Modelo Carlina',
     precio: '$1,926,000 MXN',
     ubicacion: 'Privada ardenza, 43845 Zempoala, Hgo.',
+    latitud: 20.009483,
+    longitud: -98.773788,
     descripcion: 'Con opción de ampliación, equipada y con cisterna.',
     caracteristicas: [
       { tipo: 'simple', texto: '105m² de terreno' },
@@ -106,6 +118,8 @@ const propiedades = [
     titulo: 'Casa habitacional en venta Modelo Ruché',
     precio: '$2,539,000 MXN',
     ubicacion: 'Privada ardanza, 43845 Zempoala, Hgo.',
+    latitud: 20.009483,
+    longitud: -98.773788,
     descripcion: 'Cochera techada para 2 automóviles, pasillo lateral de 1 metro de distancia, muros independientes, con cisterna y equipada.',
     caracteristicas: [
       { tipo: 'simple', texto: '155m² de terreno' },
@@ -121,6 +135,8 @@ const propiedades = [
     titulo: 'Casa habitacional en venta Modelo Loureira',
     precio: '$2,920,000 MXN',
     ubicacion: 'Privada sorento, 43845 Zempoala, Hgo.',
+    latitud: 20.010608,
+    longitud: -98.779752,
     descripcion: 'Con opción a ampliación con RoofGarden, equipada y con cisterna.',
     caracteristicas: [
       { tipo: 'simple', texto: '122.5m² de terreno' },
@@ -137,6 +153,8 @@ const propiedades = [
     titulo: 'Casa habitacional en venta Modelo Gracciano',
     precio: '$3,326,000 MXN',
     ubicacion: 'Privada sorento, 43845 Zempoala, Hgo.',
+    latitud: 20.010608,
+    longitud: -98.779752,
     descripcion: 'Con opción a roofgarden, equipada y con cisterna.',
     caracteristicas: [
       { tipo: 'simple', texto: '140m² de terreno' },
@@ -156,6 +174,8 @@ const propiedades = [
   titulo: 'Casa habitacional en venta Modelo Malvasia',
   precio: '$4,100,000 MXN',
     ubicacion: 'Privada sorento, 43845 Zempoala, Hgo.',
+    latitud: 20.010608,
+    longitud: -98.779752,
     descripcion: '¡Amplitud, confort y estilo en cada rincón!',
   caracteristicas: [
     { tipo: 'simple', texto: '175m² de terreno' },
@@ -207,8 +227,53 @@ const propiedades = [
     './assets/malvasia/imagen17.jpg',
     './assets/malvasia/imagen18.jpg',
   ],
+},
+  {
+  id: '11',
+  titulo: 'Casa en el fraccionamiento San Alfonso',
+  precio: '$1,390,000 MXN',
+    ubicacion: 'Av. Santa Elena, Privadas Santa Matilde, Hgo',
+    latitud: 20.017912,
+    longitud: -98.787436,
+    descripcion: 'Se vende excelente casa de un solo piso en el fraccionamiento San Alfonso de un piso. Buena ubicación. Se aceptan todos los créditos',
+  caracteristicas: [
+    { tipo: 'simple', texto: '112.5 m² de terreno' },
+    { tipo: 'simple', texto: '80 m² de construcción' },
+    { tipo: 'simple', texto: '3 Recamaras' },
+    { tipo: 'simple', texto: '1 Baño amplio y completo, con azulejo en área de regadera' },
+    { tipo: 'simple', texto: 'Sala comedor' },
+    { tipo: 'simple', texto: 'Cocina con área de alacena' },
+    { tipo: 'simple', texto: 'Tarja doble' },
+    { tipo: 'simple', texto: 'piso vidriado en toda la casa' },
+    { tipo: 'simple', texto: 'Pequeño jardín' },
+    { tipo: 'simple', texto: 'Cochera para un coche' },
+    { tipo: 'simple', texto: 'Protecciones' },
+    { tipo: 'simple', texto: 'Puerta de seguridad' },
+    { tipo: 'simple', texto: 'Patio de servidio techado' },
+    { tipo: 'simple', texto: 'Enladrillado en azotea' },
+    { tipo: 'simple', texto: 'Excelente estado de conservación' },
+  ],
+  imagenes: [
+    './assets/malvasia/imagen1.jpg',
+    './assets/malvasia/imagen2.jpg',
+    './assets/malvasia/imagen3.jpg',
+    './assets/malvasia/imagen4.jpg',
+    './assets/malvasia/imagen5.jpg',
+    './assets/malvasia/imagen6.jpg',
+    './assets/malvasia/imagen7.jpg',
+    './assets/malvasia/imagen8.jpg',
+    './assets/malvasia/imagen9.jpg',
+    './assets/malvasia/imagen10.jpg',
+    './assets/malvasia/imagen11.jpg',
+    './assets/malvasia/imagen12.jpg',
+    './assets/malvasia/imagen13.jpg',
+    './assets/malvasia/imagen14.jpg',
+    './assets/malvasia/imagen15.jpg',
+    './assets/malvasia/imagen16.jpg',
+    './assets/malvasia/imagen17.jpg',
+    './assets/malvasia/imagen18.jpg',
+  ],
 }
-  
   // Agrega más propiedades
 ];
 

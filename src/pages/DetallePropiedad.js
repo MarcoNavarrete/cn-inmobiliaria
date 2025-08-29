@@ -91,17 +91,21 @@ export default function DetallePropiedad() {
           })}
         </ul>
 
+        {propiedad.latitud && propiedad.longitud ? (
         <div className="mapa">
-        <iframe
-          title="Ubicación"
-          src={`https://www.google.com/maps?q=${encodeURIComponent(propiedad.ubicacion)}&output=embed`}
-          width="100%"
-          height="300"
-          style={{ border: 0 }}
-          allowFullScreen=""
-          loading="lazy"
-        ></iframe>
-      </div>
+          <iframe
+            title="Ubicación"
+            src={`https://www.google.com/maps?q=${propiedad.latitud},${propiedad.longitud}&output=embed`}
+            width="100%"
+            height="300"
+            style={{ border: 0 }}
+            allowFullScreen=""
+            loading="lazy"
+          ></iframe>
+        </div>
+      ) : (
+        <p>Ubicación no disponible</p>
+      )}
 
           <div className="boton-contacto">
         {/* <a href="/contacto" className="btn-contacto">Quiero más información</a> */}
