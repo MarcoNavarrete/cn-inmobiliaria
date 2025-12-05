@@ -23,7 +23,6 @@ const propiedades = [
       './assets/casa1_6.jpg',
     ],
   },
-  ,
   {
     id: '2',
     titulo: 'Terreno en venta',
