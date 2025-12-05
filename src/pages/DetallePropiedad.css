@@ -25,6 +25,17 @@
   color: var(--dorado-suave);
 }
 
+.video {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.video video {
+  max-height: 500px;
+  object-fit: scale-down;
+  width: 90%;
+}
+
 .ubicacion {
   margin-bottom: 1rem;
 }

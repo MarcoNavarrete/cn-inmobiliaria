@@ -47,8 +47,8 @@ export default function DetallePropiedad() {
   return (
     <section className="detalle">
       {propiedad.video && (
-        <div className="video" style="text-align: center; margin-bottom: 20px;">
-          <video controls width="95%" style="max-height: 500px; object-fit: scale-down;">
+        <div className="video" >
+          <video controls>
             <source src={propiedad.video} type="video/mp4" />
             Tu navegador no soporta el video.
           </video>
