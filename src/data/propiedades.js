@@ -23,6 +23,29 @@ const propiedades = [
       './assets/casa1_6.jpg',
     ],
   },
+   {
+    id: '1',
+    titulo: 'Venta de Casa Habitación y Locales comerciales',
+    precio: '$18,000,000 MXN',
+    ubicacion: 'Av. Santa Cecilia #10 Col. La Purisima Tenayuca, Tlanepantla, Estado de México.',
+    latitud: 19.533526,
+    longitud: -99.167685,
+    descripcion: 'Casa habitación y locales comerciales de dos niveles planta baja y planta alta más 8 locales y un salón de 200 metros cuadrados en planta alta. Con excelente ubicación y todos los servicios (Cuenta con Licencias comerciales, de Vinos y licores, Pulcata, Cantina, y Consultorio dental). Zona arqueológica (pirámides y museo). Transporte público importante: metrobús Tenayuca 10 minutos caminando. suburbano Ceylan 10 minutos en carro.',
+    caracteristicas: [
+      { tipo: 'simple', texto: '54 años de antigüedad' },
+      { tipo: 'simple', texto: '10 viviendas, 8 locales, 1 salón y estacionamiento' },
+      { tipo: 'simple', texto: '600 m² de terreno' },
+      { tipo: 'simple', texto: '484 m² de construcción' },
+    ],
+    imagenes: [
+      './assets/casa1.jpg',
+      './assets/casa1_2.jpg',
+      './assets/casa1_3.jpg',
+      './assets/casa1_4.jpg',
+      './assets/casa1_5.jpg',
+      './assets/casa1_6.jpg',
+    ],
+  },
   {
     id: '2',
     titulo: 'Terreno en venta',
@@ -64,6 +87,68 @@ const propiedades = [
       './assets/casa2_4.jpg',
       './assets/casa2_5.jpg',
       './assets/casa2_6.jpg',
+    ],
+  },
+  {
+    id: '20',
+    titulo: 'Terreno en venta',
+    precio: '$1,800,000 MXN',
+    ubicacion: 'Acaxochitlán, Hidalgo',
+    latitud: 20.158537,
+    longitud: -98.202740,
+    descripcion: 'Terreno de 300 m² ubicado a solo 2 cuadras y media del centro de Acaxochitlán, Hidalgo, recientemente nombrado Pueblo Mágico, lo que lo convierte en una zona con alta proyección de crecimiento y valorización. \n '+
+'Cuenta con todos los servicios a pie de calle y se encuentra en un área destinada a consolidarse como zona residencial, con planes de espacios recreativos y áreas comunes. Su cercanía al centro permite disfrutar de la vida local, comercios y servicios, sin perder la tranquilidad de un entorno habitacional.\n' +
+'El propietario ofrece un esquema de pago flexible, con 50% de enganche y el resto a 6 meses, facilitando la adquisición. La propiedad está lista para cambio de propietario, sin complicaciones legales.\n' +
+'Una excelente oportunidad para quienes buscan invertir o construir en una de las zonas con mayor proyección de Hidalgo.',
+    caracteristicas: [
+      {
+      tipo: 'grupo',
+      titulo: 'Detalles del terreno',
+      opciones: [
+        'Tipo de inmuble: Terreno',
+        'Superficie: 300 m²',
+        'Precio: $1,800,000 MXN',
+        'Esquema de pago: 50% enganche, resto a 6 meses',
+        'Disponibilidad: Inmediata',
+        'Estatus legal: Listo para cambio de propietario',
+      ],
+    },
+    {
+      tipo: 'grupo',
+      titulo: 'Características del terreno',
+      opciones: [
+        'Terreno de topografía regular',
+        'Uso habitacional',
+        'Accesos cómodos y cercanía inmediata a comercios, servicios y vialidades principales',
+      ],
+    },
+    {
+      tipo: 'grupo',
+      titulo: 'Características del terreno',
+      opciones: [
+        'Terreno de topografía regular',
+        'Uso habitacional',
+        'Accesos cómodos y cercanía inmediata a comercios, servicios y vialidades principales',
+      ],
+    },
+    {
+      tipo: 'grupo',
+      titulo: 'Servicios a pie de calle:',
+      opciones: [
+        'Agua',
+        'Luz',
+        'Drenaje',
+      ],
+    },
+    ],
+    imagenes: [
+      './assets/imagen_1.jpeg',
+      './assets/imagen_2.jpeg',
+      './assets/imagen_3.jpeg',
+      './assets/imagen_4.jpeg',
+      './assets/imagen_5.jpeg',
+      './assets/imagen_6.jpeg',
+      './assets/imagen_7.jpeg',
     ],
   },
   {
