@@ -30,7 +30,7 @@ const propiedades = [
     ubicacion: 'Al Bosque S/N, Fraccionamiento Lomas de Cocoyoc, Morelos',
     latitud: 18.901697,
     longitud: -98.962452,
-    descripcion: 'Disfruta de un lugar rodeado de árboles y del sonido de un río cristalino que atraviesa el terreno. Este terreno en venta en Lomas de Cocoyoc, Morelos, es ideal para construir la casa de tus sueños o una cabaña de descanso.\nEl terreno cuenta con una superficie de 524.81 m² y está ubicado a solo 7 minutos del centro de Cocoyoc, dentro de un fraccionamiento exclusivo, lo que te permite disfrutar de la tranquilidad del campo sin alejarte demasiado de las comodidades urbanas.\nAdemás, el terreno cuenta con todos los servicios necesarios para su desarrollo, incluyendo agua potable, electricidad y acceso pavimentado.\nNo pierdas la oportunidad de adquirir este hermoso terreno en Lomas de Cocoyoc y comenzar a construir el hogar que siempre has deseado.',
+    descripcion: 'Disfruta de un lugar rodeado de árboles y del sonido de un río cristalino que atraviesa el terreno. Este terreno en venta en Lomas de Cocoyoc, Morelos, es ideal para construir la casa de tus sueños o una cabaña de descanso.\r\nEl terreno cuenta con una superficie de 524.81 m² y está ubicado a solo 7 minutos del centro de Cocoyoc, dentro de un fraccionamiento exclusivo, lo que te permite disfrutar de la tranquilidad del campo sin alejarte demasiado de las comodidades urbanas.\r\nAdemás, el terreno cuenta con todos los servicios necesarios para su desarrollo, incluyendo agua potable, electricidad y acceso pavimentado.\r\nNo pierdas la oportunidad de adquirir este hermoso terreno en Lomas de Cocoyoc y comenzar a construir el hogar que siempre has deseado.',
     caracteristicas: [
       { tipo: 'simple', texto: '524.81 m² de superficie' },
       { tipo: 'simple', texto: 'A 7 minutos de distancia del centro' },
@@ -51,7 +51,7 @@ const propiedades = [
     ubicacion: 'Calle Portezuelo S/N, Vizcaínas, 42136 Mineral del Monte, Hgo.',
     latitud: 20.137347,
     longitud: -98.684010,
-    descripcion: '¿Quieres vivir rodeado de árboles, aire puro y tranquilidad?\nDescubre Monte Real, un terreno con vista tipo mirador a la ciudad de Pachuca y al pueblo mágico Real del Monte. Ideal para construcción de cabaña u hotel, ideal para construir tu casa de descanso o vivir permanentemente en contacto con la naturaleza.\nUbicación privilegiada cerca de Mineral del Monte, con fácil acceso desde Pachuca y CDMX. Cuenta con escrituras y todos los servicios.\nEntorno 100% natural y arbolado. Senderos, áreas verdes y ambiente familiar.\nSolo efectivo, y transferencias en dos partes:\n1- firma del Contrato\n2- firma de escrituras\nIdeal para quienes buscan privacidad, tranquilidad y plusvalía.',
+    descripcion: '¿Quieres vivir rodeado de árboles, aire puro y tranquilidad?\r\nDescubre Monte Real, un terreno con vista tipo mirador a la ciudad de Pachuca y al pueblo mágico Real del Monte. Ideal para construcción de cabaña u hotel, ideal para construir tu casa de descanso o vivir permanentemente en contacto con la naturaleza.\r\nUbicación privilegiada cerca de Mineral del Monte, con fácil acceso desde Pachuca y CDMX. Cuenta con escrituras y todos los servicios.\r\nEntorno 100% natural y arbolado. Senderos, áreas verdes y ambiente familiar.\r\nSolo efectivo, y transferencias en dos partes:\r\n1- firma del Contrato\r\n2- firma de escrituras\r\nIdeal para quienes buscan privacidad, tranquilidad y plusvalía.',
     caracteristicas: [
       { tipo: 'simple', texto: '1,198.24 m² de superficie' },
       { tipo: 'simple', texto: 'A 7 minutos de distancia del centro' },
@@ -73,9 +73,9 @@ const propiedades = [
     ubicacion: 'Acaxochitlán, Hidalgo',
     latitud: 20.158537,
     longitud: -98.202740,
-    descripcion: 'Terreno de 300 m² ubicado a solo 2 cuadras y media del centro de Acaxochitlán, Hidalgo, recientemente nombrado Pueblo Mágico, lo que lo convierte en una zona con alta proyección de crecimiento y valorización. \n '+
-'Cuenta con todos los servicios a pie de calle y se encuentra en un área destinada a consolidarse como zona residencial, con planes de espacios recreativos y áreas comunes. Su cercanía al centro permite disfrutar de la vida local, comercios y servicios, sin perder la tranquilidad de un entorno habitacional.\n' +
-'El propietario ofrece un esquema de pago flexible, con 50% de enganche y el resto a 6 meses, facilitando la adquisición. La propiedad está lista para cambio de propietario, sin complicaciones legales.\n' +
+    descripcion: 'Terreno de 300 m² ubicado a solo 2 cuadras y media del centro de Acaxochitlán, Hidalgo, recientemente nombrado Pueblo Mágico, lo que lo convierte en una zona con alta proyección de crecimiento y valorización. \r\n '+
+'Cuenta con todos los servicios a pie de calle y se encuentra en un área destinada a consolidarse como zona residencial, con planes de espacios recreativos y áreas comunes. Su cercanía al centro permite disfrutar de la vida local, comercios y servicios, sin perder la tranquilidad de un entorno habitacional.\r\n' +
+'El propietario ofrece un esquema de pago flexible, con 50% de enganche y el resto a 6 meses, facilitando la adquisición. La propiedad está lista para cambio de propietario, sin complicaciones legales.\r\n' +
 'Una excelente oportunidad para quienes buscan invertir o construir en una de las zonas con mayor proyección de Hidalgo.',
     caracteristicas: [
       {
