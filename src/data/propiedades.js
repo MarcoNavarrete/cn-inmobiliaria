@@ -101,15 +101,6 @@ const propiedades = [
     },
     {
       tipo: 'grupo',
-      titulo: 'Características del terreno',
-      opciones: [
-        'Terreno de topografía regular',
-        'Uso habitacional',
-        'Accesos cómodos y cercanía inmediata a comercios, servicios y vialidades principales',
-      ],
-    },
-    {
-      tipo: 'grupo',
       titulo: 'Servicios a pie de calle:',
       opciones: [
         'Agua',
