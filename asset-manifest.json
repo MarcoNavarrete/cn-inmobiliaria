@@ -1,17 +1,17 @@
 {
   "files": {
     "main.css": "/cn-inmobiliaria/static/css/main.8939f2b6.css",
-    "main.js": "/cn-inmobiliaria/static/js/main.71fef300.js",
+    "main.js": "/cn-inmobiliaria/static/js/main.67906c87.js",
     "static/js/453.f2eb4912.chunk.js": "/cn-inmobiliaria/static/js/453.f2eb4912.chunk.js",
     "static/media/hero.jpg": "/cn-inmobiliaria/static/media/hero.ae5810e122ebcd7536cb.jpg",
     "static/media/logo.svg": "/cn-inmobiliaria/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
     "index.html": "/cn-inmobiliaria/index.html",
     "main.8939f2b6.css.map": "/cn-inmobiliaria/static/css/main.8939f2b6.css.map",
-    "main.71fef300.js.map": "/cn-inmobiliaria/static/js/main.71fef300.js.map",
+    "main.67906c87.js.map": "/cn-inmobiliaria/static/js/main.67906c87.js.map",
     "453.f2eb4912.chunk.js.map": "/cn-inmobiliaria/static/js/453.f2eb4912.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.8939f2b6.css",
-    "static/js/main.71fef300.js"
+    "static/js/main.67906c87.js"
   ]
 }
