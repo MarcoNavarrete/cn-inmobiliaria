@@ -1,0 +1,218 @@
+.admin-imagenes {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+  color: var(--azul-oscuro);
+}
+
+.admin-imagenes-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-imagenes-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--dorado-suave);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-imagenes h1,
+.admin-imagenes h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+}
+
+.admin-imagenes h1 {
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+.admin-imagenes-actions-top {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.admin-imagenes-actions-top a,
+.admin-imagenes-dropzone button,
+.admin-imagenes-preview-head button,
+.admin-imagenes-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-imagenes-preview-head button,
+.admin-imagenes-dropzone button {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.admin-imagenes-dropzone {
+  display: grid;
+  place-items: center;
+  gap: 0.55rem;
+  min-height: 230px;
+  margin-bottom: 1.25rem;
+  padding: 1.25rem;
+  border: 2px dashed rgba(26, 61, 124, 0.24);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(16, 35, 58, 0.08);
+}
+
+.admin-imagenes-dropzone.is-dragging {
+  border-color: var(--dorado-suave);
+  background: rgba(203, 161, 53, 0.08);
+}
+
+.admin-imagenes-dropzone strong {
+  font-size: 1.25rem;
+}
+
+.admin-imagenes-dropzone p {
+  margin: 0;
+  color: var(--gris-elegante);
+}
+
+.admin-imagenes-feedback,
+.admin-imagenes-empty,
+.admin-imagenes-existentes,
+.admin-imagenes-preview {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(16, 35, 58, 0.08);
+}
+
+.admin-imagenes-feedback.is-ok {
+  color: #21633a;
+  background: rgba(33, 99, 58, 0.08);
+}
+
+.admin-imagenes-feedback.is-error {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.08);
+}
+
+.admin-imagenes-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-imagenes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.admin-imagenes-card {
+  overflow: hidden;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 12px;
+  background: var(--blanco);
+  box-shadow: 0 8px 20px rgba(16, 35, 58, 0.06);
+}
+
+.admin-imagenes-img-wrap {
+  position: relative;
+  background: rgba(26, 61, 124, 0.05);
+}
+
+.admin-imagenes-img-wrap span {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
+  border-radius: 999px;
+  padding: 0.32rem 0.55rem;
+  background: rgba(33, 99, 58, 0.94);
+  color: var(--blanco);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.admin-imagenes-card img,
+.admin-imagenes-img-wrap img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.admin-imagenes-card-body {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+}
+
+.admin-imagenes-card-body strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-imagenes-card-body label {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.admin-imagenes-card-body input[type="number"] {
+  width: 100%;
+  padding: 0.58rem 0.65rem;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.admin-imagenes-card-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-imagenes-card button:disabled,
+.admin-imagenes-preview-head button:disabled,
+.admin-imagenes-dropzone button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.admin-imagenes-card button.is-danger {
+  border-color: rgba(143, 45, 36, 0.18);
+  background: rgba(143, 45, 36, 0.08);
+  color: #8f2d24;
+}
+
+.admin-imagenes-check {
+  display: flex !important;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .admin-imagenes-hero,
+  .admin-imagenes-preview-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

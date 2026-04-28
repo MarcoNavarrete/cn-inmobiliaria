@@ -1,0 +1,84 @@
+.filtros-publicos {
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+  padding: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.78);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.filtros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.campo-filtro {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 0.45rem;
+}
+
+.campo-filtro label {
+  color: var(--azul-oscuro);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.campo-filtro select,
+.campo-filtro input {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(15, 41, 64, 0.15);
+  border-radius: 8px;
+  background-color: var(--blanco);
+  color: var(--azul-oscuro);
+}
+
+.campo-filtro select:disabled,
+.campo-filtro input:disabled {
+  background-color: #f2f4f6;
+  color: #7c8792;
+}
+
+.acciones-filtros {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-filtro {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.8rem 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-filtro-primario {
+  background-color: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.btn-filtro-secundario {
+  background-color: rgba(15, 41, 64, 0.08);
+  color: var(--azul-oscuro);
+}
+
+.filtros-mensaje-error {
+  margin: 0.9rem 0 0;
+  color: #7a251d;
+  text-align: left;
+}
+
+@media screen and (max-width: 768px) {
+  .filtros-publicos {
+    padding: 1rem;
+  }
+
+  .acciones-filtros {
+    flex-direction: column;
+  }
+}

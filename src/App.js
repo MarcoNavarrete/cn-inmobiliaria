@@ -10,6 +10,17 @@ import Beneficios from './components/Beneficios';
 import Nosotros from './components/Nosotros';
 import Contacto from './components/Contacto';
 import DetallePropiedad from './pages/DetallePropiedad';
+import PropiedadesPage from './pages/PropiedadesPage';
+import AdminTour360Page from './pages/AdminTour360Page';
+import AdminInmuebleFormPage from './pages/AdminInmuebleFormPage';
+import AdminInmuebleImagenesPage from './pages/AdminInmuebleImagenesPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminPropiedadesPage from './pages/AdminPropiedadesPage';
+import AdminProspectosPage from './pages/AdminProspectosPage';
+import AdminUsuariosPage from './pages/AdminUsuariosPage';
+import LoginPage from './pages/LoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminLayout from './components/AdminLayout';
 import WhatsAppFlotante from './components/WhatsAppFlotante';
 
 import AOS from 'aos';
@@ -35,11 +46,30 @@ function App() {
             </>
           }
         />
-        <Route path="/propiedades" element={<PropiedadesDestacadas />} />
+        <Route path="/propiedades" element={<PropiedadesPage />} />
         <Route path="/nosotros" element={<Nosotros />} />
         <Route path="/contacto" element={<Contacto />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/propiedad/:id" element={<DetallePropiedad />} />
-      </Routes>
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="propiedades" element={<AdminPropiedadesPage />} />
+          <Route path="prospectos" element={<AdminProspectosPage />} />
+          <Route path="usuarios" element={<AdminUsuariosPage />} />
+          <Route path="inmuebles/nuevo" element={<AdminInmuebleFormPage />} />
+          <Route path="inmuebles/editar/:id" element={<AdminInmuebleFormPage />} />
+          <Route path="inmuebles/:id/imagenes" element={<AdminInmuebleImagenesPage />} />
+          <Route path="tours360/:inmuebleId" element={<AdminTour360Page />} />
+        </Route>
+      </Routes> 
       <Footer />
       <WhatsAppFlotante />
     </Router>

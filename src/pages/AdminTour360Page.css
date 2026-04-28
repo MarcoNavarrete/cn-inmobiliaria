@@ -1,0 +1,334 @@
+.admin-tour360 {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+  color: var(--azul-oscuro);
+}
+
+.admin-tour360-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-tour360-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--dorado-suave);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-tour360 h1,
+.admin-tour360 h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  color: var(--azul-oscuro);
+}
+
+.admin-tour360 h1 {
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+.admin-tour360 h2 {
+  font-size: 1.28rem;
+}
+
+.admin-tour360-card,
+.admin-tour360-preview {
+  margin-bottom: 1.25rem;
+  padding: 1.15rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(16, 35, 58, 0.08);
+}
+
+.admin-tour360-card-head,
+.admin-tour360-actions,
+.admin-tour360-checks,
+.admin-tour360-visual-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-tour360-card-head {
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.admin-tour360-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.85fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.admin-tour360-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.admin-tour360-form.compact {
+  gap: 0.8rem;
+}
+
+.admin-tour360-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-tour360-row.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-tour360-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-tour360-field span,
+.admin-tour360-check span {
+  font-weight: 700;
+  color: rgba(26, 61, 124, 0.88);
+}
+
+.admin-tour360-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.admin-tour360-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(26, 61, 124, 0.1);
+  color: var(--azul-oscuro);
+  font-size: 0.75rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: help;
+}
+
+.admin-tour360-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 5;
+  width: min(260px, 72vw);
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(9, 22, 35, 0.94);
+  color: var(--blanco);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.admin-tour360-help:hover .admin-tour360-tooltip,
+.admin-tour360-help:focus .admin-tour360-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.admin-tour360-field input,
+.admin-tour360-field textarea,
+.admin-tour360-field select {
+  width: 100%;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  background: var(--blanco);
+  color: var(--azul-oscuro);
+  font: inherit;
+}
+
+.admin-tour360-field textarea {
+  resize: vertical;
+}
+
+.admin-tour360-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-tour360-check input {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-tour360-primary,
+.admin-tour360-secondary,
+.admin-tour360-item-actions button {
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.62rem 0.9rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.admin-tour360-primary {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.admin-tour360-secondary,
+.admin-tour360-item-actions button {
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  border-color: rgba(26, 61, 124, 0.1);
+}
+
+.admin-tour360-primary:hover,
+.admin-tour360-secondary:hover,
+.admin-tour360-item-actions button:hover {
+  border-color: rgba(203, 161, 53, 0.45);
+  box-shadow: 0 8px 18px rgba(16, 35, 58, 0.1);
+}
+
+.admin-tour360-primary:disabled,
+.admin-tour360-secondary:disabled,
+.admin-tour360-item-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.admin-tour360-item-actions button.danger {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.08);
+  border-color: rgba(143, 45, 36, 0.14);
+}
+
+.admin-tour360-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-tour360-list-item {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 10px;
+  background: rgba(246, 249, 252, 0.82);
+}
+
+.admin-tour360-list-item.is-selected {
+  border-color: rgba(203, 161, 53, 0.55);
+  background: rgba(203, 161, 53, 0.08);
+}
+
+.admin-tour360-list-item > button {
+  display: grid;
+  gap: 0.2rem;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-tour360-list-item span {
+  color: var(--gris-elegante);
+  font-size: 0.92rem;
+}
+
+.admin-tour360-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-tour360-item-actions button {
+  min-height: 34px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.9rem;
+}
+
+.admin-tour360-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.admin-tour360-pill.muted {
+  color: var(--gris-elegante);
+}
+
+.admin-tour360-alert,
+.admin-tour360-loading,
+.admin-tour360-empty,
+.admin-tour360-helper {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: rgba(26, 61, 124, 0.06);
+}
+
+.admin-tour360-visual-tools {
+  margin-bottom: 0.75rem;
+}
+
+.admin-tour360-helper {
+  color: rgba(26, 61, 124, 0.86);
+  font-weight: 600;
+}
+
+.admin-tour360-alert-ok {
+  color: #21633a;
+  background: rgba(33, 99, 58, 0.08);
+}
+
+.admin-tour360-alert-error {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.08);
+}
+
+.admin-tour360-preview h2 {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 900px) {
+  .admin-tour360-hero,
+  .admin-tour360-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-tour360-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-tour360-row,
+  .admin-tour360-row.two {
+    grid-template-columns: 1fr;
+  }
+}

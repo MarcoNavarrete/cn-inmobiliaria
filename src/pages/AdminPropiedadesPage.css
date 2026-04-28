@@ -1,0 +1,287 @@
+.admin-propiedades {
+  width: min(1240px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+  color: var(--azul-oscuro);
+}
+
+.admin-propiedades-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-propiedades-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--dorado-suave);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-propiedades h1 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+.admin-propiedades-primary,
+.admin-propiedades-actions a,
+.admin-propiedades-filtros button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-propiedades-primary {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.admin-propiedades-aprobacion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(203, 161, 53, 0.22);
+  border-radius: 12px;
+  background: rgba(203, 161, 53, 0.12);
+  color: var(--azul-oscuro);
+}
+
+.admin-propiedades-aprobacion span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 30px;
+  border-radius: 999px;
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+  font-weight: 800;
+}
+
+.admin-propiedades-tabs {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.admin-propiedades-tabs button {
+  min-height: 38px;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 999px;
+  padding: 0.5rem 0.85rem;
+  background: rgba(26, 61, 124, 0.06);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-propiedades-tabs button.is-active {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.admin-propiedades-filtros,
+.admin-propiedades-card {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(16, 35, 58, 0.08);
+}
+
+.admin-propiedades-filtros {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px) minmax(160px, 220px) auto;
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.admin-propiedades-filtros label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-propiedades-filtros span {
+  color: rgba(26, 61, 124, 0.88);
+  font-weight: 700;
+}
+
+.admin-propiedades-filtros input,
+.admin-propiedades-filtros select {
+  width: 100%;
+  padding: 0.68rem 0.75rem;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  color: var(--azul-oscuro);
+  font: inherit;
+}
+
+.admin-propiedades-feedback,
+.admin-propiedades-empty {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: rgba(26, 61, 124, 0.06);
+}
+
+.admin-propiedades-feedback.is-error {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.08);
+}
+
+.admin-propiedades-feedback.is-ok {
+  color: #21633a;
+  background: rgba(33, 99, 58, 0.08);
+}
+
+.admin-propiedades-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-propiedades-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-propiedades-table th,
+.admin-propiedades-table td {
+  padding: 0.85rem;
+  border-bottom: 1px solid rgba(26, 61, 124, 0.08);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-propiedades-table th {
+  color: rgba(26, 61, 124, 0.82);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.admin-propiedades-inmueble {
+  display: grid;
+  grid-template-columns: 72px minmax(180px, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.admin-propiedades-inmueble img,
+.admin-propiedades-img-placeholder {
+  width: 72px;
+  height: 54px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.admin-propiedades-img-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--gris-elegante);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.admin-propiedades-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.admin-propiedades-pill.is-borrador {
+  background: rgba(89, 99, 110, 0.12);
+}
+
+.admin-propiedades-pill.is-pendiente_revision {
+  background: rgba(203, 161, 53, 0.18);
+}
+
+.admin-propiedades-pill.is-disponible {
+  background: rgba(33, 99, 58, 0.12);
+  color: #21633a;
+}
+
+.admin-propiedades-pill.is-apartado {
+  background: rgba(26, 61, 124, 0.12);
+}
+
+.admin-propiedades-pill.is-vendido {
+  background: rgba(70, 54, 130, 0.12);
+}
+
+.admin-propiedades-pill.is-rechazado {
+  background: rgba(143, 45, 36, 0.12);
+  color: #8f2d24;
+}
+
+.admin-propiedades-pill.is-inactivo {
+  background: rgba(89, 99, 110, 0.12);
+  color: #59636e;
+}
+
+.admin-propiedades-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.admin-propiedades-actions a,
+.admin-propiedades-actions button {
+  min-height: 34px;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-propiedades-actions button.is-danger {
+  border-color: rgba(143, 45, 36, 0.18);
+  background: rgba(143, 45, 36, 0.08);
+  color: #8f2d24;
+}
+
+.admin-propiedades-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+@media (max-width: 900px) {
+  .admin-propiedades-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-propiedades-filtros {
+    grid-template-columns: 1fr;
+  }
+}
