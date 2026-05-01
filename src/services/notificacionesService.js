@@ -50,6 +50,7 @@ const adaptNotificacion = (notificacion) => ({
   mensaje: toText(pickFirst(notificacion?.mensaje, notificacion?.Mensaje, notificacion?.descripcion), ''),
   url: toText(pickFirst(notificacion?.url, notificacion?.Url, notificacion?.ruta, notificacion?.Ruta), ''),
   leida: pickFirst(notificacion?.leida, notificacion?.Leida, notificacion?.esLeida, notificacion?.EsLeida, false) === true,
+  fechaRaw: pickFirst(notificacion?.fechaCreacion, notificacion?.FechaCreacion, notificacion?.createdAt, ''),
   fecha: formatDate(pickFirst(notificacion?.fechaCreacion, notificacion?.FechaCreacion, notificacion?.createdAt)),
 });
 

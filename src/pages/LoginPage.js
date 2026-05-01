@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { login, obtenerToken } from '../services/authService';
 import './LoginPage.css';
 
@@ -18,7 +18,8 @@ export default function LoginPage() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
 
-  const destino = location.state?.from?.pathname || '/admin';
+  const from = location.state?.from;
+  const destino = from ? `${from.pathname || '/'}${from.search || ''}` : '/';
 
   if (obtenerToken()) {
     return <Navigate to={destino} replace />;
@@ -85,6 +86,9 @@ export default function LoginPage() {
             {cargando ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+        <p className="login-alt">
+          ¿No tienes cuenta? <Link to="/register" state={{ from }}>Registrate</Link>
+        </p>
       </section>
     </main>
   );

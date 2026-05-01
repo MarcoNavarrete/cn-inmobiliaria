@@ -35,8 +35,23 @@
   font-weight: bold;
 }
 
-.nav a:hover {
+.nav a:hover,
+.nav-button:hover {
   color: var(--dorado-suave);
+}
+
+.nav-user {
+  color: var(--dorado-suave);
+  font-weight: 800;
+}
+
+.nav-button {
+  border: 0;
+  background: transparent;
+  color: var(--blanco);
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 /* Responsive */
@@ -65,9 +80,12 @@
     display: flex;
   }
 
-  .nav a {
+  .nav a,
+  .nav-button,
+  .nav-user {
     padding: 0.5rem 0;
     width: 100%;
+    text-align: left;
   }
 }
 

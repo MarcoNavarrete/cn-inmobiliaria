@@ -1,12 +1,14 @@
 // src/pages/DetallePropiedad.js
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ImageGallery from 'react-image-gallery';
 import 'react-image-gallery/styles/css/image-gallery.css';
 import './DetallePropiedad.css';
 import { obtenerDetalleInmueble } from '../services/inmueblesService';
 import { crearProspecto } from '../services/prospectosService';
 import { obtenerTour360PorInmueble } from '../services/tours360Service';
+import { obtenerToken } from '../services/authService';
+import { agregarFavorito, eliminarFavorito, existeFavorito } from '../services/favoritosService';
 import Tour360Viewer from '../components/Tour360Viewer';
 
 const FORMULARIO_INICIAL = {
@@ -18,11 +20,16 @@ const FORMULARIO_INICIAL = {
 
 export default function DetallePropiedad() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [propiedad, setPropiedad] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tour360, setTour360] = useState(null);
   const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
+  const [esFavorito, setEsFavorito] = useState(false);
+  const [cargandoFavorito, setCargandoFavorito] = useState(false);
+  const [mensajeFavorito, setMensajeFavorito] = useState('');
   const [enviandoProspecto, setEnviandoProspecto] = useState(false);
   const [errorProspecto, setErrorProspecto] = useState('');
   const [exitoProspecto, setExitoProspecto] = useState('');
@@ -54,6 +61,32 @@ export default function DetallePropiedad() {
     };
 
     cargarDetalle();
+
+    return () => controller.abort();
+  }, [id]);
+
+  useEffect(() => {
+    if (!obtenerToken()) {
+      setEsFavorito(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    const cargarFavorito = async () => {
+      try {
+        const existe = await existeFavorito(id, { signal: controller.signal });
+        if (!controller.signal.aborted) {
+          setEsFavorito(existe);
+        }
+      } catch (_) {
+        if (!controller.signal.aborted) {
+          setEsFavorito(false);
+        }
+      }
+    };
+
+    cargarFavorito();
 
     return () => controller.abort();
   }, [id]);
@@ -196,6 +229,31 @@ export default function DetallePropiedad() {
     }
   };
 
+  const alternarFavorito = async () => {
+    if (!obtenerToken()) {
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+
+    setCargandoFavorito(true);
+    setMensajeFavorito('');
+
+    try {
+      if (esFavorito) {
+        await eliminarFavorito(id);
+      } else {
+        await agregarFavorito(id);
+      }
+
+      setEsFavorito((actual) => !actual);
+      setMensajeFavorito(esFavorito ? 'Propiedad quitada de favoritos.' : 'Propiedad guardada en favoritos.');
+    } catch (err) {
+      setMensajeFavorito(err.data?.mensaje || err.data?.message || 'No fue posible actualizar favoritos.');
+    } finally {
+      setCargandoFavorito(false);
+    }
+  };
+
   if (loading) {
     return (
       <section className="detalle">
@@ -257,7 +315,19 @@ export default function DetallePropiedad() {
       )}
 
       <div className="contenido">
-        <h1>{propiedad.titulo}</h1>
+        <div className="detalle-titulo-row">
+          <h1>{propiedad.titulo}</h1>
+          <button
+            type="button"
+            className={`detalle-favorito-btn ${esFavorito ? 'is-active' : ''}`}
+            onClick={alternarFavorito}
+            disabled={cargandoFavorito}
+          >
+            <span>{esFavorito ? '♥' : '♡'}</span>
+            {esFavorito ? 'Guardado' : 'Guardar'}
+          </button>
+        </div>
+        {mensajeFavorito ? <p className="mensaje-favorito">{mensajeFavorito}</p> : null}
         <p className="precio">{propiedad.precio}</p>
         <p className="ubicacion">{'\u{1F4CD}'} {propiedad.ubicacion}</p>
         <p className="descripcion">{propiedad.descripcion}</p>

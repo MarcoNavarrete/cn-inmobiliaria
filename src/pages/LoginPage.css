@@ -73,3 +73,23 @@
   color: #8f2d24;
   font-weight: 700;
 }
+
+.login-success {
+  margin: 0;
+  padding: 0.85rem;
+  border-radius: 8px;
+  background: rgba(33, 99, 58, 0.08);
+  color: #21633a;
+  font-weight: 700;
+}
+
+.login-alt {
+  margin: 1rem 0 0;
+  color: var(--gris-elegante);
+  text-align: center;
+}
+
+.login-alt a {
+  color: var(--azul-oscuro);
+  font-weight: 800;
+}

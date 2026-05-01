@@ -40,6 +40,7 @@ export default function AdminProspectosPage() {
   const [prospectos, setProspectos] = useState([]);
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
   const [notasEditables, setNotasEditables] = useState({});
+  const [vista, setVista] = useState('tabla');
   const [cargando, setCargando] = useState(true);
   const [accionando, setAccionando] = useState('');
   const [error, setError] = useState('');
@@ -103,6 +104,15 @@ export default function AdminProspectosPage() {
       return coincideBusqueda && coincideOrigen && coincideEstatus && coincideDesde && coincideHasta;
     });
   }, [filtros, prospectos]);
+
+  const prospectosPorEstatus = useMemo(
+    () =>
+      ESTATUS_PROSPECTO.reduce((acc, estatus) => ({
+        ...acc,
+        [estatus]: prospectosFiltrados.filter((prospecto) => prospecto.estatus === estatus),
+      }), {}),
+    [prospectosFiltrados]
+  );
 
   const actualizarFiltro = (event) => {
     const { name, value } = event.target;
@@ -215,6 +225,23 @@ export default function AdminProspectosPage() {
         <button type="button" onClick={limpiarFiltros}>Limpiar</button>
       </section>
 
+      <section className="admin-prospectos-vistas" aria-label="Vista de prospectos">
+        <button
+          type="button"
+          className={vista === 'tabla' ? 'is-active' : ''}
+          onClick={() => setVista('tabla')}
+        >
+          Tabla
+        </button>
+        <button
+          type="button"
+          className={vista === 'kanban' ? 'is-active' : ''}
+          onClick={() => setVista('kanban')}
+        >
+          Kanban
+        </button>
+      </section>
+
       {cargando ? <p className="admin-prospectos-feedback">Cargando prospectos...</p> : null}
       {mensaje ? <p className="admin-prospectos-feedback is-ok">{mensaje}</p> : null}
       {error ? <p className="admin-prospectos-feedback is-error">{error}</p> : null}
@@ -223,6 +250,42 @@ export default function AdminProspectosPage() {
         <section className="admin-prospectos-card">
           {prospectosFiltrados.length === 0 ? (
             <p className="admin-prospectos-empty">No hay prospectos con los filtros seleccionados.</p>
+          ) : vista === 'kanban' ? (
+            <div className="admin-prospectos-kanban">
+              {ESTATUS_PROSPECTO.map((estatus) => (
+                <section key={estatus} className="admin-prospectos-kanban-col">
+                  <div className="admin-prospectos-kanban-head">
+                    <strong>{estatus}</strong>
+                    <span>{prospectosPorEstatus[estatus]?.length || 0}</span>
+                  </div>
+                  <div className="admin-prospectos-kanban-list">
+                    {(prospectosPorEstatus[estatus] || []).map((prospecto) => (
+                      <article key={prospecto.id || `${prospecto.email}-${prospecto.fechaFiltro}`} className="admin-prospectos-kanban-card">
+                        <div>
+                          <strong>{prospecto.nombre}</strong>
+                          <span>{prospecto.fechaCreacion}</span>
+                        </div>
+                        <div className="admin-prospectos-kanban-contacto">
+                          <span>{prospecto.telefono}</span>
+                          <span>{prospecto.email}</span>
+                        </div>
+                        <p>{prospecto.tituloInmueble}</p>
+                        <small>{prospecto.notas}</small>
+                        <select
+                          value={prospecto.estatus}
+                          onChange={(event) => cambiarEstatus(prospecto.id, event.target.value)}
+                          disabled={!prospecto.id || accionando === `${prospecto.id}-estatus`}
+                        >
+                          {ESTATUS_PROSPECTO.map((opcion) => (
+                            <option key={opcion} value={opcion}>{opcion}</option>
+                          ))}
+                        </select>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           ) : (
             <div className="admin-prospectos-table-wrap">
               <table className="admin-prospectos-table">

@@ -175,14 +175,7 @@
   text-transform: uppercase;
 }
 
-.admin-propiedades-inmueble {
-  display: grid;
-  grid-template-columns: 72px minmax(180px, 1fr);
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.admin-propiedades-inmueble img,
+.admin-propiedades-img,
 .admin-propiedades-img-placeholder {
   width: 72px;
   height: 54px;
@@ -198,6 +191,21 @@
   color: var(--gris-elegante);
   font-size: 0.75rem;
   font-weight: 700;
+}
+
+.admin-propiedades-asesor {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 180px;
+}
+
+.admin-propiedades-asesor strong {
+  color: var(--azul-oscuro);
+}
+
+.admin-propiedades-asesor span {
+  color: var(--gris-elegante);
+  font-size: 0.9rem;
 }
 
 .admin-propiedades-pill {
@@ -283,5 +291,53 @@
 
   .admin-propiedades-filtros {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-propiedades-table,
+  .admin-propiedades-table thead,
+  .admin-propiedades-table tbody,
+  .admin-propiedades-table tr,
+  .admin-propiedades-table th,
+  .admin-propiedades-table td {
+    display: block;
+  }
+
+  .admin-propiedades-table thead {
+    display: none;
+  }
+
+  .admin-propiedades-table tr {
+    margin-bottom: 1rem;
+    padding: 0.9rem;
+    border: 1px solid rgba(26, 61, 124, 0.1);
+    border-radius: 12px;
+    background: var(--blanco);
+  }
+
+  .admin-propiedades-table td {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid rgba(26, 61, 124, 0.08);
+  }
+
+  .admin-propiedades-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .admin-propiedades-table td::before {
+    content: attr(data-label);
+    color: rgba(26, 61, 124, 0.72);
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .admin-propiedades-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

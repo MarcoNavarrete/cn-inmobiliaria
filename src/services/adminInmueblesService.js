@@ -87,6 +87,9 @@ const adaptInmuebleAdmin = (inmueble) => ({
       ''
   ),
   titulo: inmueble.titulo || 'Sin titulo',
+  usuarioId: String(pickFirst(inmueble.usuarioId, inmueble.UsuarioId, '')),
+  asesorNombre: pickFirst(inmueble.asesorNombre, inmueble.AsesorNombre, ''),
+  asesorEmail: pickFirst(inmueble.asesorEmail, inmueble.AsesorEmail, ''),
   tipoInmueble: inmueble.tipoInmuebleNombre || inmueble.tipoInmueble || 'Sin tipo',
   precio: formatCurrency(inmueble.precio, inmueble.moneda),
   ubicacion: inmueble.ubicacion || buildUbicacion(inmueble),

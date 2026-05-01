@@ -33,12 +33,43 @@
 }
 
 .tarjeta {
+  position: relative;
   background-color: var(--blanco);
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
   width: 300px;
   overflow: hidden;
   transition: transform 0.3s ease;
+}
+
+.favorito-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--azul-oscuro);
+  font-size: 1.35rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(16, 35, 58, 0.16);
+}
+
+.favorito-btn.is-active {
+  background: #8f2d24;
+  color: var(--blanco);
+}
+
+.favorito-btn:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .tarjeta:hover {
@@ -110,4 +141,8 @@
 .estado-error {
   border: 1px solid rgba(163, 45, 38, 0.2);
   color: #7a251d;
+}
+
+.favoritos-feedback {
+  margin-bottom: 1rem;
 }

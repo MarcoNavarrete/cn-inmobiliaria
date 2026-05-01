@@ -293,40 +293,45 @@ export default function AdminPropiedadesPage() {
               <table className="admin-propiedades-table">
                 <thead>
                   <tr>
-                    <th>Inmueble</th>
+                    <th>Imagen</th>
+                    <th>Titulo</th>
                     <th>Tipo</th>
                     <th>Precio</th>
                     <th>Ubicacion</th>
+                    <th>Asesor/Propietario</th>
                     <th>Estatus</th>
-                    <th>Destacado</th>
-                    <th>Creacion</th>
+                    <th>Fecha</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {inmueblesFiltrados.map((inmueble) => (
                     <tr key={inmueble.id}>
-                      <td>
-                        <div className="admin-propiedades-inmueble">
-                          {inmueble.imagenPrincipal ? (
-                            <img src={inmueble.imagenPrincipal} alt="" />
-                          ) : (
-                            <span className="admin-propiedades-img-placeholder">Sin imagen</span>
-                          )}
-                          <strong>{inmueble.titulo}</strong>
+                      <td data-label="Imagen">
+                        {inmueble.imagenPrincipal ? (
+                          <img className="admin-propiedades-img" src={inmueble.imagenPrincipal} alt="" />
+                        ) : (
+                          <span className="admin-propiedades-img-placeholder">Sin imagen</span>
+                        )}
+                      </td>
+                      <td data-label="Titulo"><strong>{inmueble.titulo}</strong></td>
+                      <td data-label="Tipo">{inmueble.tipoInmueble}</td>
+                      <td data-label="Precio">{inmueble.precio}</td>
+                      <td data-label="Ubicacion">{inmueble.ubicacion}</td>
+                      <td data-label="Asesor/Propietario">
+                        <div className="admin-propiedades-asesor">
+                          <strong>{inmueble.asesorNombre || 'Sin nombre'}</strong>
+                          {inmueble.asesorEmail ? <span>{inmueble.asesorEmail}</span> : null}
+                          {!inmueble.asesorEmail && inmueble.usuarioId ? <span>ID usuario: {inmueble.usuarioId}</span> : null}
                         </div>
                       </td>
-                      <td>{inmueble.tipoInmueble}</td>
-                      <td>{inmueble.precio}</td>
-                      <td>{inmueble.ubicacion}</td>
-                      <td>
+                      <td data-label="Estatus">
                         <span className={`admin-propiedades-pill is-${inmueble.estatus.toLowerCase()}`}>
                           {ESTATUS_LABELS[inmueble.estatus] || inmueble.estatus}
                         </span>
                       </td>
-                      <td>{inmueble.destacado ? 'Si' : 'No'}</td>
-                      <td>{inmueble.fechaCreacion}</td>
-                      <td>
+                      <td data-label="Fecha">{inmueble.fechaCreacion}</td>
+                      <td data-label="Acciones">
                         <div className="admin-propiedades-actions">
                           {inmueble.id ? (
                             <>

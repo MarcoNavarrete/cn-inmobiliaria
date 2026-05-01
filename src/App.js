@@ -11,6 +11,8 @@ import Nosotros from './components/Nosotros';
 import Contacto from './components/Contacto';
 import DetallePropiedad from './pages/DetallePropiedad';
 import PropiedadesPage from './pages/PropiedadesPage';
+import FavoritosPage from './pages/FavoritosPage';
+import MiCuentaPage from './pages/MiCuentaPage';
 import AdminTour360Page from './pages/AdminTour360Page';
 import AdminInmuebleFormPage from './pages/AdminInmuebleFormPage';
 import AdminInmuebleImagenesPage from './pages/AdminInmuebleImagenesPage';
@@ -19,6 +21,7 @@ import AdminPropiedadesPage from './pages/AdminPropiedadesPage';
 import AdminProspectosPage from './pages/AdminProspectosPage';
 import AdminUsuariosPage from './pages/AdminUsuariosPage';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
 import WhatsAppFlotante from './components/WhatsAppFlotante';
@@ -47,9 +50,12 @@ function App() {
           }
         />
         <Route path="/propiedades" element={<PropiedadesPage />} />
+        <Route path="/favoritos" element={<FavoritosPage />} />
+        <Route path="/mi-cuenta" element={<MiCuentaPage />} />
         <Route path="/nosotros" element={<Nosotros />} />
         <Route path="/contacto" element={<Contacto />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/propiedad/:id" element={<DetallePropiedad />} />
         <Route
           path="/admin"

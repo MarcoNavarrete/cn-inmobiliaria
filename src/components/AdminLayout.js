@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   FaBuilding,
@@ -60,6 +60,55 @@ const normalizarRuta = (ruta) => {
   return ruta.startsWith('/') ? ruta : `/${ruta}`;
 };
 
+const resumirTexto = (value, maxLength = 110) => {
+  const text = String(value || '').trim();
+
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text.slice(0, maxLength).trim()}...`;
+};
+
+const formatearFechaRelativa = (value) => {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const absMs = Math.abs(diffMs);
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (absMs < minute) {
+    return 'hace un momento';
+  }
+
+  if (absMs < hour) {
+    const minutes = Math.max(1, Math.round(absMs / minute));
+    return `hace ${minutes} min`;
+  }
+
+  if (absMs < day) {
+    const hours = Math.max(1, Math.round(absMs / hour));
+    return `hace ${hours} h`;
+  }
+
+  if (absMs < 2 * day) {
+    return 'ayer';
+  }
+
+  const days = Math.round(absMs / day);
+  return `hace ${days} dias`;
+};
+
 function MenuIcon({ icono }) {
   const Icon = ICONOS_MENU[String(icono || '').trim().toLowerCase()];
 
@@ -102,6 +151,29 @@ export default function AdminLayout() {
 
   const noLeidas = notificaciones.filter((notificacion) => !notificacion.leida).length;
 
+  const cargarNotificaciones = useCallback(async (options = {}) => {
+    const { silencioso = false, signal } = options;
+
+    if (!silencioso) {
+      setCargandoNotificaciones(true);
+    }
+
+    setErrorNotificaciones('');
+
+    try {
+      const data = await obtenerNotificaciones({ signal });
+      setNotificaciones(data);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setErrorNotificaciones(err.data?.mensaje || err.data?.message || err.message || 'No fue posible cargar notificaciones.');
+      }
+    } finally {
+      if (!signal?.aborted && !silencioso) {
+        setCargandoNotificaciones(false);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -130,29 +202,18 @@ export default function AdminLayout() {
 
   useEffect(() => {
     const controller = new AbortController();
-
-    const cargarNotificaciones = async () => {
-      setCargandoNotificaciones(true);
-      setErrorNotificaciones('');
-
-      try {
-        const data = await obtenerNotificaciones({ signal: controller.signal });
-        setNotificaciones(data);
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          setErrorNotificaciones(err.data?.mensaje || err.data?.message || err.message || 'No fue posible cargar notificaciones.');
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setCargandoNotificaciones(false);
-        }
-      }
-    };
-
-    cargarNotificaciones();
+    cargarNotificaciones({ signal: controller.signal });
 
     return () => controller.abort();
-  }, []);
+  }, [cargarNotificaciones]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      cargarNotificaciones({ silencioso: true });
+    }, 60000);
+
+    return () => window.clearInterval(intervalId);
+  }, [cargarNotificaciones]);
 
   const salir = () => {
     cerrarSesion();
@@ -221,11 +282,11 @@ export default function AdminLayout() {
                 {cargandoNotificaciones ? <p>Cargando notificaciones...</p> : null}
                 {errorNotificaciones ? <p className="is-error">{errorNotificaciones}</p> : null}
                 {!cargandoNotificaciones && !errorNotificaciones && notificaciones.length === 0 ? (
-                  <p>No hay notificaciones.</p>
+                  <p>Sin notificaciones</p>
                 ) : null}
                 {!cargandoNotificaciones && notificaciones.length > 0 ? (
                   <div className="admin-notificaciones-list">
-                    {notificaciones.slice(0, 8).map((notificacion) => (
+                    {notificaciones.slice(0, 10).map((notificacion) => (
                       <button
                         key={notificacion.id}
                         type="button"
@@ -233,8 +294,10 @@ export default function AdminLayout() {
                         onClick={() => navegarNotificacion(notificacion)}
                       >
                         <strong>{notificacion.titulo}</strong>
-                        {notificacion.mensaje ? <span>{notificacion.mensaje}</span> : null}
-                        {notificacion.fecha ? <small>{notificacion.fecha}</small> : null}
+                        {notificacion.mensaje ? <span>{resumirTexto(notificacion.mensaje)}</span> : null}
+                        {(notificacion.fechaRaw || notificacion.fecha) ? (
+                          <small>{formatearFechaRelativa(notificacion.fechaRaw || notificacion.fecha)}</small>
+                        ) : null}
                       </button>
                     ))}
                   </div>

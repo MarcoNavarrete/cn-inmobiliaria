@@ -49,6 +49,30 @@
   color: var(--blanco);
 }
 
+.admin-prospectos-vistas {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.admin-prospectos-vistas button {
+  min-height: 38px;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 999px;
+  padding: 0.5rem 0.85rem;
+  background: rgba(26, 61, 124, 0.06);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-prospectos-vistas button.is-active {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
 .admin-prospectos-filtros,
 .admin-prospectos-card {
   margin-bottom: 1.25rem;
@@ -218,6 +242,97 @@
   font-size: 0.9rem;
 }
 
+.admin-prospectos-kanban {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(240px, 1fr));
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+}
+
+.admin-prospectos-kanban-col {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-width: 240px;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(26, 61, 124, 0.04);
+}
+
+.admin-prospectos-kanban-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-prospectos-kanban-head span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 999px;
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+  font-weight: 800;
+}
+
+.admin-prospectos-kanban-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-prospectos-kanban-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.8rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 10px;
+  background: var(--blanco);
+  box-shadow: 0 8px 18px rgba(16, 35, 58, 0.07);
+}
+
+.admin-prospectos-kanban-card > div:first-child {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.admin-prospectos-kanban-card > div:first-child span,
+.admin-prospectos-kanban-contacto,
+.admin-prospectos-kanban-card small {
+  color: var(--gris-elegante);
+}
+
+.admin-prospectos-kanban-contacto {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.admin-prospectos-kanban-card p,
+.admin-prospectos-kanban-card small {
+  margin: 0;
+}
+
+.admin-prospectos-kanban-card small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.admin-prospectos-kanban-card select {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  background: var(--blanco);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-weight: 700;
+}
+
 @media (max-width: 1000px) {
   .admin-prospectos-hero {
     align-items: flex-start;
@@ -226,5 +341,9 @@
 
   .admin-prospectos-filtros {
     grid-template-columns: 1fr;
+  }
+
+  .admin-prospectos-kanban {
+    grid-template-columns: repeat(6, minmax(230px, 82vw));
   }
 }
