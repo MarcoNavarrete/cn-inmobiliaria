@@ -44,6 +44,18 @@ export default function MiCuentaPage() {
           <strong>Mis favoritos</strong>
           <span>Revisa las propiedades que guardaste.</span>
         </Link>
+        <Link to="/mis-solicitudes">
+          <strong>Mis solicitudes</strong>
+          <span>Consulta el seguimiento de tus solicitudes.</span>
+        </Link>
+        <Link to="/cliente/mis-busquedas">
+          <strong>Mis busquedas</strong>
+          <span>Administra los filtros que guardaste.</span>
+        </Link>
+        <Link to="/cliente/mis-alertas">
+          <strong>Mis alertas</strong>
+          <span>Revisa coincidencias nuevas de tus busquedas.</span>
+        </Link>
         <Link to="/propiedades">
           <strong>Ver propiedades</strong>
           <span>Explora inmuebles publicados.</span>

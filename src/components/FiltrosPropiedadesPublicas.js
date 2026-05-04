@@ -24,21 +24,6 @@ const TIPOS_INMUEBLE = [
   { value: 'oficina', label: 'Oficina' },
 ];
 
-const normalizarEstado = (item) => ({
-  value: item.estadoId,
-  label: item.nomEstado,
-});
-
-const normalizarPoblacion = (item) => ({
-  value: item.poblacionId,
-  label: item.nomPoblacion,
-});
-
-const normalizarLocalidad = (item) => ({
-  value: item.localidadId,
-  label: item.nomLocalidad,
-});
-
 const normalizarFiltros = (filtros = {}) => ({
   estadoId: filtros.estadoId || '',
   poblacionId: filtros.poblacionId || '',
@@ -71,7 +56,10 @@ export default function FiltrosPropiedadesPublicas({
         setLoadingCatalogos(true);
         setCatalogosError('');
         const data = await obtenerEstados({ signal: controller.signal });
-        setEstados(data.map(normalizarEstado));
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Filtros] estados normalizados', data);
+        }
+        setEstados(data);
       } catch (err) {
         if (err.name !== 'AbortError') {
           setCatalogosError('No fue posible cargar los filtros de ubicacion.');
@@ -103,7 +91,7 @@ export default function FiltrosPropiedadesPublicas({
         const data = await obtenerPoblaciones(filtros.estadoId, {
           signal: controller.signal,
         });
-        setPoblaciones(data.map(normalizarPoblacion));
+        setPoblaciones(data);
       } catch (err) {
         if (err.name !== 'AbortError') {
           setCatalogosError('No fue posible cargar las poblaciones.');
@@ -131,7 +119,7 @@ export default function FiltrosPropiedadesPublicas({
         const data = await obtenerLocalidades(filtros.estadoId, filtros.poblacionId, {
           signal: controller.signal,
         });
-        setLocalidades(data.map(normalizarLocalidad));
+        setLocalidades(data);
       } catch (err) {
         if (err.name !== 'AbortError') {
           setCatalogosError('No fue posible cargar las localidades.');
@@ -208,8 +196,8 @@ export default function FiltrosPropiedadesPublicas({
           >
             <option value="">Todos</option>
             {estados.map((estado) => (
-              <option key={estado.value} value={estado.value}>
-                {estado.label}
+              <option key={estado.id} value={estado.id}>
+                {estado.nombre}
               </option>
             ))}
           </select>
@@ -226,8 +214,8 @@ export default function FiltrosPropiedadesPublicas({
           >
             <option value="">Todos</option>
             {poblaciones.map((poblacion) => (
-              <option key={poblacion.value} value={poblacion.value}>
-                {poblacion.label}
+              <option key={poblacion.id} value={poblacion.id}>
+                {poblacion.nombre}
               </option>
             ))}
           </select>
@@ -244,8 +232,8 @@ export default function FiltrosPropiedadesPublicas({
           >
             <option value="">Todas</option>
             {localidades.map((localidad) => (
-              <option key={localidad.value} value={localidad.value}>
-                {localidad.label}
+              <option key={localidad.id} value={localidad.id}>
+                {localidad.nombre}
               </option>
             ))}
           </select>

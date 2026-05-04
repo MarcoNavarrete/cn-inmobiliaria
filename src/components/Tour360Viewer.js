@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import 'pannellum/build/pannellum.css';
 import 'pannellum/build/pannellum.js';
+import './tour360/Tour360Viewer.css';
 
 const MIN_LOADING_TIME = 420;
 const EDITOR_YAW_CORRECTION_DEGREES = -60;
@@ -182,6 +183,7 @@ const buildViewerConfig = (tour, onInfoClick) => {
 export default function Tour360Viewer({
   editorMarker = null,
   editorMode = false,
+  onViewerReady,
   onPanoramaClick,
   tour,
 }) {
@@ -195,6 +197,31 @@ export default function Tour360Viewer({
   const [cargandoEscena, setCargandoEscena] = useState(true);
 
   const escenas = useMemo(() => tour?.escenas || [], [tour]);
+  const tourKey = useMemo(
+    () =>
+      JSON.stringify({
+        id: tour?.id || '',
+        escenaInicialId: tour?.escenaInicialId || '',
+        escenas: escenas.map((escena) => ({
+          id: escena.id,
+          urlImagen360: escena.urlImagen360,
+          nombre: escena.nombre,
+          pitchInicial: escena.pitchInicial,
+          yawInicial: escena.yawInicial,
+          hfovInicial: escena.hfovInicial,
+          hotspots: (escena.hotspots || []).map((hotspot) => ({
+            id: hotspot.id,
+            pitch: hotspot.pitch,
+            yaw: hotspot.yaw,
+            texto: hotspot.texto,
+            etiqueta: hotspot.etiqueta,
+            escenaDestinoId: hotspot.escenaDestinoId,
+          })),
+        })),
+      }),
+    [escenas, tour?.escenaInicialId, tour?.id]
+  );
+  const stableTourRef = useRef(tour);
   const escenasValidas = useMemo(
     () => escenas.filter((escena) => isValidPanoramaUrl(escena.urlImagen360)),
     [escenas]
@@ -203,6 +230,10 @@ export default function Tour360Viewer({
   const indiceEscenaActual = escenasValidas.findIndex((escena) => escena.id === escenaActualId);
   const escenaActual = escenasPorId[escenaActualId] || escenasPorId[tour?.escenaInicialId];
   const tieneVariasEscenas = escenasValidas.length > 1;
+
+  useEffect(() => {
+    stableTourRef.current = tour;
+  }, [tour, tourKey]);
 
   const iniciarCargaEscena = useCallback(() => {
     loadingStartedAtRef.current = Date.now();
@@ -227,19 +258,22 @@ export default function Tour360Viewer({
     setEscenaActualId(tour?.escenaInicialId || '');
     setMensajeInfo('');
     iniciarCargaEscena();
-  }, [tour, iniciarCargaEscena]);
+  }, [tour?.escenaInicialId, iniciarCargaEscena]);
 
   useEffect(() => {
-    if (!tour || !containerRef.current || !window.pannellum || escenasValidas.length === 0) {
+    const currentTour = stableTourRef.current;
+
+    if (!currentTour || !containerRef.current || !window.pannellum || escenasValidas.length === 0) {
       return undefined;
     }
 
     containerRef.current.innerHTML = '';
-    const config = buildViewerConfig(tour, setMensajeInfo);
+    const config = buildViewerConfig(currentTour, setMensajeInfo);
     viewerRef.current = window.pannellum.viewer(containerRef.current, config);
+    onViewerReady?.(viewerRef.current);
 
     const syncScene = () => {
-      const activeScene = viewerRef.current?.getScene?.() || tour.escenaInicialId;
+      const activeScene = viewerRef.current?.getScene?.() || currentTour.escenaInicialId;
       setEscenaActualId(activeScene);
       iniciarCargaEscena();
     };
@@ -264,13 +298,14 @@ export default function Tour360Viewer({
         viewerRef.current.destroy();
         viewerRef.current = null;
       }
+      onViewerReady?.(null);
       if (loadingTimeoutRef.current) {
         clearTimeout(loadingTimeoutRef.current);
         loadingTimeoutRef.current = null;
       }
       window.removeEventListener('resize', resizeViewer);
     };
-  }, [tour, escenasValidas.length, iniciarCargaEscena, finalizarCargaEscena]);
+  }, [tourKey, escenasValidas.length, iniciarCargaEscena, finalizarCargaEscena, onViewerReady]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -299,8 +334,8 @@ export default function Tour360Viewer({
       const correctedYaw = normalizeYaw(coords[1] + EDITOR_YAW_CORRECTION_DEGREES);
 
       onPanoramaClick({
-        pitch: Number(coords[0].toFixed(2)),
-        yaw: Number(correctedYaw.toFixed(2)),
+        pitch: Number(coords[0].toFixed(6)),
+        yaw: Number(correctedYaw.toFixed(6)),
         sceneId: viewer.getScene?.() || escenaActualId,
       });
     };

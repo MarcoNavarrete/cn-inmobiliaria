@@ -1,0 +1,119 @@
+.guardar-busqueda-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(9, 22, 35, 0.58);
+}
+
+.guardar-busqueda-modal {
+  width: min(480px, 100%);
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: var(--blanco);
+  color: var(--azul-oscuro);
+  box-shadow: 0 24px 60px rgba(6, 18, 30, 0.28);
+}
+
+.guardar-busqueda-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.guardar-busqueda-head p {
+  margin: 0 0 0.25rem;
+  color: var(--dorado-suave);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.guardar-busqueda-head h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+}
+
+.guardar-busqueda-head button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 8px;
+  background: rgba(26, 61, 124, 0.06);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.guardar-busqueda-form,
+.guardar-busqueda-form label {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.guardar-busqueda-form label span {
+  font-weight: 800;
+}
+
+.guardar-busqueda-form input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  padding: 0.7rem 0.8rem;
+  color: var(--azul-oscuro);
+  font: inherit;
+}
+
+.guardar-busqueda-error {
+  margin: 0;
+  border-radius: 8px;
+  padding: 0.8rem;
+  background: rgba(143, 45, 36, 0.08);
+  color: #8f2d24;
+  font-weight: 700;
+}
+
+.guardar-busqueda-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 0.35rem;
+}
+
+.guardar-busqueda-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.guardar-busqueda-actions button:first-child {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.guardar-busqueda-actions button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+@media (max-width: 520px) {
+  .guardar-busqueda-actions button {
+    width: 100%;
+  }
+}

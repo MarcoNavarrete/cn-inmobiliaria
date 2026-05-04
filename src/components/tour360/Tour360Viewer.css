@@ -1,0 +1,194 @@
+.tour360-seccion {
+  display: grid;
+  gap: 1rem;
+}
+
+.tour360-encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tour360-encabezado h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  color: var(--azul-oscuro);
+}
+
+.tour360-encabezado p {
+  margin: 0.35rem 0 0;
+  color: var(--gris-elegante);
+}
+
+.tour360-encabezado-meta,
+.tour360-acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.tour360-escena-actual {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 150px;
+}
+
+.tour360-escena-label,
+.tour360-escena-contador {
+  color: var(--gris-elegante);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tour360-escena-nombre {
+  color: var(--azul-oscuro);
+  font-weight: 900;
+}
+
+.tour360-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.tour360-nav-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.tour360-visor-shell {
+  position: relative;
+  overflow: hidden;
+  min-height: 460px;
+  border-radius: 12px;
+  background: #071521;
+}
+
+.tour360-visor {
+  min-height: 460px;
+}
+
+.tour360-visor .pnlm-container,
+.tour360-visor .pnlm-render-container,
+.tour360-visor canvas {
+  border-radius: 12px;
+}
+
+.tour360-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  background: rgba(7, 21, 33, 0.58);
+  color: var(--blanco);
+  font-weight: 900;
+}
+
+.tour360-loading-spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: var(--dorado-suave);
+  border-radius: 50%;
+  animation: tour360-spin 0.85s linear infinite;
+}
+
+.tour360-editor-instruction,
+.tour360-mensaje-info,
+.tour360-estado-error {
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  font-weight: 800;
+}
+
+.tour360-editor-instruction {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.tour360-hotspot {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+}
+
+.tour360-hotspot-marker,
+.tour360-editor-marker-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--blanco);
+  border-radius: 999px;
+  background: var(--dorado-suave);
+  color: #071521;
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
+}
+
+.tour360-hotspot-scene .tour360-hotspot-marker {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.tour360-hotspot-label {
+  max-width: 180px;
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+  background: rgba(7, 21, 33, 0.84);
+  color: var(--blanco);
+  font-size: 0.82rem;
+  font-weight: 900;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.tour360-hotspot:hover .tour360-hotspot-label,
+.tour360-hotspot:focus-visible .tour360-hotspot-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.tour360-visor .pnlm-about-msg,
+.tour360-visor .pnlm-panorama-info {
+  display: none !important;
+}
+
+@keyframes tour360-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .tour360-encabezado {
+    flex-direction: column;
+  }
+
+  .tour360-visor-shell,
+  .tour360-visor {
+    min-height: 320px;
+  }
+}

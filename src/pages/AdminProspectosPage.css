@@ -85,7 +85,7 @@
 
 .admin-prospectos-filtros {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(140px, 170px) minmax(170px, 210px) minmax(145px, 170px) minmax(145px, 170px) auto;
+  grid-template-columns: minmax(220px, 1fr) minmax(130px, 160px) minmax(140px, 170px) minmax(170px, 210px) minmax(145px, 170px) minmax(145px, 170px) auto;
   gap: 0.8rem;
   align-items: end;
 }
@@ -172,14 +172,54 @@
   font-weight: 800;
 }
 
+.admin-prospectos-contexto {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 190px;
+}
+
+.admin-prospectos-contexto strong {
+  color: var(--azul-oscuro);
+}
+
+.admin-prospectos-tipo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-prospectos-tipo.is-desarrollo {
+  background: rgba(203, 161, 53, 0.16);
+  color: #72540f;
+}
+
+.admin-prospectos-tipo.is-modelo_desarrollo {
+  background: rgba(33, 99, 58, 0.12);
+  color: #21633a;
+}
+
 .admin-prospectos-notas {
-  min-width: 260px;
-  max-width: 380px;
+  display: grid;
+  gap: 0.45rem;
+  min-width: 180px;
+  max-width: 260px;
   color: rgba(26, 61, 124, 0.9);
 }
 
-.admin-prospectos-estatus,
-.admin-prospectos-notas textarea {
+.admin-prospectos-notas small {
+  color: var(--gris-elegante);
+}
+
+.admin-prospectos-estatus {
   width: 100%;
   border: 1px solid rgba(26, 61, 124, 0.16);
   border-radius: 8px;
@@ -190,22 +230,17 @@
 
 .admin-prospectos-estatus {
   min-width: 170px;
+  margin-top: 0.45rem;
   padding: 0.55rem 0.65rem;
   font-weight: 700;
 }
 
-.admin-prospectos-notas textarea {
-  resize: vertical;
-  min-height: 82px;
-  padding: 0.6rem 0.65rem;
-}
-
+.admin-prospectos-notas-btn,
 .admin-prospectos-notas button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 34px;
-  margin-top: 0.45rem;
   border: 1px solid rgba(26, 61, 124, 0.1);
   border-radius: 8px;
   padding: 0.45rem 0.65rem;
@@ -217,10 +252,44 @@
 }
 
 .admin-prospectos-estatus:disabled,
-.admin-prospectos-notas textarea:disabled,
+.admin-prospectos-notas-btn:disabled,
 .admin-prospectos-notas button:disabled {
   cursor: not-allowed;
   opacity: 0.62;
+}
+
+.admin-prospectos-estatus-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-prospectos-estatus-badge.is-contactado {
+  background: rgba(26, 61, 124, 0.12);
+}
+
+.admin-prospectos-estatus-badge.is-interesado,
+.admin-prospectos-estatus-badge.is-visita-agendada {
+  background: rgba(33, 99, 58, 0.12);
+  color: #21633a;
+}
+
+.admin-prospectos-estatus-badge.is-descartado {
+  background: rgba(143, 45, 36, 0.08);
+  color: #8f2d24;
+}
+
+.admin-prospectos-estatus-badge.is-cerrado {
+  background: rgba(203, 161, 53, 0.16);
+  color: #72540f;
 }
 
 .admin-prospectos-fechas {
@@ -331,6 +400,136 @@
   color: var(--azul-oscuro);
   font: inherit;
   font-weight: 700;
+}
+
+.admin-prospectos-notas-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(7, 21, 33, 0.58);
+}
+
+.admin-prospectos-notas-panel {
+  width: min(520px, 100%);
+  height: 100%;
+  overflow: auto;
+  padding: 1.25rem;
+  background: var(--blanco);
+  color: var(--azul-oscuro);
+  box-shadow: -18px 0 48px rgba(0, 0, 0, 0.24);
+}
+
+.admin-prospectos-notas-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-prospectos-notas-head h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+}
+
+.admin-prospectos-notas-head span {
+  color: var(--gris-elegante);
+  font-weight: 800;
+}
+
+.admin-prospectos-notas-head button {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.admin-prospectos-notas-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.admin-prospectos-nota-item {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 10px;
+  background: rgba(26, 61, 124, 0.04);
+}
+
+.admin-prospectos-nota-item div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-prospectos-nota-item span {
+  color: var(--gris-elegante);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.admin-prospectos-nota-item p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.admin-prospectos-nota-form {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(26, 61, 124, 0.1);
+}
+
+.admin-prospectos-nota-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-prospectos-nota-form label span {
+  color: rgba(26, 61, 124, 0.88);
+  font-weight: 800;
+}
+
+.admin-prospectos-nota-form textarea {
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  padding: 0.7rem;
+  color: var(--azul-oscuro);
+  font: inherit;
+}
+
+.admin-prospectos-nota-form button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.65rem 0.9rem;
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.admin-prospectos-nota-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
 }
 
 @media (max-width: 1000px) {

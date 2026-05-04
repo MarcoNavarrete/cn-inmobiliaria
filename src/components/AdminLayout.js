@@ -308,9 +308,19 @@ export default function AdminLayout() {
           {cargandoMenu ? <span className="admin-nav-status">Cargando menu...</span> : null}
           {errorMenu ? <span className="admin-nav-status is-error">{errorMenu}</span> : null}
           {!cargandoMenu && !errorMenu ? (
-            menu.map((item) => (
-              <MenuItem key={item.menuId || item.ruta || item.nombre} item={item} />
-            ))
+            <>
+              <NavLink to="/admin" end>
+                <FaTachometerAlt aria-hidden="true" />
+                <span>Dashboard</span>
+              </NavLink>
+              {menu.map((item) => (
+                <MenuItem key={item.menuId || item.ruta || item.nombre} item={item} />
+              ))}
+              <NavLink to="/admin/desarrollos">
+                <FaBuilding aria-hidden="true" />
+                <span>Desarrollos inmobiliarios</span>
+              </NavLink>
+            </>
           ) : null}
           <Link to="/">Volver al sitio</Link>
           <button type="button" onClick={salir}>Cerrar sesion</button>

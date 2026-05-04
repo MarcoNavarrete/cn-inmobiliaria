@@ -2,15 +2,32 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   actualizarEstatusProspecto,
-  actualizarNotasProspecto,
+  agregarNotaProspecto,
+  listarNotasProspecto,
+} from '../services/adminProspectosService';
+import {
   obtenerProspectos,
 } from '../services/prospectosService';
 import './AdminProspectosPage.css';
 
-const ESTATUS_PROSPECTO = ['NUEVO', 'CONTACTADO', 'VISITA_AGENDADA', 'INTERESADO', 'CERRADO', 'PERDIDO'];
+const ESTATUS_PROSPECTO = ['NUEVO', 'CONTACTADO', 'INTERESADO', 'VISITA_AGENDADA', 'DESCARTADO', 'CERRADO'];
+
+const TIPOS_PROSPECTO = {
+  INMUEBLE: 'Propiedad',
+  DESARROLLO: 'Desarrollo',
+  MODELO_DESARROLLO: 'Modelo',
+};
+
+const FILTROS_TIPO = [
+  { label: 'Todos', value: '' },
+  { label: 'Propiedades', value: 'INMUEBLE' },
+  { label: 'Desarrollos', value: 'DESARROLLO' },
+  { label: 'Modelos', value: 'MODELO_DESARROLLO' },
+];
 
 const FILTROS_INICIALES = {
   busqueda: '',
+  tipoProspecto: '',
   origen: '',
   estatus: '',
   desde: '',
@@ -21,6 +38,30 @@ const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No fue posible cargar prospectos.';
 
 const normalizarTexto = (value) => String(value || '').trim().toLowerCase();
+
+const getTipoLabel = (tipoProspecto) => TIPOS_PROSPECTO[tipoProspecto] || 'Prospecto';
+
+const getCssSuffix = (value) => String(value || '').toLowerCase().replace(/_/g, '-');
+
+const getEstatusOpciones = (estatusActual) =>
+  ESTATUS_PROSPECTO.includes(estatusActual)
+    ? ESTATUS_PROSPECTO
+    : [estatusActual, ...ESTATUS_PROSPECTO].filter(Boolean);
+
+const getContextoProspecto = (prospecto) => {
+  if (prospecto.tipoProspecto === 'DESARROLLO') {
+    return prospecto.desarrolloNombre || 'Desarrollo sin nombre';
+  }
+
+  if (prospecto.tipoProspecto === 'MODELO_DESARROLLO') {
+    return [
+      prospecto.desarrolloNombre || 'Desarrollo sin nombre',
+      prospecto.modeloNombre || 'Modelo sin nombre',
+    ].join(' - ');
+  }
+
+  return prospecto.tituloInmueble;
+};
 
 const fechaComparable = (value) => {
   if (!value) {
@@ -39,7 +80,15 @@ const fechaComparable = (value) => {
 export default function AdminProspectosPage() {
   const [prospectos, setProspectos] = useState([]);
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
-  const [notasEditables, setNotasEditables] = useState({});
+  const [notasModal, setNotasModal] = useState({
+    isOpen: false,
+    prospecto: null,
+    notas: [],
+    nuevaNota: '',
+    cargando: false,
+    guardando: false,
+    error: '',
+  });
   const [vista, setVista] = useState('tabla');
   const [cargando, setCargando] = useState(true);
   const [accionando, setAccionando] = useState('');
@@ -56,12 +105,6 @@ export default function AdminProspectosPage() {
       try {
         const data = await obtenerProspectos({ signal: controller.signal });
         setProspectos(data);
-        setNotasEditables(
-          data.reduce((acc, prospecto) => ({
-            ...acc,
-            [prospecto.id]: prospecto.notas,
-          }), {})
-        );
       } catch (err) {
         if (err.name !== 'AbortError') {
           setError(getApiErrorMessage(err));
@@ -92,16 +135,19 @@ export default function AdminProspectosPage() {
         prospecto.telefono,
         prospecto.email,
         prospecto.tituloInmueble,
+        prospecto.desarrolloNombre,
+        prospecto.modeloNombre,
       ].join(' '));
       const fecha = fechaComparable(prospecto.fechaFiltro);
 
       const coincideBusqueda = !busqueda || textoBusqueda.includes(busqueda);
+      const coincideTipo = !filtros.tipoProspecto || prospecto.tipoProspecto === filtros.tipoProspecto;
       const coincideOrigen = !filtros.origen || prospecto.origen === filtros.origen;
       const coincideEstatus = !filtros.estatus || prospecto.estatus === filtros.estatus;
       const coincideDesde = !filtros.desde || (fecha && fecha >= filtros.desde);
       const coincideHasta = !filtros.hasta || (fecha && fecha <= filtros.hasta);
 
-      return coincideBusqueda && coincideOrigen && coincideEstatus && coincideDesde && coincideHasta;
+      return coincideBusqueda && coincideTipo && coincideOrigen && coincideEstatus && coincideDesde && coincideHasta;
     });
   }, [filtros, prospectos]);
 
@@ -134,14 +180,14 @@ export default function AdminProspectosPage() {
     );
   };
 
-  const cambiarEstatus = async (prospectoId, estatus) => {
-    setAccionando(`${prospectoId}-estatus`);
+  const cambiarEstatus = async (prospecto, estatus) => {
+    setAccionando(`${prospecto.id}-estatus`);
     setError('');
     setMensaje('');
 
     try {
-      await actualizarEstatusProspecto(prospectoId, estatus);
-      actualizarProspectoLocal(prospectoId, { estatus });
+      await actualizarEstatusProspecto(prospecto.tipoProspecto, prospecto.id, estatus);
+      actualizarProspectoLocal(prospecto.id, { estatus });
       setMensaje('Estatus actualizado.');
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -150,27 +196,87 @@ export default function AdminProspectosPage() {
     }
   };
 
-  const cambiarNotaLocal = (prospectoId, notas) => {
-    setNotasEditables((actuales) => ({
-      ...actuales,
-      [prospectoId]: notas,
+  const cerrarNotas = () => {
+    setNotasModal({
+      isOpen: false,
+      prospecto: null,
+      notas: [],
+      nuevaNota: '',
+      cargando: false,
+      guardando: false,
+      error: '',
+    });
+  };
+
+  const abrirNotas = async (prospecto) => {
+    setNotasModal({
+      isOpen: true,
+      prospecto,
+      notas: [],
+      nuevaNota: '',
+      cargando: true,
+      guardando: false,
+      error: '',
+    });
+
+    try {
+      const notas = await listarNotasProspecto(prospecto.tipoProspecto, prospecto.id);
+      setNotasModal((actual) => ({
+        ...actual,
+        notas,
+        cargando: false,
+      }));
+    } catch (err) {
+      setNotasModal((actual) => ({
+        ...actual,
+        cargando: false,
+        error: getApiErrorMessage(err),
+      }));
+    }
+  };
+
+  const cambiarNuevaNota = (event) => {
+    setNotasModal((actual) => ({
+      ...actual,
+      nuevaNota: event.target.value,
+      error: '',
     }));
   };
 
-  const guardarNotas = async (prospectoId) => {
-    const notas = notasEditables[prospectoId] || '';
-    setAccionando(`${prospectoId}-notas`);
-    setError('');
-    setMensaje('');
+  const agregarNota = async () => {
+    const nota = notasModal.nuevaNota.trim();
+
+    if (!nota) {
+      setNotasModal((actual) => ({
+        ...actual,
+        error: 'La nota es requerida.',
+      }));
+      return;
+    }
+
+    setNotasModal((actual) => ({
+      ...actual,
+      guardando: true,
+      error: '',
+    }));
 
     try {
-      await actualizarNotasProspecto(prospectoId, notas);
-      actualizarProspectoLocal(prospectoId, { notas });
-      setMensaje('Notas actualizadas.');
+      await agregarNotaProspecto(notasModal.prospecto.tipoProspecto, notasModal.prospecto.id, nota);
+      const notas = await listarNotasProspecto(notasModal.prospecto.tipoProspecto, notasModal.prospecto.id);
+      setNotasModal((actual) => ({
+        ...actual,
+        notas,
+        nuevaNota: '',
+        guardando: false,
+      }));
+      actualizarProspectoLocal(notasModal.prospecto.id, { notas: nota });
+      setMensaje('Nota agregada.');
     } catch (err) {
-      setError(getApiErrorMessage(err));
-    } finally {
-      setAccionando('');
+      setNotasModal((actual) => ({
+        ...actual,
+        guardando: false,
+        error: getApiErrorMessage(err),
+      }));
     }
   };
 
@@ -193,8 +299,16 @@ export default function AdminProspectosPage() {
             name="busqueda"
             value={filtros.busqueda}
             onChange={actualizarFiltro}
-            placeholder="Nombre, telefono, email o inmueble"
+            placeholder="Nombre, telefono, email, inmueble o desarrollo"
           />
+        </label>
+        <label>
+          <span>Tipo</span>
+          <select name="tipoProspecto" value={filtros.tipoProspecto} onChange={actualizarFiltro}>
+            {FILTROS_TIPO.map((filtro) => (
+              <option key={filtro.label} value={filtro.value}>{filtro.label}</option>
+            ))}
+          </select>
         </label>
         <label>
           <span>Origen</span>
@@ -269,17 +383,31 @@ export default function AdminProspectosPage() {
                           <span>{prospecto.telefono}</span>
                           <span>{prospecto.email}</span>
                         </div>
-                        <p>{prospecto.tituloInmueble}</p>
+                        <span className={`admin-prospectos-tipo is-${prospecto.tipoProspecto.toLowerCase()}`}>
+                          {getTipoLabel(prospecto.tipoProspecto)}
+                        </span>
+                        <p>{getContextoProspecto(prospecto)}</p>
                         <small>{prospecto.notas}</small>
+                        <span className={`admin-prospectos-estatus-badge is-${getCssSuffix(prospecto.estatus)}`}>
+                          {prospecto.estatus}
+                        </span>
                         <select
                           value={prospecto.estatus}
-                          onChange={(event) => cambiarEstatus(prospecto.id, event.target.value)}
+                          onChange={(event) => cambiarEstatus(prospecto, event.target.value)}
                           disabled={!prospecto.id || accionando === `${prospecto.id}-estatus`}
                         >
-                          {ESTATUS_PROSPECTO.map((opcion) => (
+                          {getEstatusOpciones(prospecto.estatus).map((opcion) => (
                             <option key={opcion} value={opcion}>{opcion}</option>
                           ))}
                         </select>
+                        <button
+                          type="button"
+                          className="admin-prospectos-notas-btn"
+                          onClick={() => abrirNotas(prospecto)}
+                          disabled={!prospecto.id}
+                        >
+                          Notas
+                        </button>
                       </article>
                     ))}
                   </div>
@@ -294,7 +422,7 @@ export default function AdminProspectosPage() {
                     <th>Fecha</th>
                     <th>Prospecto</th>
                     <th>Contacto</th>
-                    <th>Inmueble</th>
+                    <th>Interes</th>
                     <th>Origen</th>
                     <th>Estatus</th>
                     <th>Notas</th>
@@ -313,34 +441,40 @@ export default function AdminProspectosPage() {
                           <span>{prospecto.email}</span>
                         </div>
                       </td>
-                      <td>{prospecto.tituloInmueble}</td>
+                      <td>
+                        <div className="admin-prospectos-contexto">
+                          <span className={`admin-prospectos-tipo is-${prospecto.tipoProspecto.toLowerCase()}`}>
+                            {getTipoLabel(prospecto.tipoProspecto)}
+                          </span>
+                          <strong>{getContextoProspecto(prospecto)}</strong>
+                        </div>
+                      </td>
                       <td><span className="admin-prospectos-pill">{prospecto.origen}</span></td>
                       <td>
+                        <span className={`admin-prospectos-estatus-badge is-${getCssSuffix(prospecto.estatus)}`}>
+                          {prospecto.estatus}
+                        </span>
                         <select
                           className="admin-prospectos-estatus"
                           value={prospecto.estatus}
-                          onChange={(event) => cambiarEstatus(prospecto.id, event.target.value)}
+                          onChange={(event) => cambiarEstatus(prospecto, event.target.value)}
                           disabled={!prospecto.id || accionando === `${prospecto.id}-estatus`}
                         >
-                          {ESTATUS_PROSPECTO.map((estatus) => (
+                          {getEstatusOpciones(prospecto.estatus).map((estatus) => (
                             <option key={estatus} value={estatus}>{estatus}</option>
                           ))}
                         </select>
                       </td>
                       <td className="admin-prospectos-notas">
-                        <textarea
-                          value={notasEditables[prospecto.id] ?? prospecto.notas}
-                          onChange={(event) => cambiarNotaLocal(prospecto.id, event.target.value)}
-                          rows="3"
-                          disabled={!prospecto.id || accionando === `${prospecto.id}-notas`}
-                        />
                         <button
                           type="button"
-                          onClick={() => guardarNotas(prospecto.id)}
-                          disabled={!prospecto.id || accionando === `${prospecto.id}-notas`}
+                          className="admin-prospectos-notas-btn"
+                          onClick={() => abrirNotas(prospecto)}
+                          disabled={!prospecto.id}
                         >
-                          {accionando === `${prospecto.id}-notas` ? 'Guardando...' : 'Guardar notas'}
+                          Notas
                         </button>
+                        <small>{prospecto.notas}</small>
                       </td>
                       <td>
                         <div className="admin-prospectos-fechas">
@@ -372,6 +506,67 @@ export default function AdminProspectosPage() {
             </div>
           )}
         </section>
+      ) : null}
+
+      {notasModal.isOpen ? (
+        <div className="admin-prospectos-notas-overlay" role="presentation" onMouseDown={cerrarNotas}>
+          <aside
+            className="admin-prospectos-notas-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-prospectos-notas-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="admin-prospectos-notas-head">
+              <div>
+                <p className="admin-prospectos-eyebrow">Seguimiento comercial</p>
+                <h2 id="admin-prospectos-notas-title">Notas</h2>
+                <span>{notasModal.prospecto?.nombre} - {getContextoProspecto(notasModal.prospecto || {})}</span>
+              </div>
+              <button type="button" onClick={cerrarNotas} aria-label="Cerrar notas">x</button>
+            </div>
+
+            {notasModal.cargando ? (
+              <p className="admin-prospectos-feedback">Cargando notas...</p>
+            ) : null}
+
+            {notasModal.error ? (
+              <p className="admin-prospectos-feedback is-error">{notasModal.error}</p>
+            ) : null}
+
+            {!notasModal.cargando ? (
+              <div className="admin-prospectos-notas-list">
+                {notasModal.notas.length === 0 ? (
+                  <p className="admin-prospectos-empty">Sin notas registradas.</p>
+                ) : notasModal.notas.map((nota) => (
+                  <article key={nota.id || `${nota.fecha}-${nota.nota}`} className="admin-prospectos-nota-item">
+                    <div>
+                      <strong>{nota.usuario}</strong>
+                      <span>{nota.fecha}</span>
+                    </div>
+                    <p>{nota.nota}</p>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="admin-prospectos-nota-form">
+              <label>
+                <span>Nueva nota</span>
+                <textarea
+                  value={notasModal.nuevaNota}
+                  onChange={cambiarNuevaNota}
+                  rows="4"
+                  disabled={notasModal.guardando}
+                  placeholder="Escribe el seguimiento realizado"
+                />
+              </label>
+              <button type="button" onClick={agregarNota} disabled={notasModal.guardando}>
+                {notasModal.guardando ? 'Agregando...' : 'Agregar nota'}
+              </button>
+            </div>
+          </aside>
+        </div>
       ) : null}
     </main>
   );

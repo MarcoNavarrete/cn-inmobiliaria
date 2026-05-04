@@ -7,7 +7,7 @@ import './DetallePropiedad.css';
 import { obtenerDetalleInmueble } from '../services/inmueblesService';
 import { crearProspecto } from '../services/prospectosService';
 import { obtenerTour360PorInmueble } from '../services/tours360Service';
-import { obtenerToken } from '../services/authService';
+import { getCurrentUser, obtenerToken } from '../services/authService';
 import { agregarFavorito, eliminarFavorito, existeFavorito } from '../services/favoritosService';
 import Tour360Viewer from '../components/Tour360Viewer';
 
@@ -33,6 +33,10 @@ export default function DetallePropiedad() {
   const [enviandoProspecto, setEnviandoProspecto] = useState(false);
   const [errorProspecto, setErrorProspecto] = useState('');
   const [exitoProspecto, setExitoProspecto] = useState('');
+
+  const token = obtenerToken();
+  const usuario = token ? getCurrentUser() : null;
+  const usuarioAutenticado = Boolean(token && usuario);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -63,6 +67,20 @@ export default function DetallePropiedad() {
     cargarDetalle();
 
     return () => controller.abort();
+  }, [id]);
+
+  useEffect(() => {
+    const usuarioActual = getCurrentUser();
+
+    if (!usuarioActual) {
+      return;
+    }
+
+    setFormulario((actual) => ({
+      ...actual,
+      nombre: actual.nombre || usuarioActual.nombre || '',
+      email: actual.email || usuarioActual.email || '',
+    }));
   }, [id]);
 
   useEffect(() => {
@@ -216,8 +234,16 @@ export default function DetallePropiedad() {
         notas,
       });
 
-      setExitoProspecto('Tu solicitud fue enviada correctamente. Te contactaremos pronto.');
-      setFormulario(FORMULARIO_INICIAL);
+      setExitoProspecto(
+        usuarioAutenticado
+          ? 'Solicitud enviada. Puedes verla en Mis solicitudes.'
+          : 'Tu solicitud fue enviada correctamente. Te contactaremos pronto.'
+      );
+      setFormulario((actual) => ({
+        ...FORMULARIO_INICIAL,
+        nombre: usuarioAutenticado ? actual.nombre : '',
+        email: usuarioAutenticado ? actual.email : '',
+      }));
     } catch (err) {
       setErrorProspecto(
         err.data?.mensaje ||
@@ -418,7 +444,36 @@ export default function DetallePropiedad() {
         )}
 
         <div className="prospecto-formulario">
-          <h2>Solicita mas informacion</h2>
+          <div className="prospecto-formulario-encabezado">
+            <div>
+              <p>Solicitud</p>
+              <h2>Solicitar informacion</h2>
+            </div>
+            {usuarioAutenticado ? (
+              <Link to="/mis-solicitudes" className="prospecto-seguimiento-link">
+                Mis solicitudes
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                state={{ from: location }}
+                className="prospecto-seguimiento-link"
+              >
+                Iniciar sesion
+              </Link>
+            )}
+          </div>
+
+          {usuarioAutenticado ? (
+            <p className="prospecto-ayuda">
+              Envia tu solicitud con tu cuenta para darle seguimiento desde Mis solicitudes.
+            </p>
+          ) : (
+            <p className="prospecto-ayuda">
+              Puedes llenar tus datos como visitante o iniciar sesion para dar seguimiento a tu solicitud.
+            </p>
+          )}
+
           <form onSubmit={enviarProspecto} className="formulario-contacto">
             <label className="campo-contacto">
               <span>Nombre</span>
@@ -474,11 +529,17 @@ export default function DetallePropiedad() {
                 className="btn-contacto"
                 disabled={enviandoProspecto}
               >
-                {enviandoProspecto ? 'Enviando...' : 'Quiero mas informacion'}
+                {enviandoProspecto ? 'Enviando...' : 'Solicitar informacion'}
               </button>
-              <Link to="/contacto" className="btn-contacto btn-contacto-secundario">
-                Ir a contacto
-              </Link>
+              {!usuarioAutenticado ? (
+                <Link
+                  to="/login"
+                  state={{ from: location }}
+                  className="btn-contacto btn-contacto-secundario"
+                >
+                  Iniciar sesion para seguimiento
+                </Link>
+              ) : null}
             </div>
           </form>
 
@@ -487,7 +548,10 @@ export default function DetallePropiedad() {
           ) : null}
 
           {exitoProspecto ? (
-            <p className="mensaje-formulario mensaje-formulario-exito">{exitoProspecto}</p>
+            <div className="mensaje-formulario mensaje-formulario-exito">
+              <p>{exitoProspecto}</p>
+              {usuarioAutenticado ? <Link to="/mis-solicitudes">Ver Mis solicitudes</Link> : null}
+            </div>
           ) : null}
         </div>
 

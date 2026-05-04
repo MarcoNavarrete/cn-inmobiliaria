@@ -538,13 +538,54 @@
   margin-top: 2rem;
   padding: 1.5rem;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(238, 244, 248, 0.95), rgba(255, 255, 255, 0.96));
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  background: var(--blanco);
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  box-shadow: 0 12px 28px rgba(16, 35, 58, 0.1);
+}
+
+.prospecto-formulario-encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.prospecto-formulario-encabezado p {
+  margin: 0 0 0.25rem;
+  color: var(--dorado-suave);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .prospecto-formulario h2 {
-  margin: 0 0 1rem;
+  margin: 0;
   color: var(--azul-oscuro);
+}
+
+.prospecto-ayuda {
+  max-width: 720px;
+  margin: 0 0 1.1rem;
+  color: var(--gris-elegante);
+}
+
+.prospecto-seguimiento-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  background-color: rgba(15, 41, 64, 0.08);
+  color: var(--azul-oscuro);
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.prospecto-seguimiento-link:hover {
+  background-color: rgba(15, 41, 64, 0.16);
 }
 
 .formulario-contacto {
@@ -602,14 +643,32 @@
 
 .mensaje-formulario {
   margin: 1rem 0 0;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
 }
 
 .mensaje-formulario-error {
   color: #7a251d;
+  background: rgba(143, 45, 36, 0.08);
 }
 
 .mensaje-formulario-exito {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
   color: #21633a;
+  background: rgba(33, 99, 58, 0.08);
+}
+
+.mensaje-formulario-exito p {
+  margin: 0;
+}
+
+.mensaje-formulario-exito a {
+  color: #21633a;
+  font-weight: 800;
 }
 
 .btn-ver {
@@ -641,6 +700,15 @@
 
   .acciones-contacto {
     flex-direction: column;
+  }
+
+  .prospecto-formulario-encabezado {
+    flex-direction: column;
+  }
+
+  .prospecto-seguimiento-link,
+  .acciones-contacto .btn-contacto {
+    width: 100%;
   }
 
   .boton-ver {

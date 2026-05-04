@@ -4,6 +4,16 @@ import './PropiedadesDestacadas.css';
 import { obtenerInmueblesPublicos } from '../services/inmueblesService';
 import { obtenerToken } from '../services/authService';
 import { agregarFavorito, eliminarFavorito, obtenerFavoritos } from '../services/favoritosService';
+import GuardarBusquedaModal from './cliente/GuardarBusquedaModal';
+
+const normalizarFiltrosBusqueda = (filtros = {}) => ({
+  estadoId: filtros.estadoId || filtros.EstadoId || '',
+  poblacionId: filtros.poblacionId || filtros.PoblacionId || '',
+  localidadId: filtros.localidadId || filtros.LocalidadId || '',
+  tipoInmueble: filtros.tipoInmueble || filtros.TipoInmueble || '',
+  precioMin: filtros.precioMin || filtros.PrecioMin || '',
+  precioMax: filtros.precioMax || filtros.PrecioMax || '',
+});
 
 export default function ListadoPropiedadesPublicas({
   filtros = {},
@@ -17,6 +27,8 @@ export default function ListadoPropiedadesPublicas({
   const [favoritosIds, setFavoritosIds] = useState(new Set());
   const [favoritoAccion, setFavoritoAccion] = useState('');
   const [favoritoMensaje, setFavoritoMensaje] = useState('');
+  const [busquedaModalOpen, setBusquedaModalOpen] = useState(false);
+  const [busquedaMensaje, setBusquedaMensaje] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const filtrosNormalizados = useMemo(
@@ -43,6 +55,10 @@ export default function ListadoPropiedadesPublicas({
   const filtrosParaConsulta = useMemo(
     () => JSON.parse(filtrosKey),
     [filtrosKey]
+  );
+  const filtrosActualesBusqueda = useMemo(
+    () => normalizarFiltrosBusqueda(filtros),
+    [filtros]
   );
 
   useEffect(() => {
@@ -135,10 +151,29 @@ export default function ListadoPropiedadesPublicas({
     }
   };
 
+  const abrirGuardarBusqueda = () => {
+    setBusquedaMensaje('');
+
+    if (!obtenerToken()) {
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+
+    setBusquedaModalOpen(true);
+  };
+
   return (
     <section className="propiedades" data-aos="fade-up" data-aos-duration="1200">
-      <h2>{titulo}</h2>
+      <div className="propiedades-head">
+        <h2>{titulo}</h2>
+        {mostrarFiltros ? (
+          <button type="button" className="guardar-busqueda-btn" onClick={abrirGuardarBusqueda}>
+            Guardar busqueda
+          </button>
+        ) : null}
+      </div>
       {mostrarFiltros ? filtrosSlot : null}
+      {busquedaMensaje ? <p className="estado-feedback busquedas-feedback">{busquedaMensaje}</p> : null}
       {favoritoMensaje ? <p className="estado-feedback favoritos-feedback">{favoritoMensaje}</p> : null}
       {loading ? (
         <p className="estado-feedback">Cargando propiedades...</p>
@@ -173,6 +208,12 @@ export default function ListadoPropiedadesPublicas({
           ))}
         </div>
       )}
+      <GuardarBusquedaModal
+        isOpen={busquedaModalOpen}
+        onClose={() => setBusquedaModalOpen(false)}
+        filtrosActuales={filtrosActualesBusqueda}
+        onSaved={() => setBusquedaMensaje('Busqueda guardada correctamente.')}
+      />
     </section>
   );
 }

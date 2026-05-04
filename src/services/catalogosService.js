@@ -19,21 +19,21 @@ const normalizeList = (value) => {
 const toStringId = (value) => (value === null || value === undefined ? '' : String(value));
 
 const adaptEstado = (estado) => ({
-  id: toStringId(estado?.estadoId ?? estado?.id),
+  id: toStringId(estado?.estadoId ?? estado?.estado_id ?? estado?.id),
   nombre: estado?.nomEstado ?? estado?.nombre ?? '',
 });
 
 const adaptPoblacion = (poblacion) => ({
-  id: toStringId(poblacion?.poblacionId ?? poblacion?.id),
-  nombre: poblacion?.nomPoblacion ?? poblacion?.nombre ?? '',
-  estadoId: toStringId(poblacion?.estadoId),
+  id: toStringId(poblacion?.poblacionId ?? poblacion?.poblacion_id ?? poblacion?.id),
+  nombre: poblacion?.nomPoblacion ?? poblacion?.nombre ?? poblacion?.municipioNombre ?? '',
+  estadoId: toStringId(poblacion?.estadoId ?? poblacion?.estado_id),
 });
 
 const adaptLocalidad = (localidad) => ({
-  id: toStringId(localidad?.localidadId ?? localidad?.id),
-  nombre: localidad?.nomLocalidad ?? localidad?.nombre ?? '',
-  estadoId: toStringId(localidad?.estadoId),
-  poblacionId: toStringId(localidad?.poblacionId),
+  id: toStringId(localidad?.localidadId ?? localidad?.localidad_id ?? localidad?.id),
+  nombre: localidad?.nomLocalidad ?? localidad?.nombre ?? localidad?.coloniaNombre ?? '',
+  estadoId: toStringId(localidad?.estadoId ?? localidad?.estado_id),
+  poblacionId: toStringId(localidad?.poblacionId ?? localidad?.poblacion_id),
 });
 
 const adaptTipoInmueble = (tipo) => ({

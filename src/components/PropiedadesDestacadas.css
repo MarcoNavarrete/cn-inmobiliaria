@@ -21,8 +21,37 @@
 .propiedades h2 {
   font-family: var(--fuente-titulos);
   font-size: 2.2rem;
-  margin-bottom: 2rem;
+  margin: 0;
   color: var(--azul-oscuro);
+}
+
+.propiedades-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.guardar-busqueda-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(16, 35, 58, 0.1);
+}
+
+.guardar-busqueda-btn:hover {
+  background: var(--dorado-suave);
 }
 
 .tarjetas {
@@ -145,4 +174,11 @@
 
 .favoritos-feedback {
   margin-bottom: 1rem;
+}
+
+.busquedas-feedback {
+  margin-bottom: 1rem;
+  background: rgba(33, 99, 58, 0.08);
+  color: #21633a;
+  font-weight: 700;
 }

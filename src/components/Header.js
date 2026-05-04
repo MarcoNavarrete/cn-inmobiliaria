@@ -1,5 +1,5 @@
 // src/components/Header.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './Header.css';
 import './Logo.css';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -10,12 +10,17 @@ const ROLES_PANEL = ['ASESOR', 'SUPERVISOR', 'ADMIN', 'SUPERADMIN'];
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
+  const cuentaRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [cuentaOpen, setCuentaOpen] = useState(false);
   const [usuario, setUsuario] = useState(() => getCurrentUser());
   const puedeVerPanel = ROLES_PANEL.includes(String(usuario?.rol || '').toUpperCase());
+  const usuarioLabel = usuario?.nombre || usuario?.email || 'Usuario';
 
   useEffect(() => {
     setUsuario(getCurrentUser());
+    setMenuOpen(false);
+    setCuentaOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -29,46 +34,99 @@ export default function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    const cerrarAlClickFuera = (event) => {
+      if (cuentaRef.current && !cuentaRef.current.contains(event.target)) {
+        setCuentaOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', cerrarAlClickFuera);
+
+    return () => {
+      document.removeEventListener('mousedown', cerrarAlClickFuera);
+    };
+  }, []);
+
+  const cerrarMenus = () => {
+    setMenuOpen(false);
+    setCuentaOpen(false);
+  };
+
   const salir = () => {
     cerrarSesion();
-    setMenuOpen(false);
+    cerrarMenus();
     navigate('/');
   };
-  
+
+  const cuentaLinks = (
+    <>
+      <Link to="/mi-cuenta" onClick={cerrarMenus}>Mi cuenta</Link>
+      <Link to="/favoritos" onClick={cerrarMenus}>Mis favoritos</Link>
+      <Link to="/mis-solicitudes" onClick={cerrarMenus}>Mis solicitudes</Link>
+      <Link to="/cliente/mis-busquedas" onClick={cerrarMenus}>Mis busquedas</Link>
+      <Link to="/cliente/mis-alertas" onClick={cerrarMenus}>Mis alertas</Link>
+      {puedeVerPanel ? <Link to="/admin" onClick={cerrarMenus}>Panel</Link> : null}
+      <button type="button" className="nav-button" onClick={salir}>Cerrar sesion</button>
+    </>
+  );
+
   return (
     <header className="header">
       <div className="logo">
-        <Link to="/">
+        <Link to="/" onClick={cerrarMenus}>
           <img src="./assets/logo.png" alt="CN Inmobiliaria" />
         </Link>
       </div>
 
       <button
         className="hamburger"
-        onClick={() => setMenuOpen(!menuOpen)}
-        aria-label="Menú"
+        onClick={() => {
+          setMenuOpen((open) => !open);
+          setCuentaOpen(false);
+        }}
+        aria-label="Menu"
+        aria-expanded={menuOpen}
       >
-        ☰
+        Menu
       </button>
 
       <nav className={`nav ${menuOpen ? 'open' : ''}`}>
-        <Link to="/" onClick={() => setMenuOpen(false)}>Inicio</Link>
-        <Link to="/propiedades" onClick={() => setMenuOpen(false)}>Propiedades</Link>
-        <Link to="/nosotros" onClick={() => setMenuOpen(false)}>Nosotros</Link>
-        <Link to="/contacto" onClick={() => setMenuOpen(false)}>Contacto</Link>
+        <Link to="/" onClick={cerrarMenus}>Inicio</Link>
+        <Link to="/propiedades" onClick={cerrarMenus}>Propiedades</Link>
+        <Link to="/desarrollos" onClick={cerrarMenus}>Desarrollos</Link>
+        <Link to="/nosotros" onClick={cerrarMenus}>Nosotros</Link>
+        <Link to="/contacto" onClick={cerrarMenus}>Contacto</Link>
+
         {usuario ? (
           <>
-            <span className="nav-user">{usuario.nombre || usuario.email}</span>
-            <Link to="/mi-cuenta" onClick={() => setMenuOpen(false)}>Mi cuenta</Link>
-            <Link to="/favoritos" onClick={() => setMenuOpen(false)}>Mis favoritos</Link>
-            {puedeVerPanel ? <Link to="/admin" onClick={() => setMenuOpen(false)}>Panel</Link> : null}
-            <button type="button" className="nav-button" onClick={salir}>Cerrar sesion</button>
+            <div className="account-menu" ref={cuentaRef}>
+              <span className="nav-user" title={usuarioLabel}>{usuarioLabel}</span>
+              <button
+                type="button"
+                className="account-toggle"
+                onClick={() => setCuentaOpen((open) => !open)}
+                aria-haspopup="menu"
+                aria-expanded={cuentaOpen}
+              >
+                Mi cuenta
+              </button>
+              <div className={`account-dropdown ${cuentaOpen ? 'open' : ''}`} role="menu">
+                {cuentaLinks}
+              </div>
+            </div>
+            <div className="mobile-account-links">
+              <span className="nav-user" title={usuarioLabel}>{usuarioLabel}</span>
+              {cuentaLinks}
+            </div>
           </>
         ) : (
-          <Link to="/login" onClick={() => setMenuOpen(false)}>Iniciar sesion</Link>
+          <div className="auth-links">
+            <Link to="/login" onClick={cerrarMenus}>Iniciar sesion</Link>
+            <Link to="/register" onClick={cerrarMenus}>Registrarse</Link>
+          </div>
         )}
       </nav>
-
     </header>
   );
 }

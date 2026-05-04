@@ -1,0 +1,120 @@
+.admin-upload-widget {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(26, 61, 124, 0.08);
+}
+
+.admin-upload-dropzone {
+  display: grid;
+  place-items: center;
+  gap: 0.55rem;
+  min-height: 210px;
+  padding: 1.25rem;
+  border: 2px dashed rgba(26, 61, 124, 0.24);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  text-align: center;
+}
+
+.admin-upload-dropzone.is-dragging {
+  border-color: var(--dorado-suave);
+  background: rgba(203, 161, 53, 0.08);
+}
+
+.admin-upload-dropzone strong {
+  font-size: 1.12rem;
+}
+
+.admin-upload-dropzone p {
+  margin: 0;
+  color: var(--gris-elegante);
+}
+
+.admin-upload-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.admin-upload-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-upload-actions button:last-child {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.admin-upload-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.admin-upload-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 210px;
+  border-radius: 14px;
+  background: rgba(26, 61, 124, 0.08);
+  overflow: hidden;
+}
+
+.admin-upload-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-upload-preview span {
+  color: var(--gris-elegante);
+  font-weight: 800;
+}
+
+.admin-upload-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+.admin-upload-message.is-ok {
+  background: rgba(33, 99, 58, 0.08);
+  color: #21633a;
+}
+
+.admin-upload-message.is-error {
+  background: rgba(143, 45, 36, 0.08);
+  color: #8f2d24;
+}
+
+@media (max-width: 760px) {
+  .admin-upload-widget {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-upload-preview {
+    min-height: 220px;
+  }
+
+  .admin-upload-actions button {
+    width: 100%;
+  }
+}

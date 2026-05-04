@@ -1,0 +1,188 @@
+.mis-solicitudes-page {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+  color: var(--azul-oscuro);
+}
+
+.mis-solicitudes-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.mis-solicitudes-hero p,
+.mis-solicitudes-label {
+  margin: 0 0 0.25rem;
+  color: var(--dorado-suave);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.mis-solicitudes-label {
+  display: block;
+  font-size: 0.78rem;
+}
+
+.mis-solicitudes-hero h1,
+.mis-solicitudes-card h2,
+.mis-solicitudes-empty h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+}
+
+.mis-solicitudes-hero h1 {
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+.mis-solicitudes-hero a,
+.mis-solicitudes-empty a,
+.mis-solicitudes-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.mis-solicitudes-feedback,
+.mis-solicitudes-empty {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(26, 61, 124, 0.06);
+}
+
+.mis-solicitudes-feedback.is-error {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.08);
+}
+
+.mis-solicitudes-empty {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(16, 35, 58, 0.08);
+}
+
+.mis-solicitudes-empty p {
+  margin: 0;
+  color: var(--gris-elegante);
+}
+
+.mis-solicitudes-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.mis-solicitudes-card {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  background: var(--blanco);
+  box-shadow: 0 10px 24px rgba(16, 35, 58, 0.08);
+}
+
+.mis-solicitudes-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.mis-solicitudes-card h2 {
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+}
+
+.mis-solicitudes-status {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  font-size: 0.82rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.mis-solicitudes-status.is-nuevo {
+  background: rgba(212, 167, 44, 0.16);
+}
+
+.mis-solicitudes-status.is-contactado,
+.mis-solicitudes-status.is-visita_agendada,
+.mis-solicitudes-status.is-interesado {
+  background: rgba(33, 99, 58, 0.1);
+  color: #21633a;
+}
+
+.mis-solicitudes-status.is-perdido {
+  background: rgba(143, 45, 36, 0.08);
+  color: #8f2d24;
+}
+
+.mis-solicitudes-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin: 0;
+}
+
+.mis-solicitudes-meta div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.mis-solicitudes-meta .is-wide {
+  grid-column: 1 / -1;
+}
+
+.mis-solicitudes-meta dt {
+  color: var(--gris-elegante);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.mis-solicitudes-meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.mis-solicitudes-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mis-solicitudes-actions span {
+  color: var(--gris-elegante);
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .mis-solicitudes-hero,
+  .mis-solicitudes-main {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mis-solicitudes-meta {
+    grid-template-columns: 1fr;
+  }
+}
