@@ -100,16 +100,9 @@ export default function AdminTour360BasePage({
   const escenas = useMemo(() => tour?.escenas || [], [tour]);
   const escenaSeleccionada = escenas.find((escena) => escena.id === escenaSeleccionadaId) || escenas[0] || null;
   const hotspots = escenaSeleccionada?.hotspots || [];
-  const tourPreviewEscena = useMemo(
-    () =>
-      escenaSeleccionada
-        ? {
-            ...tour,
-            escenaInicialId: escenaSeleccionada.id,
-            escenas: [escenaSeleccionada],
-          }
-        : null,
-    [escenaSeleccionada, tour]
+  const tourPreview = useMemo(
+    () => (tour?.escenas?.length ? tour : null),
+    [tour]
   );
 
   const cargarTour = useCallback(async () => {
@@ -249,6 +242,12 @@ export default function AdminTour360BasePage({
       yaw: yawRedondeado,
     }));
     setPosicionMensaje(`Posicion seleccionada: pitch ${pitchRedondeado}, yaw ${yawRedondeado}`);
+  }, []);
+
+  const sincronizarEscenaDesdePreview = useCallback((sceneId) => {
+    if (sceneId) {
+      setEscenaSeleccionadaId(sceneId);
+    }
   }, []);
 
   const usarPosicionActual = () => {
@@ -421,7 +420,7 @@ export default function AdminTour360BasePage({
             <div className="admin-tour360-card-head">
               <div>
                 <h2>Selector visual de hotspot</h2>
-                <p className="admin-tour360-helper">Haz clic en la imagen 360 para definir la posicion del hotspot.</p>
+                <p className="admin-tour360-helper">Haz clic en la imagen para colocar el hotspot.</p>
               </div>
               <div className="admin-tour360-actions">
                 <button type="button" className="admin-tour360-secondary" onClick={usarPosicionActual} disabled={!escenaSeleccionada}>
@@ -430,13 +429,16 @@ export default function AdminTour360BasePage({
                 {posicionMensaje ? <span className="admin-tour360-pill">{posicionMensaje}</span> : null}
               </div>
             </div>
-            {tourPreviewEscena ? (
+            {tourPreview ? (
               <Tour360Viewer
+                activeSceneId={escenaSeleccionada?.id}
                 editorMarker={hotspotTemporal}
                 editorMode
+                loopScenes={false}
                 onPanoramaClick={seleccionarHotspotDesdePreview}
+                onSceneChange={sincronizarEscenaDesdePreview}
                 onViewerReady={setViewerApi}
-                tour={tourPreviewEscena}
+                tour={tourPreview}
               />
             ) : (
               <p className="admin-tour360-empty">Selecciona o crea una escena para editar hotspots.</p>

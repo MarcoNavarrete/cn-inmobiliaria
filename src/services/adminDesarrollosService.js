@@ -88,6 +88,12 @@ export const normalizeModeloPayload = (payload = {}) => ({
   activo: payload.activo !== false,
 });
 
+const normalizeModeloImagenPayload = (payload = {}) => ({
+  url: toText(pickFirst(payload.url, payload.urlImagen, payload.imagenUrl)),
+  orden: toNumberOrNull(payload.orden) ?? 0,
+  activo: payload.activo !== false,
+});
+
 export const adaptDesarrolloAdmin = (item = {}) => ({
   id: toText(pickFirst(item.desarrolloId, item.id, item.Id)),
   desarrolloId: toText(pickFirst(item.desarrolloId, item.id, item.Id)),
@@ -215,10 +221,10 @@ export const listarModeloImagenes = async (modeloId, options = {}) =>
   normalizeList(await getJson(`/api/admin/desarrollos/modelos/${modeloId}/imagenes`, options)).map(adaptImagen);
 
 export const crearModeloImagen = (modeloId, payload) =>
-  requestJson(`/api/admin/desarrollos/modelos/${modeloId}/imagenes`, { method: 'POST', body: payload });
+  requestJson(`/api/admin/desarrollos/modelos/${modeloId}/imagenes`, { method: 'POST', body: normalizeModeloImagenPayload(payload) });
 
 export const actualizarModeloImagen = (modeloId, imagenId, payload) =>
-  requestJson(`/api/admin/desarrollos/modelos/${modeloId}/imagenes/${imagenId}`, { method: 'PUT', body: payload });
+  requestJson(`/api/admin/desarrollos/modelos/${modeloId}/imagenes/${imagenId}`, { method: 'PUT', body: normalizeModeloImagenPayload(payload) });
 
 export const eliminarModeloImagen = (modeloId, imagenId) =>
   requestJson(`/api/admin/desarrollos/modelos/${modeloId}/imagenes/${imagenId}`, { method: 'DELETE' });

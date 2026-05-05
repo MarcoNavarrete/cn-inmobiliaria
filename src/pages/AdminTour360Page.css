@@ -60,6 +60,10 @@
   margin-bottom: 1rem;
 }
 
+.admin-tour360-card-head > div {
+  min-width: 0;
+}
+
 .admin-tour360-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(340px, 0.85fr);
@@ -300,6 +304,9 @@
 .admin-tour360-helper {
   color: rgba(26, 61, 124, 0.86);
   font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .admin-tour360-alert-ok {

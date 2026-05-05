@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   actualizarDesarrolloModelo,
@@ -26,6 +26,7 @@ export default function AdminDesarrolloModeloImagenesPage() {
   const [accionandoId, setAccionandoId] = useState('');
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const registrandoUploadRef = useRef(false);
 
   const cargar = useCallback(async (options = {}) => {
     setCargando(true);
@@ -65,35 +66,45 @@ export default function AdminDesarrolloModeloImagenesPage() {
   };
 
   const registrarUpload = async (response) => {
-    const url = response?.url || response?.Url || '';
+    if (registrandoUploadRef.current) {
+      return;
+    }
+
+    const url = response?.url || response?.Url || response?.data?.url || response?.data?.Url || '';
 
     if (!url) {
       setError('El API no devolvio la URL de la imagen.');
       return;
     }
 
+    registrandoUploadRef.current = true;
     setRegistrandoUpload(true);
     setError('');
     setMensaje('');
 
+    const siguienteOrden = calcularSiguienteOrden();
+
     try {
       await crearModeloImagen(modeloId, {
         url,
-        orden: calcularSiguienteOrden(),
+        orden: siguienteOrden,
         activo: true,
       });
+      setForm(FORM_INICIAL);
+      setMostrarManual(false);
       setMensaje('Imagen subida y registrada correctamente.');
       await cargar();
     } catch (err) {
       setForm((actual) => ({
         ...actual,
         url,
-        orden: calcularSiguienteOrden(),
+        orden: siguienteOrden,
         activo: true,
       }));
       setMostrarManual(true);
-      setError('La imagen se subio al servidor, pero no se pudo registrar. Intenta agregarla manualmente.');
+      setError('La imagen se subio al servidor, pero no se pudo registrar en base de datos.');
     } finally {
+      registrandoUploadRef.current = false;
       setRegistrandoUpload(false);
     }
   };

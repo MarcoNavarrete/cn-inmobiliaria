@@ -181,8 +181,11 @@ const buildViewerConfig = (tour, onInfoClick) => {
 };
 
 export default function Tour360Viewer({
+  activeSceneId,
   editorMarker = null,
   editorMode = false,
+  loopScenes = true,
+  onSceneChange,
   onViewerReady,
   onPanoramaClick,
   tour,
@@ -193,7 +196,8 @@ export default function Tour360Viewer({
   const loadingStartedAtRef = useRef(0);
   const editorMarkerIdRef = useRef(null);
   const [mensajeInfo, setMensajeInfo] = useState('');
-  const [escenaActualId, setEscenaActualId] = useState(tour?.escenaInicialId || '');
+  const onSceneChangeRef = useRef(onSceneChange);
+  const [escenaActualId, setEscenaActualId] = useState(activeSceneId || tour?.escenaInicialId || '');
   const [cargandoEscena, setCargandoEscena] = useState(true);
 
   const escenas = useMemo(() => tour?.escenas || [], [tour]);
@@ -232,6 +236,10 @@ export default function Tour360Viewer({
   const tieneVariasEscenas = escenasValidas.length > 1;
 
   useEffect(() => {
+    onSceneChangeRef.current = onSceneChange;
+  }, [onSceneChange]);
+
+  useEffect(() => {
     stableTourRef.current = tour;
   }, [tour, tourKey]);
 
@@ -255,10 +263,10 @@ export default function Tour360Viewer({
   }, []);
 
   useEffect(() => {
-    setEscenaActualId(tour?.escenaInicialId || '');
+    setEscenaActualId(activeSceneId || tour?.escenaInicialId || '');
     setMensajeInfo('');
     iniciarCargaEscena();
-  }, [tour?.escenaInicialId, iniciarCargaEscena]);
+  }, [activeSceneId, tour?.escenaInicialId, iniciarCargaEscena]);
 
   useEffect(() => {
     const currentTour = stableTourRef.current;
@@ -275,6 +283,7 @@ export default function Tour360Viewer({
     const syncScene = () => {
       const activeScene = viewerRef.current?.getScene?.() || currentTour.escenaInicialId;
       setEscenaActualId(activeScene);
+      onSceneChangeRef.current?.(activeScene);
       iniciarCargaEscena();
     };
     const handleLoad = finalizarCargaEscena;
@@ -306,6 +315,23 @@ export default function Tour360Viewer({
       window.removeEventListener('resize', resizeViewer);
     };
   }, [tourKey, escenasValidas.length, iniciarCargaEscena, finalizarCargaEscena, onViewerReady]);
+
+  useEffect(() => {
+    if (!activeSceneId || !escenasValidas.some((escena) => escena.id === activeSceneId)) {
+      return;
+    }
+
+    if (escenaActualId === activeSceneId && viewerRef.current?.getScene?.() === activeSceneId) {
+      return;
+    }
+
+    setEscenaActualId(activeSceneId);
+
+    if (viewerRef.current?.getScene?.() !== activeSceneId) {
+      iniciarCargaEscena();
+      viewerRef.current?.loadScene?.(activeSceneId);
+    }
+  }, [activeSceneId, escenaActualId, escenasValidas, iniciarCargaEscena]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -416,7 +442,9 @@ export default function Tour360Viewer({
       return;
     }
 
-    const siguienteIndice = (indiceEscenaActual + direccion + escenasValidas.length) % escenasValidas.length;
+    const siguienteIndice = loopScenes
+      ? (indiceEscenaActual + direccion + escenasValidas.length) % escenasValidas.length
+      : indiceEscenaActual + direccion;
     const siguienteEscena = escenasValidas[siguienteIndice];
 
     if (!siguienteEscena || siguienteEscena.id === escenaActualId) {
@@ -453,7 +481,7 @@ export default function Tour360Viewer({
                 className="tour360-nav-btn"
                 onClick={() => cambiarEscena(-1)}
                 aria-label="Escena anterior"
-                disabled={cargandoEscena}
+                disabled={cargandoEscena || (!loopScenes && indiceEscenaActual <= 0)}
               >
                 <FaChevronLeft aria-hidden="true" />
                 <span>Anterior</span>
@@ -463,7 +491,7 @@ export default function Tour360Viewer({
                 className="tour360-nav-btn"
                 onClick={() => cambiarEscena(1)}
                 aria-label="Siguiente escena"
-                disabled={cargandoEscena}
+                disabled={cargandoEscena || (!loopScenes && indiceEscenaActual >= escenasValidas.length - 1)}
               >
                 <span>Siguiente</span>
                 <FaChevronRight aria-hidden="true" />
@@ -477,7 +505,7 @@ export default function Tour360Viewer({
         <div ref={containerRef} className="tour360-visor" />
         {editorMode ? (
           <div className="tour360-editor-instruction">
-            Haz clic en la escena para colocar el hotspot
+            Haz clic en la imagen para colocar el hotspot.
           </div>
         ) : null}
         {cargandoEscena ? (

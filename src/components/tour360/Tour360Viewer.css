@@ -122,7 +122,19 @@
   position: absolute;
   left: 1rem;
   bottom: 1rem;
+  z-index: 2;
+  width: max-content;
+  max-width: min(360px, calc(100% - 2rem));
+  border-radius: 999px;
+  padding: 0.62rem 0.85rem;
   background: rgba(255, 255, 255, 0.92);
+  color: var(--azul-oscuro);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: normal;
+  white-space: normal;
+  box-shadow: 0 10px 24px rgba(7, 21, 33, 0.18);
 }
 
 .tour360-hotspot {

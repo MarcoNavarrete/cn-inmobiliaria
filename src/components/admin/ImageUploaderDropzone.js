@@ -63,6 +63,10 @@ export default function ImageUploaderDropzone({
   };
 
   const subir = async () => {
+    if (disabled || subiendo) {
+      return;
+    }
+
     if (!archivo) {
       setError('Selecciona una imagen antes de subir.');
       return;
@@ -82,7 +86,8 @@ export default function ImageUploaderDropzone({
 
       limpiarPreview();
       setPreviewUrl(resolveApiAssetUrl(url));
-      onUploaded?.(response);
+      await onUploaded?.(response);
+      setArchivo(null);
     } catch (err) {
       setError(err.data?.mensaje || err.data?.message || err.message || 'No fue posible subir la imagen.');
     } finally {
