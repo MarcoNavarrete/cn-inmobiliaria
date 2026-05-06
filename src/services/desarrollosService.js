@@ -114,7 +114,7 @@ const adaptDesarrollo = (desarrollo) => {
     desarrollo?.imagenPrincipal,
     desarrollo?.portadaUrl
   ));
-  const galeria = normalizeImages(desarrollo?.imagenes);
+  const galeria = normalizeImages(pickFirst(desarrollo?.galeria, desarrollo?.imagenes));
 
   return {
     id: toText(pickFirst(desarrollo?.desarrolloId, desarrollo?.id)),
@@ -127,9 +127,11 @@ const adaptDesarrollo = (desarrollo) => {
     zona: toText(desarrollo?.zona),
     ubicacion: buildUbicacion(desarrollo),
     precioDesde: toNumberOrZero(desarrollo?.precioDesde),
+    imagenPrincipalUrl: toText(desarrollo?.imagenPrincipalUrl),
     imagenPrincipal,
     telefonoContacto: toText(desarrollo?.telefonoContacto),
     nombreContacto: toText(desarrollo?.nombreContacto),
+    imagenes: galeria,
     galeria: galeria.length > 0 ? galeria : [imagenPrincipal].filter(Boolean),
     destacado: desarrollo?.destacado === true,
     amenidades: normalizeAmenidades(desarrollo?.amenidades),

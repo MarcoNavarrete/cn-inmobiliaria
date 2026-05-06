@@ -1,0 +1,240 @@
+.plano-demo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 1rem;
+}
+
+.plano-demo-map-card,
+.plano-demo-panel {
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 12px;
+  background: var(--blanco);
+  box-shadow: 0 14px 30px rgba(16, 35, 58, 0.08);
+}
+
+.plano-demo-map-card {
+  overflow: hidden;
+}
+
+.plano-demo-map-head {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(26, 61, 124, 0.08);
+}
+
+.plano-demo-map-head h3,
+.plano-demo-panel h3 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  color: var(--azul-oscuro);
+}
+
+.plano-demo-map-head p {
+  margin: 0.25rem 0 0;
+  color: var(--gris-elegante);
+}
+
+.plano-demo-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.plano-demo-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.55rem;
+  background: rgba(26, 61, 124, 0.06);
+  color: var(--azul-oscuro);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.plano-demo-legend i {
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(7, 21, 33, 0.18);
+  border-radius: 999px;
+}
+
+.plano-demo-scroll {
+  overflow-x: auto;
+}
+
+.plano-demo-stage {
+  position: relative;
+  min-width: 640px;
+  padding: 1rem;
+  background:
+    linear-gradient(135deg, rgba(26, 61, 124, 0.08), rgba(203, 161, 53, 0.08)),
+    #edf3f7;
+}
+
+.plano-demo-stage svg {
+  width: 100%;
+  min-height: 430px;
+  display: block;
+}
+
+.plano-demo-base {
+  fill: #f8fbfd;
+  stroke: rgba(26, 61, 124, 0.18);
+  stroke-width: 2;
+}
+
+.plano-demo-street {
+  fill: none;
+  stroke: rgba(26, 61, 124, 0.18);
+  stroke-width: 26;
+  stroke-linecap: round;
+}
+
+.plano-demo-street.secondary {
+  stroke-width: 18;
+}
+
+.plano-demo-street-label,
+.plano-demo-unit-label {
+  fill: var(--azul-oscuro);
+  font-size: 13px;
+  font-weight: 900;
+  pointer-events: none;
+  text-anchor: middle;
+}
+
+.plano-demo-street-label {
+  fill: rgba(26, 61, 124, 0.46);
+}
+
+.plano-demo-street-label.rotate {
+  transform: rotate(90deg);
+  transform-origin: 462px 188px;
+}
+
+.plano-demo-unit {
+  filter: url(#plano-shadow);
+  stroke: rgba(7, 21, 33, 0.35);
+  stroke-width: 2;
+  cursor: pointer;
+  transition: opacity 0.16s ease, stroke-width 0.16s ease, transform 0.16s ease;
+}
+
+.plano-demo-unit-group:hover .plano-demo-unit,
+.plano-demo-unit.is-selected {
+  opacity: 0.9;
+  stroke: var(--azul-oscuro);
+  stroke-width: 4;
+}
+
+.is-disponible {
+  fill: #3f9d5b;
+}
+
+.is-apartado {
+  fill: #f2c94c;
+}
+
+.is-vendido {
+  fill: #c94b44;
+}
+
+.is-construccion {
+  fill: #ffffff;
+}
+
+.is-bloqueado {
+  fill: #9aa4ad;
+}
+
+.plano-demo-tooltip {
+  position: absolute;
+  z-index: 4;
+  display: grid;
+  gap: 0.2rem;
+  min-width: 180px;
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: rgba(7, 21, 33, 0.92);
+  color: var(--blanco);
+  box-shadow: 0 14px 32px rgba(7, 21, 33, 0.26);
+  pointer-events: none;
+}
+
+.plano-demo-tooltip span {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.86rem;
+}
+
+.plano-demo-panel {
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+
+.plano-demo-eyebrow {
+  margin: 0;
+  color: var(--dorado-suave);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.plano-demo-panel dl {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.plano-demo-panel dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 9px;
+  padding: 0.65rem;
+  background: rgba(26, 61, 124, 0.05);
+}
+
+.plano-demo-panel dt {
+  color: var(--gris-elegante);
+  font-weight: 900;
+}
+
+.plano-demo-panel dd {
+  margin: 0;
+  color: var(--azul-oscuro);
+  font-weight: 900;
+  text-align: right;
+}
+
+.plano-demo-panel button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  background: var(--dorado-suave);
+  color: #071521;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.plano-demo-panel-note {
+  border-radius: 9px;
+  padding: 0.75rem;
+  background: rgba(26, 61, 124, 0.06);
+  color: var(--gris-elegante);
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .plano-demo {
+    grid-template-columns: 1fr;
+  }
+
+  .plano-demo-stage {
+    min-width: 560px;
+  }
+}

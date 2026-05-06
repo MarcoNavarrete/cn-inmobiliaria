@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import ImageLightbox from '../components/common/ImageLightbox';
+import MarkdownContent from '../components/common/MarkdownContent';
 import ProspectoDesarrolloModal from '../components/desarrollos/ProspectoDesarrolloModal';
 import Tour360Viewer from '../components/tour360/Tour360Viewer';
 import { obtenerDesarrolloPorSlug } from '../services/desarrollosService';
@@ -40,6 +42,14 @@ export default function DetalleDesarrolloPage() {
   const [desarrollo, setDesarrollo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [imagenActual, setImagenActual] = useState(0);
+  const [imagenesModeloActivas, setImagenesModeloActivas] = useState({});
+  const [lightbox, setLightbox] = useState({
+    images: [],
+    initialIndex: 0,
+    isOpen: false,
+    title: '',
+  });
   const [tourModal, setTourModal] = useState({
     isOpen: false,
     title: '',
@@ -82,6 +92,27 @@ export default function DetalleDesarrolloPage() {
     cargarDesarrollo();
 
     return () => controller.abort();
+  }, [slug]);
+
+  const imagenesCarrusel = useMemo(() => {
+    if (!desarrollo) {
+      return [];
+    }
+
+    const imagenes = [
+      desarrollo.imagenPrincipal,
+      ...(desarrollo.imagenes || desarrollo.galeria || []),
+    ].filter(Boolean);
+
+    return [...new Set(imagenes)];
+  }, [desarrollo]);
+
+  useEffect(() => {
+    setImagenActual(0);
+  }, [slug, imagenesCarrusel.length]);
+
+  useEffect(() => {
+    setImagenesModeloActivas({});
   }, [slug]);
 
   // TODO: habilitar tour 360 general del desarrollo cuando existan escenas del desarrollo/amenidades.
@@ -135,6 +166,50 @@ export default function DetalleDesarrolloPage() {
 
   const abrirWhatsapp = ({ desarrollo: desarrolloActual, modelo }) => {
     window.open(whatsappHref(desarrolloActual, modelo), '_blank', 'noopener,noreferrer');
+  };
+
+  const abrirLightbox = (images, initialIndex, title) => {
+    setLightbox({
+      images,
+      initialIndex,
+      isOpen: true,
+      title,
+    });
+  };
+
+  const cerrarLightbox = () => {
+    setLightbox((actual) => ({ ...actual, isOpen: false }));
+  };
+
+  const moverCarrusel = (direccion) => {
+    setImagenActual((actual) => {
+      if (imagenesCarrusel.length <= 1) {
+        return 0;
+      }
+
+      return (actual + direccion + imagenesCarrusel.length) % imagenesCarrusel.length;
+    });
+  };
+
+  const moverImagenModelo = (modeloId, total, direccion) => {
+    if (total <= 1) {
+      return;
+    }
+
+    setImagenesModeloActivas((actuales) => {
+      const actual = actuales[modeloId] || 0;
+      return {
+        ...actuales,
+        [modeloId]: (actual + direccion + total) % total,
+      };
+    });
+  };
+
+  const seleccionarImagenModelo = (modeloId, index) => {
+    setImagenesModeloActivas((actuales) => ({
+      ...actuales,
+      [modeloId]: index,
+    }));
   };
 
   const abrirTourModelo = async (modelo) => {
@@ -199,7 +274,10 @@ export default function DetalleDesarrolloPage() {
           <div>
             <p className="detalle-desarrollo-eyebrow">Concepto</p>
             <h2>Un proyecto pensado para vivir e invertir</h2>
-            <p>{desarrollo.descripcion}</p>
+            <MarkdownContent
+              content={desarrollo.descripcion}
+              fallback="Conoce disponibilidad, amenidades y modelos de este desarrollo."
+            />
           </div>
           <aside>
             <span>Precio desde</span>
@@ -211,11 +289,49 @@ export default function DetalleDesarrolloPage() {
           </aside>
         </div>
 
-        {desarrollo.galeria.length > 0 ? (
-          <section className="detalle-desarrollo-galeria" aria-label="Galeria del desarrollo">
-            {desarrollo.galeria.map((imagen, index) => (
-              <img key={`${imagen}-${index}`} src={imagen} alt={`${desarrollo.nombre} ${index + 1}`} />
-            ))}
+        {imagenesCarrusel.length > 0 ? (
+          <section className="detalle-desarrollo-carousel" aria-label="Galeria del desarrollo">
+            <div className="detalle-desarrollo-carousel-main">
+              <img
+                src={imagenesCarrusel[imagenActual]}
+                alt={`${desarrollo.nombre} ${imagenActual + 1}`}
+              />
+              <span className="detalle-desarrollo-carousel-counter">
+                {imagenActual + 1} / {imagenesCarrusel.length}
+              </span>
+              {imagenesCarrusel.length > 1 ? (
+                <div className="detalle-desarrollo-carousel-controls">
+                  <button type="button" onClick={() => moverCarrusel(-1)} aria-label="Imagen anterior">
+                    Anterior
+                  </button>
+                  <button type="button" onClick={() => moverCarrusel(1)} aria-label="Imagen siguiente">
+                    Siguiente
+                  </button>
+                </div>
+              ) : null}
+              <button
+                type="button"
+                className="detalle-desarrollo-view-large"
+                onClick={() => abrirLightbox(imagenesCarrusel, imagenActual, desarrollo.nombre)}
+              >
+                Ver en grande
+              </button>
+            </div>
+            {imagenesCarrusel.length > 1 ? (
+              <div className="detalle-desarrollo-carousel-thumbs">
+                {imagenesCarrusel.map((imagen, index) => (
+                  <button
+                    key={`${imagen}-${index}`}
+                    type="button"
+                    className={index === imagenActual ? 'is-active' : ''}
+                    onClick={() => setImagenActual(index)}
+                    aria-label={`Ver imagen ${index + 1}`}
+                  >
+                    <img src={imagen} alt="" />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </section>
         ) : (
           <section className="detalle-desarrollo-gallery-empty">
@@ -251,6 +367,20 @@ export default function DetalleDesarrolloPage() {
           </section>
         ) : null}
 
+        {/*
+          TODO: habilitar cuando el prototipo de plano interactivo pueda publicarse.
+          Import pendiente:
+          import PlanoInteractivoDemo from '../components/desarrollos/PlanoInteractivoDemo';
+
+          <section className="detalle-desarrollo-section">
+            <div className="detalle-desarrollo-section-head">
+              <p className="detalle-desarrollo-eyebrow">Disponibilidad</p>
+              <h2>Plano interactivo de disponibilidad</h2>
+            </div>
+            <PlanoInteractivoDemo />
+          </section>
+        */}
+
         <section id="modelos-disponibles" className="detalle-desarrollo-section">
           <div className="detalle-desarrollo-section-head">
             <p className="detalle-desarrollo-eyebrow">Modelos disponibles</p>
@@ -261,10 +391,16 @@ export default function DetalleDesarrolloPage() {
           ) : (
             <div className="modelos-grid">
               {desarrollo.modelos.map((modelo) => {
-                const imagenModelo = modelo.imagenPrincipal || modelo.imagenes[0] || '';
+                const galeriaModelo = [...new Set([
+                  modelo.imagenPrincipal,
+                  ...(modelo.imagenes || []),
+                ].filter(Boolean))];
+                const modeloKey = modelo.id || modelo.nombre;
+                const imagenModeloActual = Math.min(imagenesModeloActivas[modeloKey] || 0, Math.max(galeriaModelo.length - 1, 0));
+                const imagenModelo = galeriaModelo[imagenModeloActual] || '';
 
                 return (
-                  <article key={modelo.id || modelo.nombre} className="modelo-card">
+                  <article key={modeloKey} className="modelo-card">
                     <div className={`modelo-card-media ${imagenModelo ? '' : 'is-placeholder'}`}>
                       {imagenModelo ? (
                         <img src={imagenModelo} alt={modelo.nombre} />
@@ -274,13 +410,56 @@ export default function DetalleDesarrolloPage() {
                       <span className={modelo.disponible ? 'is-available' : 'is-unavailable'}>
                         {modelo.disponible ? 'Disponible' : 'Lista de espera'}
                       </span>
+                      {galeriaModelo.length > 1 ? (
+                        <>
+                          <span className="modelo-card-counter">
+                            {imagenModeloActual + 1} / {galeriaModelo.length}
+                          </span>
+                          <div className="modelo-card-media-controls">
+                            <button type="button" onClick={() => moverImagenModelo(modeloKey, galeriaModelo.length, -1)} aria-label="Imagen anterior del modelo">
+                              Anterior
+                            </button>
+                            <button type="button" onClick={() => moverImagenModelo(modeloKey, galeriaModelo.length, 1)} aria-label="Imagen siguiente del modelo">
+                              Siguiente
+                            </button>
+                          </div>
+                        </>
+                      ) : null}
+                      {galeriaModelo.length > 0 ? (
+                        <button
+                          type="button"
+                          className="modelo-card-view-large"
+                          onClick={() => abrirLightbox(galeriaModelo, imagenModeloActual, modelo.nombre)}
+                        >
+                          Ver en grande
+                        </button>
+                      ) : null}
                     </div>
+                    {galeriaModelo.length > 1 ? (
+                      <div className="modelo-card-thumbs" aria-label={`Galeria de ${modelo.nombre}`}>
+                        {galeriaModelo.slice(0, 4).map((imagen, index) => (
+                          <button
+                            key={`${modeloKey}-${imagen}-${index}`}
+                            type="button"
+                            className={index === imagenModeloActual ? 'is-active' : ''}
+                            onClick={() => seleccionarImagenModelo(modeloKey, index)}
+                            aria-label={`Ver imagen ${index + 1} de ${modelo.nombre}`}
+                          >
+                            <img src={imagen} alt="" />
+                          </button>
+                        ))}
+                        {galeriaModelo.length > 4 ? <span>+{galeriaModelo.length - 4}</span> : null}
+                      </div>
+                    ) : null}
                     <div className="modelo-card-body">
                       <div>
                         <h3>{modelo.nombre}</h3>
                         <strong>{formatCurrency(modelo.precio)}</strong>
                       </div>
-                      <p>{modelo.descripcion}</p>
+                      <MarkdownContent
+                        content={modelo.descripcion}
+                        fallback="Modelo disponible dentro del desarrollo."
+                      />
                       <dl>
                         <div><dt>Recamaras</dt><dd>{modelo.recamaras}</dd></div>
                         <div><dt>Banos</dt><dd>{modelo.banos}{modelo.medioBano ? ` + ${modelo.medioBano}/2` : ''}</dd></div>
@@ -318,6 +497,13 @@ export default function DetalleDesarrolloPage() {
         onClose={cerrarModalProspecto}
         onSuccess={abrirWhatsapp}
         origen={prospectoModal.origen}
+      />
+      <ImageLightbox
+        images={lightbox.images}
+        initialIndex={lightbox.initialIndex}
+        isOpen={lightbox.isOpen}
+        onClose={cerrarLightbox}
+        title={lightbox.title}
       />
       {tourModal.isOpen ? (
         <div className="detalle-desarrollo-tour-modal" role="presentation" onMouseDown={cerrarTourModal}>
