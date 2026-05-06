@@ -107,8 +107,19 @@ export default function AdminTour360Page() {
   const [error, setError] = useState('');
 
   const escenas = useMemo(() => tour?.escenas || [], [tour]);
-  const escenaSeleccionada = escenas.find((escena) => escena.id === escenaSeleccionadaId) || escenas[0] || null;
+  const escenaSeleccionada = escenas.find((escena) => String(escena.id) === String(escenaSeleccionadaId)) || escenas[0] || null;
   const hotspots = escenaSeleccionada?.hotspots || [];
+
+  const seleccionarEscena = useCallback((escena) => {
+    const sceneId = typeof escena === 'object' ? escena?.id : escena;
+
+    if (!sceneId) {
+      return;
+    }
+
+    setEscenaSeleccionadaId(String(sceneId));
+    setHotspotTemporal(null);
+  }, []);
 
   const cargarTour = useCallback(async () => {
     setCargando(true);
@@ -119,11 +130,11 @@ export default function AdminTour360Page() {
       setTour(data);
       setTourForm(buildTourForm(data));
       setEscenaSeleccionadaId((actual) => {
-        if (data?.escenas?.some((escena) => escena.id === actual)) {
-          return actual;
+        if (data?.escenas?.some((escena) => String(escena.id) === String(actual))) {
+          return String(actual);
         }
 
-        return data?.escenaInicialId || data?.escenas?.[0]?.id || '';
+        return String(data?.escenaInicialId || data?.escenas?.[0]?.id || '');
       });
     } catch (err) {
       setError(err.message || 'No fue posible cargar el tour.');
@@ -238,7 +249,7 @@ export default function AdminTour360Page() {
     setEscenaForm(buildEscenaForm(escena));
     setEscenaArchivo(null);
     setEscenaArchivoKey((actual) => actual + 1);
-    setEscenaSeleccionadaId(escena.id);
+    seleccionarEscena(escena);
   };
 
   const desactivarEscena = (escena) => {
@@ -327,7 +338,7 @@ export default function AdminTour360Page() {
   };
 
   const capturarHotspotDesdePreview = ({ pitch, sceneId, yaw }) => {
-    setEscenaSeleccionadaId(sceneId);
+    seleccionarEscena(sceneId);
     setHotspotEditandoId('');
     setHotspotTemporal({ pitch, sceneId, yaw });
     setHotspotForm((actual) => ({
@@ -393,9 +404,9 @@ export default function AdminTour360Page() {
                   escenas.map((escena) => (
                     <article
                       key={escena.id}
-                      className={`admin-tour360-list-item ${escenaSeleccionada?.id === escena.id ? 'is-selected' : ''}`}
+                      className={`admin-tour360-list-item ${String(escenaSeleccionada?.id) === String(escena.id) ? 'is-selected' : ''}`}
                     >
-                      <button type="button" onClick={() => setEscenaSeleccionadaId(escena.id)}>
+                      <button type="button" onClick={() => seleccionarEscena(escena)}>
                         <strong>{escena.nombre}</strong>
                         <span>Orden {escena.orden ?? 0}</span>
                       </button>
@@ -621,9 +632,12 @@ export default function AdminTour360Page() {
             </div>
             {tour?.escenas?.length ? (
               <Tour360Viewer
+                activeSceneId={escenaSeleccionada?.id}
                 editorMarker={hotspotTemporal}
                 editorMode={modoAgregarHotspot}
+                loopScenes={false}
                 onPanoramaClick={capturarHotspotDesdePreview}
+                onSceneChange={seleccionarEscena}
                 tour={tour}
               />
             ) : (

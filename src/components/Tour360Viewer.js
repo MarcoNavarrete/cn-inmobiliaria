@@ -105,12 +105,13 @@ const buildEditorMarkerTooltip = (hotSpotDiv) => {
 const buildViewerConfig = (tour, onInfoClick) => {
   const scenes = {};
   const validScenes = tour.escenas.filter((escena) => isValidPanoramaUrl(escena.urlImagen360));
-  const validSceneIds = new Set(validScenes.map((escena) => escena.id));
+  const validSceneIds = new Set(validScenes.map((escena) => String(escena.id)));
 
   validScenes.forEach((escena) => {
+    const sceneId = String(escena.id);
     const panoramaUrl = escena.urlImagen360.trim();
 
-    scenes[escena.id] = {
+    scenes[sceneId] = {
       type: 'equirectangular',
       panorama: panoramaUrl,
       title: escena.nombre,
@@ -119,18 +120,20 @@ const buildViewerConfig = (tour, onInfoClick) => {
       hfov: escena.hfovInicial ?? 110,
       hotSpots: escena.hotspots
         .map((hotspot) => {
-          if (hotspot.escenaDestinoId && !validSceneIds.has(hotspot.escenaDestinoId)) {
+          const escenaDestinoId = hotspot.escenaDestinoId ? String(hotspot.escenaDestinoId) : '';
+
+          if (escenaDestinoId && !validSceneIds.has(escenaDestinoId)) {
             return null;
           }
 
-          if (hotspot.escenaDestinoId) {
+          if (escenaDestinoId) {
             return {
               id: hotspot.id,
               pitch: hotspot.pitch,
               yaw: hotspot.yaw,
               type: 'scene',
               text: hotspot.texto || 'Ir a otra escena',
-              sceneId: hotspot.escenaDestinoId,
+              sceneId: escenaDestinoId,
               cssClass: 'tour360-hotspot-wrapper',
               createTooltipFunc: buildSceneTooltip,
               createTooltipArgs: {
@@ -160,9 +163,10 @@ const buildViewerConfig = (tour, onInfoClick) => {
     };
   });
 
+  const escenaInicialId = tour.escenaInicialId ? String(tour.escenaInicialId) : '';
   const firstScene =
-    scenes[tour.escenaInicialId] !== undefined
-      ? tour.escenaInicialId
+    scenes[escenaInicialId] !== undefined
+      ? escenaInicialId
       : Object.keys(scenes)[0];
 
   return {
@@ -197,7 +201,7 @@ export default function Tour360Viewer({
   const editorMarkerIdRef = useRef(null);
   const [mensajeInfo, setMensajeInfo] = useState('');
   const onSceneChangeRef = useRef(onSceneChange);
-  const [escenaActualId, setEscenaActualId] = useState(activeSceneId || tour?.escenaInicialId || '');
+  const [escenaActualId, setEscenaActualId] = useState(String(activeSceneId || tour?.escenaInicialId || ''));
   const [cargandoEscena, setCargandoEscena] = useState(true);
 
   const escenas = useMemo(() => tour?.escenas || [], [tour]);
@@ -230,9 +234,9 @@ export default function Tour360Viewer({
     () => escenas.filter((escena) => isValidPanoramaUrl(escena.urlImagen360)),
     [escenas]
   );
-  const escenasPorId = useMemo(() => Object.fromEntries(escenas.map((escena) => [escena.id, escena])), [escenas]);
-  const indiceEscenaActual = escenasValidas.findIndex((escena) => escena.id === escenaActualId);
-  const escenaActual = escenasPorId[escenaActualId] || escenasPorId[tour?.escenaInicialId];
+  const escenasPorId = useMemo(() => Object.fromEntries(escenas.map((escena) => [String(escena.id), escena])), [escenas]);
+  const indiceEscenaActual = escenasValidas.findIndex((escena) => String(escena.id) === String(escenaActualId));
+  const escenaActual = escenasPorId[String(escenaActualId)] || escenasPorId[String(tour?.escenaInicialId || '')];
   const tieneVariasEscenas = escenasValidas.length > 1;
 
   useEffect(() => {
@@ -263,7 +267,7 @@ export default function Tour360Viewer({
   }, []);
 
   useEffect(() => {
-    setEscenaActualId(activeSceneId || tour?.escenaInicialId || '');
+    setEscenaActualId(String(activeSceneId || tour?.escenaInicialId || ''));
     setMensajeInfo('');
     iniciarCargaEscena();
   }, [activeSceneId, tour?.escenaInicialId, iniciarCargaEscena]);
@@ -281,7 +285,7 @@ export default function Tour360Viewer({
     onViewerReady?.(viewerRef.current);
 
     const syncScene = () => {
-      const activeScene = viewerRef.current?.getScene?.() || currentTour.escenaInicialId;
+      const activeScene = String(viewerRef.current?.getScene?.() || currentTour.escenaInicialId || '');
       setEscenaActualId(activeScene);
       onSceneChangeRef.current?.(activeScene);
       iniciarCargaEscena();
@@ -317,19 +321,21 @@ export default function Tour360Viewer({
   }, [tourKey, escenasValidas.length, iniciarCargaEscena, finalizarCargaEscena, onViewerReady]);
 
   useEffect(() => {
-    if (!activeSceneId || !escenasValidas.some((escena) => escena.id === activeSceneId)) {
+    const normalizedActiveSceneId = String(activeSceneId || '');
+
+    if (!normalizedActiveSceneId || !escenasValidas.some((escena) => String(escena.id) === normalizedActiveSceneId)) {
       return;
     }
 
-    if (escenaActualId === activeSceneId && viewerRef.current?.getScene?.() === activeSceneId) {
+    if (String(escenaActualId) === normalizedActiveSceneId && String(viewerRef.current?.getScene?.() || '') === normalizedActiveSceneId) {
       return;
     }
 
-    setEscenaActualId(activeSceneId);
+    setEscenaActualId(normalizedActiveSceneId);
 
-    if (viewerRef.current?.getScene?.() !== activeSceneId) {
+    if (String(viewerRef.current?.getScene?.() || '') !== normalizedActiveSceneId) {
       iniciarCargaEscena();
-      viewerRef.current?.loadScene?.(activeSceneId);
+      viewerRef.current?.loadScene?.(normalizedActiveSceneId);
     }
   }, [activeSceneId, escenaActualId, escenasValidas, iniciarCargaEscena]);
 
@@ -362,7 +368,7 @@ export default function Tour360Viewer({
       onPanoramaClick({
         pitch: Number(coords[0].toFixed(6)),
         yaw: Number(correctedYaw.toFixed(6)),
-        sceneId: viewer.getScene?.() || escenaActualId,
+        sceneId: String(viewer.getScene?.() || escenaActualId || ''),
       });
     };
 
@@ -389,7 +395,7 @@ export default function Tour360Viewer({
       editorMarkerIdRef.current = null;
     }
 
-    if (!editorMarker || editorMarker.sceneId !== escenaActualId) {
+    if (!editorMarker || String(editorMarker.sceneId) !== String(escenaActualId)) {
       return undefined;
     }
 
@@ -447,12 +453,12 @@ export default function Tour360Viewer({
       : indiceEscenaActual + direccion;
     const siguienteEscena = escenasValidas[siguienteIndice];
 
-    if (!siguienteEscena || siguienteEscena.id === escenaActualId) {
+    if (!siguienteEscena || String(siguienteEscena.id) === String(escenaActualId)) {
       return;
     }
 
     iniciarCargaEscena();
-    viewerRef.current.loadScene(siguienteEscena.id);
+    viewerRef.current.loadScene(String(siguienteEscena.id));
   };
 
   return (

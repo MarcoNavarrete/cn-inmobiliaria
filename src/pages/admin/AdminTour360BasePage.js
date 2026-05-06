@@ -98,12 +98,24 @@ export default function AdminTour360BasePage({
   const [error, setError] = useState('');
 
   const escenas = useMemo(() => tour?.escenas || [], [tour]);
-  const escenaSeleccionada = escenas.find((escena) => escena.id === escenaSeleccionadaId) || escenas[0] || null;
+  const escenaSeleccionada = escenas.find((escena) => String(escena.id) === String(escenaSeleccionadaId)) || escenas[0] || null;
   const hotspots = escenaSeleccionada?.hotspots || [];
   const tourPreview = useMemo(
     () => (tour?.escenas?.length ? tour : null),
     [tour]
   );
+
+  const seleccionarEscena = useCallback((escena) => {
+    const sceneId = typeof escena === 'object' ? escena?.id : escena;
+
+    if (!sceneId) {
+      return;
+    }
+
+    setEscenaSeleccionadaId(String(sceneId));
+    setHotspotTemporal(null);
+    setPosicionMensaje('');
+  }, []);
 
   const cargarTour = useCallback(async () => {
     setCargando(true);
@@ -113,7 +125,7 @@ export default function AdminTour360BasePage({
       const data = await obtenerTour(entityId);
       setTour(data);
       setTourForm(buildTourForm(data));
-      setEscenaSeleccionadaId(data?.escenaInicialId || data?.escenas?.[0]?.id || '');
+      setEscenaSeleccionadaId(String(data?.escenaInicialId || data?.escenas?.[0]?.id || ''));
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -230,7 +242,7 @@ export default function AdminTour360BasePage({
     const pitchRedondeado = Number(pitch).toFixed(6);
     const yawRedondeado = Number(yaw).toFixed(6);
 
-    setEscenaSeleccionadaId(sceneId);
+    seleccionarEscena(sceneId);
     setHotspotTemporal({
       pitch: Number(pitchRedondeado),
       yaw: Number(yawRedondeado),
@@ -242,13 +254,11 @@ export default function AdminTour360BasePage({
       yaw: yawRedondeado,
     }));
     setPosicionMensaje(`Posicion seleccionada: pitch ${pitchRedondeado}, yaw ${yawRedondeado}`);
-  }, []);
+  }, [seleccionarEscena]);
 
   const sincronizarEscenaDesdePreview = useCallback((sceneId) => {
-    if (sceneId) {
-      setEscenaSeleccionadaId(sceneId);
-    }
-  }, []);
+    seleccionarEscena(sceneId);
+  }, [seleccionarEscena]);
 
   const usarPosicionActual = () => {
     if (!viewerApi?.getPitch || !viewerApi?.getYaw || !escenaSeleccionada?.id) {
@@ -329,8 +339,8 @@ export default function AdminTour360BasePage({
               </div>
               <div className="admin-tour360-list">
                 {escenas.length === 0 ? <p className="admin-tour360-empty">Aun no hay escenas.</p> : escenas.map((escena) => (
-                  <article key={escena.id} className={`admin-tour360-list-item ${escenaSeleccionada?.id === escena.id ? 'is-selected' : ''}`}>
-                    <button type="button" onClick={() => setEscenaSeleccionadaId(escena.id)}>
+                  <article key={escena.id} className={`admin-tour360-list-item ${String(escenaSeleccionada?.id) === String(escena.id) ? 'is-selected' : ''}`}>
+                    <button type="button" onClick={() => seleccionarEscena(escena)}>
                       <strong>{escena.nombre}</strong>
                       <span>Orden {escena.orden ?? 0}</span>
                     </button>
@@ -338,7 +348,7 @@ export default function AdminTour360BasePage({
                       {escena.esEscenaInicial ? <span className="admin-tour360-pill">Inicial</span> : null}
                       <button type="button" onClick={() => { setEscenaEditandoId(escena.id); setEscenaForm(buildEscenaForm(escena)); }}>Editar</button>
                       <button type="button" className="danger" onClick={() => ejecutar(() => eliminarEscena(escena.id), 'Escena eliminada.')} disabled={guardando}>Eliminar</button>
-                      <button type="button" onClick={() => setEscenaSeleccionadaId(escena.id)}>
+                      <button type="button" onClick={() => seleccionarEscena(escena)}>
                         Editar hotspots
                       </button>
                     </div>
