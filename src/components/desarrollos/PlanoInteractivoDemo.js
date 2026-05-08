@@ -68,11 +68,11 @@ const buildDemoSvg = () => `
   </svg>
 `;
 
-export default function PlanoInteractivoDemo({ desarrolloId }) {
+export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = false, onUnavailable }) {
   const [unidades, setUnidades] = useState([]);
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [tooltip, setTooltip] = useState(null);
-  const [svgMarkup, setSvgMarkup] = useState(buildDemoSvg());
+  const [svgMarkup, setSvgMarkup] = useState(requireRealSvg ? '' : buildDemoSvg());
   const [svgRealDisponible, setSvgRealDisponible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -84,7 +84,11 @@ export default function PlanoInteractivoDemo({ desarrolloId }) {
   useEffect(() => {
     if (!desarrolloId) {
       setLoading(false);
-      setError('No se encontro el desarrollo para cargar unidades.');
+      if (requireRealSvg) {
+        onUnavailable?.();
+      } else {
+        setError('No se encontro el desarrollo para cargar unidades.');
+      }
       return undefined;
     }
 
@@ -103,8 +107,23 @@ export default function PlanoInteractivoDemo({ desarrolloId }) {
         if (plano?.activo && plano.svgUrl && isInternalSvgUrl(plano.svgUrl)) {
           const response = await fetch(resolveApiAssetUrl(plano.svgUrl), { signal: controller.signal });
           const text = response.ok ? await response.text() : '';
-          setSvgMarkup(text ? sanitizeSvg(text) : buildDemoSvg());
-          setSvgRealDisponible(Boolean(text));
+          if (text) {
+            setSvgMarkup(sanitizeSvg(text));
+            setSvgRealDisponible(true);
+          } else if (requireRealSvg) {
+            setSvgMarkup('');
+            setSvgRealDisponible(false);
+            onUnavailable?.();
+            return;
+          } else {
+            setSvgMarkup(buildDemoSvg());
+            setSvgRealDisponible(false);
+          }
+        } else if (requireRealSvg) {
+          setSvgMarkup('');
+          setSvgRealDisponible(false);
+          onUnavailable?.();
+          return;
         } else {
           setSvgMarkup(buildDemoSvg());
           setSvgRealDisponible(false);
@@ -122,7 +141,13 @@ export default function PlanoInteractivoDemo({ desarrolloId }) {
         if (err.name !== 'AbortError') {
           setUnidades([]);
           setUnidadSeleccionada(null);
-          setError(err.data?.mensaje || err.data?.message || 'No fue posible cargar las unidades del desarrollo.');
+          if (requireRealSvg) {
+            setSvgMarkup('');
+            setSvgRealDisponible(false);
+            onUnavailable?.();
+          } else {
+            setError(err.data?.mensaje || err.data?.message || 'No fue posible cargar las unidades del desarrollo.');
+          }
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -134,15 +159,19 @@ export default function PlanoInteractivoDemo({ desarrolloId }) {
     cargarDatos();
 
     return () => controller.abort();
-  }, [desarrolloId]);
+  }, [desarrolloId, onUnavailable, requireRealSvg]);
 
   const svgConInteraccion = useMemo(() => {
+    if (requireRealSvg && !svgMarkup) {
+      return '';
+    }
+
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgMarkup, 'image/svg+xml');
     const svg = doc.querySelector('svg');
 
     if (!svg) {
-      return buildDemoSvg();
+      return requireRealSvg ? '' : buildDemoSvg();
     }
 
     unidades.forEach((unidad) => {
@@ -160,7 +189,7 @@ export default function PlanoInteractivoDemo({ desarrolloId }) {
     });
 
     return sanitizeSvg(svg.outerHTML);
-  }, [svgMarkup, unidadSeleccionada?.svgElementId, unidades]);
+  }, [requireRealSvg, svgMarkup, unidadSeleccionada?.svgElementId, unidades]);
 
   const mostrarTooltip = (event, unidad) => {
     if (!unidad) {
@@ -203,6 +232,10 @@ export default function PlanoInteractivoDemo({ desarrolloId }) {
     event.preventDefault();
     setUnidadSeleccionada(unidad);
   };
+
+  if (requireRealSvg && (!svgRealDisponible || !svgConInteraccion)) {
+    return null;
+  }
 
   return (
     <div className="plano-demo">

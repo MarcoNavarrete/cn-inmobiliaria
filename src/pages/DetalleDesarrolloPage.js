@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ImageLightbox from '../components/common/ImageLightbox';
 import MarkdownContent from '../components/common/MarkdownContent';
@@ -6,6 +6,7 @@ import PlanoInteractivoDemo from '../components/desarrollos/PlanoInteractivoDemo
 import ProspectoDesarrolloModal from '../components/desarrollos/ProspectoDesarrolloModal';
 import Tour360Viewer from '../components/tour360/Tour360Viewer';
 import { obtenerDesarrolloPorSlug } from '../services/desarrollosService';
+import { obtenerPlanoPublico } from '../services/adminDesarrolloPlanoService';
 import {
   obtenerTourPublicoModelo,
 } from '../services/tour360Service';
@@ -26,6 +27,11 @@ const formatCurrency = (value) => {
 };
 
 const normalizeWhatsAppNumber = (value) => String(value || '').replace(/[^\d]/g, '');
+
+const isInternalSvgUrl = (value) => {
+  const url = String(value || '').trim();
+  return /^\/uploads\/.+\.svg($|\?)/i.test(url) || /^\.?\/assets\/.+\.svg($|\?)/i.test(url);
+};
 
 const whatsappHref = (desarrollo, modelo) => {
   const telefono =
@@ -63,6 +69,7 @@ export default function DetalleDesarrolloPage() {
     modelo: null,
     origen: 'DESARROLLO',
   });
+  const [mostrarPlanoInteractivo, setMostrarPlanoInteractivo] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -95,6 +102,34 @@ export default function DetalleDesarrolloPage() {
     return () => controller.abort();
   }, [slug]);
 
+  useEffect(() => {
+    if (!desarrollo?.id) {
+      setMostrarPlanoInteractivo(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    const validarPlanoPublico = async () => {
+      setMostrarPlanoInteractivo(false);
+
+      try {
+        const plano = await obtenerPlanoPublico(desarrollo.id, { signal: controller.signal });
+        if (!controller.signal.aborted) {
+          setMostrarPlanoInteractivo(Boolean(plano?.activo && plano.svgUrl && isInternalSvgUrl(plano.svgUrl)));
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          setMostrarPlanoInteractivo(false);
+        }
+      }
+    };
+
+    validarPlanoPublico();
+
+    return () => controller.abort();
+  }, [desarrollo?.id]);
+
   const imagenesCarrusel = useMemo(() => {
     if (!desarrollo) {
       return [];
@@ -117,6 +152,10 @@ export default function DetalleDesarrolloPage() {
   }, [slug]);
 
   // TODO: habilitar tour 360 general del desarrollo cuando existan escenas del desarrollo/amenidades.
+
+  const ocultarPlanoInteractivo = useCallback(() => {
+    setMostrarPlanoInteractivo(false);
+  }, []);
 
   if (loading) {
     return (
@@ -368,14 +407,19 @@ export default function DetalleDesarrolloPage() {
           </section>
         ) : null}
 
-        <section className="detalle-desarrollo-section">
-          <div className="detalle-desarrollo-section-head">
-            <p className="detalle-desarrollo-eyebrow">Disponibilidad</p>
-            <h2>Plano interactivo de disponibilidad</h2>
-          </div>
-          {/* TODO: reemplazar SVG demo por SVG real del desarrollador cuando este disponible. */}
-          <PlanoInteractivoDemo desarrolloId={desarrollo.id} />
-        </section>
+        {mostrarPlanoInteractivo ? (
+          <section className="detalle-desarrollo-section">
+            <div className="detalle-desarrollo-section-head">
+              <p className="detalle-desarrollo-eyebrow">Disponibilidad</p>
+              <h2>Plano interactivo de disponibilidad</h2>
+            </div>
+            <PlanoInteractivoDemo
+              desarrolloId={desarrollo.id}
+              requireRealSvg
+              onUnavailable={ocultarPlanoInteractivo}
+            />
+          </section>
+        ) : null}
 
         <section id="modelos-disponibles" className="detalle-desarrollo-section">
           <div className="detalle-desarrollo-section-head">
