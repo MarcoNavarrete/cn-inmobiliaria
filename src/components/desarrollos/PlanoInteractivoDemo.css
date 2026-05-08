@@ -64,6 +64,20 @@
   overflow-x: auto;
 }
 
+.plano-demo-state {
+  margin: 1rem;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  background: rgba(26, 61, 124, 0.06);
+  color: var(--gris-elegante);
+  font-weight: 800;
+}
+
+.plano-demo-state.is-error {
+  background: rgba(143, 45, 36, 0.08);
+  color: #8f2d24;
+}
+
 .plano-demo-stage {
   position: relative;
   min-width: 640px;
@@ -73,7 +87,8 @@
     #edf3f7;
 }
 
-.plano-demo-stage svg {
+.plano-demo-stage svg,
+.plano-demo-svg-inline svg {
   width: 100%;
   min-height: 430px;
   display: block;
@@ -122,11 +137,17 @@
   transition: opacity 0.16s ease, stroke-width 0.16s ease, transform 0.16s ease;
 }
 
+.plano-demo-unit:hover,
 .plano-demo-unit-group:hover .plano-demo-unit,
 .plano-demo-unit.is-selected {
   opacity: 0.9;
   stroke: var(--azul-oscuro);
   stroke-width: 4;
+}
+
+.plano-demo-unit.is-unmapped {
+  opacity: 0.42;
+  cursor: default;
 }
 
 .is-disponible {

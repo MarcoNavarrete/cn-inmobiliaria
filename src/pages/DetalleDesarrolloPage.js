@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ImageLightbox from '../components/common/ImageLightbox';
 import MarkdownContent from '../components/common/MarkdownContent';
+import PlanoInteractivoDemo from '../components/desarrollos/PlanoInteractivoDemo';
 import ProspectoDesarrolloModal from '../components/desarrollos/ProspectoDesarrolloModal';
 import Tour360Viewer from '../components/tour360/Tour360Viewer';
 import { obtenerDesarrolloPorSlug } from '../services/desarrollosService';
@@ -367,19 +368,14 @@ export default function DetalleDesarrolloPage() {
           </section>
         ) : null}
 
-        {/*
-          TODO: habilitar cuando el prototipo de plano interactivo pueda publicarse.
-          Import pendiente:
-          import PlanoInteractivoDemo from '../components/desarrollos/PlanoInteractivoDemo';
-
-          <section className="detalle-desarrollo-section">
-            <div className="detalle-desarrollo-section-head">
-              <p className="detalle-desarrollo-eyebrow">Disponibilidad</p>
-              <h2>Plano interactivo de disponibilidad</h2>
-            </div>
-            <PlanoInteractivoDemo />
-          </section>
-        */}
+        <section className="detalle-desarrollo-section">
+          <div className="detalle-desarrollo-section-head">
+            <p className="detalle-desarrollo-eyebrow">Disponibilidad</p>
+            <h2>Plano interactivo de disponibilidad</h2>
+          </div>
+          {/* TODO: reemplazar SVG demo por SVG real del desarrollador cuando este disponible. */}
+          <PlanoInteractivoDemo desarrolloId={desarrollo.id} />
+        </section>
 
         <section id="modelos-disponibles" className="detalle-desarrollo-section">
           <div className="detalle-desarrollo-section-head">

@@ -1,5 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { desarrolloUnidadesDemo } from '../../data/desarrolloUnidadesMock';
+import React, { useEffect, useMemo, useState } from 'react';
+import { resolveApiAssetUrl } from '../../services/apiClient';
+import { obtenerPlanoPublico } from '../../services/adminDesarrolloPlanoService';
+import { listarUnidadesPorDesarrollo } from '../../services/desarrolloUnidadesService';
 import './PlanoInteractivoDemo.css';
 
 const ESTATUS_LABELS = {
@@ -31,16 +33,140 @@ const unidadShapes = [
   { id: 'unidad-106', label: '106', type: 'polygon', points: '324,218 448,248 448,316 324,316' },
 ];
 
-export default function PlanoInteractivoDemo() {
-  const unidades = desarrolloUnidadesDemo.unidades;
+const isInternalSvgUrl = (value) => {
+  const url = String(value || '').trim();
+  return /^\/uploads\/.+\.svg($|\?)/i.test(url) || /^\.?\/assets\/.+\.svg($|\?)/i.test(url);
+};
+
+const sanitizeSvg = (svgText) =>
+  String(svgText || '')
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, '')
+    .replace(/\s(?:href|xlink:href)\s*=\s*(['"])\s*javascript:[\s\S]*?\1/gi, '');
+
+const buildDemoSvg = () => `
+  <svg viewBox="0 0 520 390" role="img" aria-label="Plano interactivo demo de unidades">
+    <defs>
+      <filter id="plano-shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#071521" flood-opacity="0.16" />
+      </filter>
+    </defs>
+    <rect x="22" y="26" width="476" height="338" rx="18" class="plano-demo-base" />
+    <path d="M40 194 H480" class="plano-demo-street" />
+    <path d="M472 54 V338" class="plano-demo-street secondary" />
+    <text x="54" y="198" class="plano-demo-street-label">Paseo central</text>
+    <text x="462" y="188" class="plano-demo-street-label rotate">Acceso</text>
+    ${unidadShapes.map((shape) => {
+      const labelX = shape.x ? shape.x + 58 : 382;
+      const labelY = shape.y ? shape.y + 45 : shape.label === '103' ? 129 : 272;
+      const figure = shape.type === 'rect'
+        ? `<rect id="${shape.id}" class="plano-demo-unit" x="${shape.x}" y="${shape.y}" width="${shape.width}" height="${shape.height}" rx="10" />`
+        : `<polygon id="${shape.id}" class="plano-demo-unit" points="${shape.points}" />`;
+
+      return `<g class="plano-demo-unit-group">${figure}<text class="plano-demo-unit-label" x="${labelX}" y="${labelY}">${shape.label}</text></g>`;
+    }).join('')}
+  </svg>
+`;
+
+export default function PlanoInteractivoDemo({ desarrolloId }) {
+  const [unidades, setUnidades] = useState([]);
+  const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
+  const [tooltip, setTooltip] = useState(null);
+  const [svgMarkup, setSvgMarkup] = useState(buildDemoSvg());
+  const [svgRealDisponible, setSvgRealDisponible] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const unidadesPorSvgId = useMemo(
     () => Object.fromEntries(unidades.map((unidad) => [unidad.svgElementId, unidad])),
     [unidades]
   );
-  const [unidadSeleccionada, setUnidadSeleccionada] = useState(unidades[0]);
-  const [tooltip, setTooltip] = useState(null);
+
+  useEffect(() => {
+    if (!desarrolloId) {
+      setLoading(false);
+      setError('No se encontro el desarrollo para cargar unidades.');
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    const cargarDatos = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const [data, plano] = await Promise.all([
+          listarUnidadesPorDesarrollo(desarrolloId, { signal: controller.signal }),
+          obtenerPlanoPublico(desarrolloId, { signal: controller.signal }).catch(() => null),
+        ]);
+
+        if (plano?.activo && plano.svgUrl && isInternalSvgUrl(plano.svgUrl)) {
+          const response = await fetch(resolveApiAssetUrl(plano.svgUrl), { signal: controller.signal });
+          const text = response.ok ? await response.text() : '';
+          setSvgMarkup(text ? sanitizeSvg(text) : buildDemoSvg());
+          setSvgRealDisponible(Boolean(text));
+        } else {
+          setSvgMarkup(buildDemoSvg());
+          setSvgRealDisponible(false);
+        }
+
+        setUnidades(data);
+        setUnidadSeleccionada((actual) => {
+          if (actual && data.some((unidad) => unidad.unidadId === actual.unidadId)) {
+            return data.find((unidad) => unidad.unidadId === actual.unidadId);
+          }
+
+          return data[0] || null;
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          setUnidades([]);
+          setUnidadSeleccionada(null);
+          setError(err.data?.mensaje || err.data?.message || 'No fue posible cargar las unidades del desarrollo.');
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    cargarDatos();
+
+    return () => controller.abort();
+  }, [desarrolloId]);
+
+  const svgConInteraccion = useMemo(() => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgMarkup, 'image/svg+xml');
+    const svg = doc.querySelector('svg');
+
+    if (!svg) {
+      return buildDemoSvg();
+    }
+
+    unidades.forEach((unidad) => {
+      const element = svg.querySelector(`#${CSS.escape(unidad.svgElementId)}`);
+      if (!element) return;
+
+      element.classList.add('plano-demo-unit', `is-${unidad.estatus.toLowerCase()}`);
+      element.setAttribute('data-svg-element-id', unidad.svgElementId);
+      element.setAttribute('role', 'button');
+      element.setAttribute('tabindex', '0');
+
+      if (unidadSeleccionada?.svgElementId === unidad.svgElementId) {
+        element.classList.add('is-selected');
+      }
+    });
+
+    return sanitizeSvg(svg.outerHTML);
+  }, [svgMarkup, unidadSeleccionada?.svgElementId, unidades]);
 
   const mostrarTooltip = (event, unidad) => {
+    if (!unidad) {
+      return;
+    }
+
     const bounds = event.currentTarget.ownerSVGElement.getBoundingClientRect();
     setTooltip({
       x: event.clientX - bounds.left,
@@ -49,13 +175,42 @@ export default function PlanoInteractivoDemo() {
     });
   };
 
+  const obtenerUnidadDesdeEvento = (event) => {
+    const element = event.target.closest?.('[data-svg-element-id]');
+    if (!element) return null;
+    return unidadesPorSvgId[element.getAttribute('data-svg-element-id')] || null;
+  };
+
+  const manejarMouseMoveSvg = (event) => {
+    const unidad = obtenerUnidadDesdeEvento(event);
+    if (!unidad) {
+      setTooltip(null);
+      return;
+    }
+
+    mostrarTooltip(event, unidad);
+  };
+
+  const manejarClickSvg = (event) => {
+    const unidad = obtenerUnidadDesdeEvento(event);
+    if (unidad) setUnidadSeleccionada(unidad);
+  };
+
+  const manejarKeyDownSvg = (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const unidad = obtenerUnidadDesdeEvento(event);
+    if (!unidad) return;
+    event.preventDefault();
+    setUnidadSeleccionada(unidad);
+  };
+
   return (
     <div className="plano-demo">
       <div className="plano-demo-map-card">
         <div className="plano-demo-map-head">
           <div>
             <h3>Disponibilidad por unidad</h3>
-            <p>Prototipo visual temporal para preparar integracion con SVG real.</p>
+            <p>{svgRealDisponible ? 'Plano interactivo del desarrollo.' : 'Vista demo temporal mientras se configura el SVG del desarrollo.'}</p>
           </div>
           <div className="plano-demo-legend">
             {Object.keys(ESTATUS_LABELS).map((estatus) => (
@@ -64,54 +219,22 @@ export default function PlanoInteractivoDemo() {
           </div>
         </div>
 
+        {loading ? <p className="plano-demo-state">Cargando disponibilidad...</p> : null}
+        {error ? <p className="plano-demo-state is-error">{error}</p> : null}
+        {!loading && !error && unidades.length === 0 ? (
+          <p className="plano-demo-state">Aun no hay unidades publicadas para este desarrollo.</p>
+        ) : null}
+
         <div className="plano-demo-scroll">
           <div className="plano-demo-stage">
-            <svg viewBox="0 0 520 390" role="img" aria-label="Plano interactivo demo de unidades">
-              <defs>
-                <filter id="plano-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#071521" floodOpacity="0.16" />
-                </filter>
-              </defs>
-              <rect x="22" y="26" width="476" height="338" rx="18" className="plano-demo-base" />
-              <path d="M40 194 H480" className="plano-demo-street" />
-              <path d="M472 54 V338" className="plano-demo-street secondary" />
-              <text x="54" y="198" className="plano-demo-street-label">Paseo central</text>
-              <text x="462" y="188" className="plano-demo-street-label rotate">Acceso</text>
-
-              {unidadShapes.map((shape) => {
-                const unidad = unidadesPorSvgId[shape.id];
-                const selected = unidadSeleccionada?.svgElementId === shape.id;
-                const className = `plano-demo-unit is-${unidad.estatus.toLowerCase()} ${selected ? 'is-selected' : ''}`;
-
-                return (
-                  <g
-                    key={shape.id}
-                    id={shape.id}
-                    className="plano-demo-unit-group"
-                    onClick={() => setUnidadSeleccionada(unidad)}
-                    onMouseMove={(event) => mostrarTooltip(event, unidad)}
-                    onMouseLeave={() => setTooltip(null)}
-                    role="button"
-                    tabIndex="0"
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        setUnidadSeleccionada(unidad);
-                      }
-                    }}
-                  >
-                    {shape.type === 'rect' ? (
-                      <rect className={className} x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx="10" />
-                    ) : (
-                      <polygon className={className} points={shape.points} />
-                    )}
-                    <text className="plano-demo-unit-label" x={shape.x ? shape.x + 58 : 382} y={shape.y ? shape.y + 45 : shape.label === '103' ? 129 : 272}>
-                      {shape.label}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
+            <div
+              className="plano-demo-svg-inline"
+              onClick={manejarClickSvg}
+              onKeyDown={manejarKeyDownSvg}
+              onMouseLeave={() => setTooltip(null)}
+              onMouseMove={manejarMouseMoveSvg}
+              dangerouslySetInnerHTML={{ __html: svgConInteraccion }}
+            />
 
             {tooltip ? (
               <div className="plano-demo-tooltip" style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}>
@@ -126,20 +249,26 @@ export default function PlanoInteractivoDemo() {
       </div>
 
       <aside className="plano-demo-panel">
-        <p className="plano-demo-eyebrow">Unidad seleccionada</p>
-        <h3>Unidad {unidadSeleccionada.codigoUnidad}</h3>
-        <dl>
-          <div><dt>Manzana</dt><dd>{unidadSeleccionada.manzana}</dd></div>
-          <div><dt>Modelo</dt><dd>{unidadSeleccionada.modeloNombre}</dd></div>
-          <div><dt>Precio</dt><dd>{formatCurrency(unidadSeleccionada.precio)}</dd></div>
-          <div><dt>Terreno</dt><dd>{unidadSeleccionada.terrenoM2} m2</dd></div>
-          <div><dt>Construccion</dt><dd>{unidadSeleccionada.construccionM2} m2</dd></div>
-          <div><dt>Estatus</dt><dd>{ESTATUS_LABELS[unidadSeleccionada.estatus]}</dd></div>
-        </dl>
-        {['DISPONIBLE', 'CONSTRUCCION'].includes(unidadSeleccionada.estatus) ? (
-          <button type="button">Apartar unidad</button>
+        {unidadSeleccionada ? (
+          <>
+            <p className="plano-demo-eyebrow">Unidad seleccionada</p>
+            <h3>Unidad {unidadSeleccionada.codigoUnidad}</h3>
+            <dl>
+              <div><dt>Manzana</dt><dd>{unidadSeleccionada.manzana || 'Sin dato'}</dd></div>
+              <div><dt>Modelo</dt><dd>{unidadSeleccionada.modeloNombre}</dd></div>
+              <div><dt>Precio</dt><dd>{formatCurrency(unidadSeleccionada.precio)}</dd></div>
+              <div><dt>Terreno</dt><dd>{unidadSeleccionada.terrenoM2 ? `${unidadSeleccionada.terrenoM2} m2` : 'Sin dato'}</dd></div>
+              <div><dt>Construccion</dt><dd>{unidadSeleccionada.construccionM2 ? `${unidadSeleccionada.construccionM2} m2` : 'Sin dato'}</dd></div>
+              <div><dt>Estatus</dt><dd>{ESTATUS_LABELS[unidadSeleccionada.estatus] || unidadSeleccionada.estatus}</dd></div>
+            </dl>
+            {['DISPONIBLE', 'CONSTRUCCION'].includes(unidadSeleccionada.estatus) ? (
+              <button type="button">Apartar unidad</button>
+            ) : (
+              <span className="plano-demo-panel-note">Esta unidad no esta disponible para apartado.</span>
+            )}
+          </>
         ) : (
-          <span className="plano-demo-panel-note">Esta unidad no esta disponible para apartado.</span>
+          <span className="plano-demo-panel-note">Selecciona una unidad disponible en el plano.</span>
         )}
       </aside>
     </div>

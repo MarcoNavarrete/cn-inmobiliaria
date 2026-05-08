@@ -300,6 +300,7 @@ export default function AdminDesarrolloFormPage() {
                 <Link to={`/admin/desarrollos/${desarrolloId}/imagenes`}>Imagenes</Link>
                 <Link to={`/admin/desarrollos/${desarrolloId}/amenidades`}>Amenidades</Link>
                 <Link to={`/admin/desarrollos/${desarrolloId}/modelos`}>Modelos</Link>
+                <Link to={`/admin/desarrollos/${desarrolloId}/unidades`}>Administrar unidades</Link>
               </>
             ) : null}
           </div>

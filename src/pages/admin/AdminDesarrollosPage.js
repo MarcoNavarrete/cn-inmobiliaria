@@ -126,6 +126,7 @@ export default function AdminDesarrollosPage() {
                           <Link to={`/admin/desarrollos/${desarrollo.id}/imagenes`}>Imagenes</Link>
                           <Link to={`/admin/desarrollos/${desarrollo.id}/amenidades`}>Amenidades</Link>
                           <Link to={`/admin/desarrollos/${desarrollo.id}/modelos`}>Modelos</Link>
+                          <Link to={`/admin/desarrollos/${desarrollo.id}/unidades`}>Unidades</Link>
                           <Link to={`/admin/desarrollos/${desarrollo.id}/tour-360`}>Tour 360</Link>
                           {desarrollo.slug ? <Link to={`/desarrollos/${desarrollo.slug}`}>Ver publico</Link> : null}
                           <button

@@ -1,0 +1,260 @@
+.admin-unidades {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+  color: var(--azul-oscuro);
+}
+
+.admin-unidades-hero,
+.admin-unidades-card-head,
+.admin-unidades-hero-actions,
+.admin-unidades-actions,
+.admin-unidades-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-unidades-hero,
+.admin-unidades-card-head {
+  justify-content: space-between;
+}
+
+.admin-unidades-hero {
+  margin-bottom: 1.25rem;
+}
+
+.admin-unidades-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--dorado-suave);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-unidades h1,
+.admin-unidades h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+}
+
+.admin-unidades-help {
+  margin: 0.3rem 0 0;
+  color: var(--gris-elegante);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.admin-unidades-card {
+  margin-bottom: 1.25rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  background: var(--blanco);
+  box-shadow: 0 14px 30px rgba(16, 35, 58, 0.08);
+}
+
+.admin-unidades-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.admin-unidades-form .is-full,
+.admin-unidades-upload.is-full {
+  grid-column: 1 / -1;
+}
+
+.admin-unidades-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-unidades-field span,
+.admin-unidades-check span {
+  color: rgba(26, 61, 124, 0.88);
+  font-weight: 800;
+}
+
+.admin-unidades-field input,
+.admin-unidades-field select {
+  width: 100%;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  padding: 0.72rem 0.8rem;
+  color: var(--azul-oscuro);
+  font: inherit;
+}
+
+.admin-unidades-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-unidades-upload {
+  display: grid;
+  gap: 0.65rem;
+  border-radius: 10px;
+  padding: 0.85rem;
+  background: rgba(26, 61, 124, 0.05);
+}
+
+.admin-unidades-upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-unidades-upload-actions span {
+  color: var(--gris-elegante);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.admin-unidades-upload-message {
+  margin: 0;
+  color: #21633a;
+  font-weight: 800;
+}
+
+.admin-unidades-check input {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-unidades-primary,
+.admin-unidades-secondary,
+.admin-unidades-card-head button,
+.admin-unidades-form-actions button,
+.admin-unidades-actions button,
+.admin-unidades-upload-actions button {
+  min-height: 40px;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 8px;
+  padding: 0.62rem 0.9rem;
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.admin-unidades-form-actions button,
+.admin-unidades-primary {
+  border-color: transparent;
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.admin-unidades-actions .is-danger {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.08);
+  border-color: rgba(143, 45, 36, 0.14);
+}
+
+.admin-unidades-feedback,
+.admin-unidades-empty {
+  margin: 0 0 1rem;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  background: rgba(26, 61, 124, 0.06);
+  color: var(--gris-elegante);
+  font-weight: 800;
+}
+
+.admin-unidades-feedback.is-ok {
+  color: #21633a;
+  background: rgba(33, 99, 58, 0.08);
+}
+
+.admin-unidades-feedback.is-error {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.08);
+}
+
+.admin-unidades-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-unidades-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1060px;
+}
+
+.admin-unidades-table th,
+.admin-unidades-table td {
+  border-bottom: 1px solid rgba(26, 61, 124, 0.08);
+  padding: 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-unidades-warning {
+  display: block;
+  margin-top: 0.25rem;
+  color: #8f2d24;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.admin-unidades-table th {
+  color: var(--gris-elegante);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-unidades-pill,
+.admin-unidades-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.28rem 0.6rem;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.admin-unidades-pill.is-ok,
+.admin-unidades-status.is-disponible {
+  color: #21633a;
+  background: rgba(33, 99, 58, 0.11);
+}
+
+.admin-unidades-status.is-apartado {
+  color: #85620f;
+  background: rgba(242, 201, 76, 0.24);
+}
+
+.admin-unidades-status.is-vendido {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.1);
+}
+
+.admin-unidades-status.is-construccion {
+  color: var(--azul-oscuro);
+  background: rgba(26, 61, 124, 0.07);
+}
+
+.admin-unidades-status.is-bloqueado,
+.admin-unidades-pill.is-off {
+  color: #59636d;
+  background: rgba(89, 99, 109, 0.12);
+}
+
+@media (max-width: 900px) {
+  .admin-unidades-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-unidades-form {
+    grid-template-columns: 1fr;
+  }
+}

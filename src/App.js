@@ -31,6 +31,7 @@ import AdminDesarrolloFormPage from './pages/admin/AdminDesarrolloFormPage';
 import AdminDesarrolloImagenesPage from './pages/admin/AdminDesarrolloImagenesPage';
 import AdminDesarrolloAmenidadesPage from './pages/admin/AdminDesarrolloAmenidadesPage';
 import AdminDesarrolloModelosPage from './pages/admin/AdminDesarrolloModelosPage';
+import AdminDesarrolloUnidadesPage from './pages/admin/AdminDesarrolloUnidadesPage';
 import AdminDesarrolloModeloImagenesPage from './pages/admin/AdminDesarrolloModeloImagenesPage';
 import AdminDesarrolloTour360Page from './pages/admin/AdminDesarrolloTour360Page';
 import AdminModeloTour360Page from './pages/admin/AdminModeloTour360Page';
@@ -110,6 +111,7 @@ function App() {
           <Route path="desarrollos/:desarrolloId/amenidades" element={<AdminDesarrolloAmenidadesPage />} />
           <Route path="desarrollos/:desarrolloId/tour-360" element={<AdminDesarrolloTour360Page />} />
           <Route path="desarrollos/:desarrolloId/modelos" element={<AdminDesarrolloModelosPage />} />
+          <Route path="desarrollos/:desarrolloId/unidades" element={<AdminDesarrolloUnidadesPage />} />
           <Route path="desarrollos/:desarrolloId/modelos/:modeloId/imagenes" element={<AdminDesarrolloModeloImagenesPage />} />
           <Route path="desarrollos/:desarrolloId/modelos/:modeloId/tour-360" element={<AdminModeloTour360Page />} />
           <Route path="tours-360/escenas/:escenaId/hotspots" element={<AdminTour360HotspotsPage />} />
