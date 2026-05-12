@@ -61,7 +61,7 @@
 }
 
 .plano-demo-scroll {
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .plano-demo-state {
@@ -80,11 +80,63 @@
 
 .plano-demo-stage {
   position: relative;
-  min-width: 640px;
+  min-height: 360px;
+  height: clamp(320px, 48vw, 520px);
   padding: 1rem;
+  overflow: hidden;
   background:
     linear-gradient(135deg, rgba(26, 61, 124, 0.08), rgba(203, 161, 53, 0.08)),
     #edf3f7;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.plano-demo-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.plano-demo-controls {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 999px;
+  padding: 0.35rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(7, 21, 33, 0.14);
+}
+
+.plano-demo-controls button {
+  min-width: 34px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 0.65rem;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.plano-demo-controls button:hover {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.plano-demo-svg-inline {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: calc(100% - 2rem);
+  transform-origin: 0 0;
+  will-change: transform;
 }
 
 .plano-demo-stage svg,
@@ -256,6 +308,14 @@
   }
 
   .plano-demo-stage {
-    min-width: 560px;
+    height: 340px;
+    min-height: 340px;
+  }
+
+  .plano-demo-controls {
+    left: 0.75rem;
+    right: auto;
+    max-width: calc(100% - 1.5rem);
+    flex-wrap: wrap;
   }
 }

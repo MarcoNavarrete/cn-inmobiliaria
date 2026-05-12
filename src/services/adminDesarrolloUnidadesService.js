@@ -1,4 +1,4 @@
-import { getJson, requestJson } from './apiClient';
+import { getJson, requestFormData, requestJson } from './apiClient';
 
 const normalizeList = (value) => {
   if (Array.isArray(value)) return value;
@@ -95,3 +95,13 @@ export const actualizarUnidadAdmin = (unidadId, payload) =>
 
 export const eliminarUnidadAdmin = (unidadId) =>
   requestJson(`/api/admin/desarrollos/unidades/${unidadId}`, { method: 'DELETE' });
+
+export const importarUnidadesCsv = (desarrolloId, file) => {
+  const body = new FormData();
+  body.append('file', file);
+
+  return requestFormData(`/api/admin/desarrollos/${desarrolloId}/unidades/import-csv`, {
+    method: 'POST',
+    body,
+  });
+};

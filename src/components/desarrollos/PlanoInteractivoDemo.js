@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { resolveApiAssetUrl } from '../../services/apiClient';
 import { obtenerPlanoPublico } from '../../services/adminDesarrolloPlanoService';
 import { listarUnidadesPorDesarrollo } from '../../services/desarrolloUnidadesService';
@@ -11,6 +11,23 @@ const ESTATUS_LABELS = {
   CONSTRUCCION: 'Construccion',
   BLOQUEADO: 'Bloqueado',
 };
+
+const ZOOM_MIN = 0.4;
+const ZOOM_MAX = 3;
+const ZOOM_STEP = 0.2;
+const DRAG_THRESHOLD = 4;
+const VISTA_INICIAL = {
+  zoom: 1,
+  translateX: 0,
+  translateY: 0,
+};
+
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const normalizarVista = (value) => ({
+  ...VISTA_INICIAL,
+  ...(value || {}),
+});
 
 const formatCurrency = (value) => {
   if (!value || Number.isNaN(Number(value))) {
@@ -69,6 +86,11 @@ const buildDemoSvg = () => `
 `;
 
 export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = false, onUnavailable }) {
+  const svgContainerRef = useRef(null);
+  const dragStartRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const hasDraggedRef = useRef(false);
+  const activePointerIdRef = useRef(null);
   const [unidades, setUnidades] = useState([]);
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [tooltip, setTooltip] = useState(null);
@@ -76,6 +98,8 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
   const [svgRealDisponible, setSvgRealDisponible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [vista, setVista] = useState(VISTA_INICIAL);
+  const [isPanning, setIsPanning] = useState(false);
   const unidadesPorSvgId = useMemo(
     () => Object.fromEntries(unidades.map((unidad) => [unidad.svgElementId, unidad])),
     [unidades]
@@ -161,6 +185,30 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
     return () => controller.abort();
   }, [desarrolloId, onUnavailable, requireRealSvg]);
 
+  useEffect(() => {
+    setTooltip(null);
+    setVista(VISTA_INICIAL);
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
+    hasDraggedRef.current = false;
+    activePointerIdRef.current = null;
+    setIsPanning(false);
+
+    return () => {
+      setTooltip(null);
+      dragStartRef.current = null;
+      isDraggingRef.current = false;
+      activePointerIdRef.current = null;
+    };
+  }, [svgMarkup]);
+
+  useEffect(() => () => {
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
+    hasDraggedRef.current = false;
+    activePointerIdRef.current = null;
+  }, []);
+
   const svgConInteraccion = useMemo(() => {
     if (requireRealSvg && !svgMarkup) {
       return '';
@@ -174,12 +222,17 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
       return requireRealSvg ? '' : buildDemoSvg();
     }
 
+    svg.querySelectorAll('text').forEach((textElement) => {
+      textElement.setAttribute('pointer-events', 'none');
+    });
+
     unidades.forEach((unidad) => {
       const element = svg.querySelector(`#${CSS.escape(unidad.svgElementId)}`);
       if (!element) return;
 
       element.classList.add('plano-demo-unit', `is-${unidad.estatus.toLowerCase()}`);
       element.setAttribute('data-svg-element-id', unidad.svgElementId);
+      element.setAttribute('data-unidad-id', unidad.unidadId || unidad.id || unidad.codigoUnidad || unidad.svgElementId);
       element.setAttribute('role', 'button');
       element.setAttribute('tabindex', '0');
 
@@ -192,11 +245,23 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
   }, [requireRealSvg, svgMarkup, unidadSeleccionada?.svgElementId, unidades]);
 
   const mostrarTooltip = (event, unidad) => {
-    if (!unidad) {
+    if (!event || !unidad) {
+      setTooltip(null);
       return;
     }
 
-    const bounds = event.currentTarget.ownerSVGElement.getBoundingClientRect();
+    const contenedor = svgContainerRef.current;
+    if (!contenedor || typeof contenedor.getBoundingClientRect !== 'function') {
+      setTooltip(null);
+      return;
+    }
+
+    if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
+      setTooltip(null);
+      return;
+    }
+
+    const bounds = contenedor.getBoundingClientRect();
     setTooltip({
       x: event.clientX - bounds.left,
       y: event.clientY - bounds.top,
@@ -205,12 +270,24 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
   };
 
   const obtenerUnidadDesdeEvento = (event) => {
-    const element = event.target.closest?.('[data-svg-element-id]');
-    if (!element) return null;
-    return unidadesPorSvgId[element.getAttribute('data-svg-element-id')] || null;
+    const target = event?.target;
+    if (!target) return null;
+
+    const element = target.closest?.('[data-svg-element-id]');
+    if (element) {
+      return unidadesPorSvgId[element.getAttribute('data-svg-element-id')] || null;
+    }
+
+    const id = target.id || target.closest?.('[id]')?.id;
+    return id ? unidadesPorSvgId[id] || null : null;
   };
 
   const manejarMouseMoveSvg = (event) => {
+    if (isDraggingRef.current || hasDraggedRef.current) {
+      setTooltip(null);
+      return;
+    }
+
     const unidad = obtenerUnidadDesdeEvento(event);
     if (!unidad) {
       setTooltip(null);
@@ -218,11 +295,6 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
     }
 
     mostrarTooltip(event, unidad);
-  };
-
-  const manejarClickSvg = (event) => {
-    const unidad = obtenerUnidadDesdeEvento(event);
-    if (unidad) setUnidadSeleccionada(unidad);
   };
 
   const manejarKeyDownSvg = (event) => {
@@ -233,9 +305,177 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
     setUnidadSeleccionada(unidad);
   };
 
+  const actualizarZoom = (delta, punto = null) => {
+    setVista((actual) => {
+      const safeActual = normalizarVista(actual);
+      const siguienteZoom = clamp(Number((safeActual.zoom + delta).toFixed(2)), ZOOM_MIN, ZOOM_MAX);
+      if (siguienteZoom === safeActual.zoom) {
+        return safeActual;
+      }
+
+      if (!punto) {
+        return {
+          ...safeActual,
+          zoom: siguienteZoom,
+        };
+      }
+
+      const ratio = siguienteZoom / safeActual.zoom;
+      return {
+        ...safeActual,
+        zoom: siguienteZoom,
+        translateX: punto.x - (punto.x - safeActual.translateX) * ratio,
+        translateY: punto.y - (punto.y - safeActual.translateY) * ratio,
+      };
+    });
+  };
+
+  const restablecerVista = () => {
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
+    hasDraggedRef.current = false;
+    activePointerIdRef.current = null;
+    setTooltip(null);
+    setIsPanning(false);
+    setVista(VISTA_INICIAL);
+  };
+
+  const iniciarPointer = (event) => {
+    if (event.button !== undefined && event.button !== 0) {
+      return;
+    }
+
+    const unidadInicial = obtenerUnidadDesdeEvento(event);
+    activePointerIdRef.current = event.pointerId;
+    const vistaActual = normalizarVista(vista);
+    dragStartRef.current = {
+      clientX: event.clientX,
+      clientY: event.clientY,
+      translateX: vistaActual.translateX,
+      translateY: vistaActual.translateY,
+      unidadInicial,
+    };
+    isDraggingRef.current = true;
+    hasDraggedRef.current = false;
+    setTooltip(null);
+
+    if (event.currentTarget?.setPointerCapture) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+  };
+
+  const moverPointer = (event) => {
+    if (activePointerIdRef.current !== null && event.pointerId !== activePointerIdRef.current) {
+      return;
+    }
+
+    if (!dragStartRef.current) {
+      manejarMouseMoveSvg(event);
+      return;
+    }
+
+    const dragStart = dragStartRef.current;
+    if (
+      !dragStart ||
+      !Number.isFinite(dragStart.clientX) ||
+      !Number.isFinite(dragStart.clientY) ||
+      !Number.isFinite(dragStart.translateX) ||
+      !Number.isFinite(dragStart.translateY)
+    ) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragStart.clientX;
+    const deltaY = event.clientY - dragStart.clientY;
+    const nextHasDragged = Math.abs(deltaX) > DRAG_THRESHOLD || Math.abs(deltaY) > DRAG_THRESHOLD;
+
+    if (!nextHasDragged) {
+      return;
+    }
+
+    hasDraggedRef.current = true;
+    if (!isPanning) {
+      setIsPanning(true);
+    }
+
+    event.preventDefault();
+    setTooltip(null);
+    setVista((actual) => {
+      const safeActual = normalizarVista(actual);
+      return {
+        ...safeActual,
+        translateX: dragStart.translateX + deltaX,
+        translateY: dragStart.translateY + deltaY,
+      };
+    });
+  };
+
+  const terminarPointer = (event) => {
+    if (activePointerIdRef.current !== null && event.pointerId !== activePointerIdRef.current) {
+      return;
+    }
+
+    const shouldSelect = !hasDraggedRef.current;
+    const unidad = shouldSelect ? dragStartRef.current?.unidadInicial || obtenerUnidadDesdeEvento(event) : null;
+
+    if (unidad) {
+      setUnidadSeleccionada(unidad);
+      setTooltip(null);
+    }
+
+    if (event.currentTarget?.releasePointerCapture && activePointerIdRef.current !== null) {
+      try {
+        event.currentTarget.releasePointerCapture(activePointerIdRef.current);
+      } catch (_) {
+        // Pointer capture can be released by the browser before pointerup.
+      }
+    }
+
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
+    hasDraggedRef.current = false;
+    activePointerIdRef.current = null;
+    setIsPanning(false);
+  };
+
+  const cancelarPointer = (event) => {
+    if (event?.currentTarget?.releasePointerCapture && activePointerIdRef.current !== null) {
+      try {
+        event.currentTarget.releasePointerCapture(activePointerIdRef.current);
+      } catch (_) {
+        // Pointer capture can be released by the browser before cancel.
+      }
+    }
+
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
+    hasDraggedRef.current = false;
+    activePointerIdRef.current = null;
+    setIsPanning(false);
+    setTooltip(null);
+  };
+
+  const manejarWheel = (event) => {
+    event.preventDefault();
+
+    const contenedor = svgContainerRef.current;
+    if (!contenedor || typeof contenedor.getBoundingClientRect !== 'function') {
+      actualizarZoom(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
+      return;
+    }
+
+    const bounds = contenedor.getBoundingClientRect();
+    actualizarZoom(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP, {
+      x: event.clientX - bounds.left,
+      y: event.clientY - bounds.top,
+    });
+  };
+
   if (requireRealSvg && (!svgRealDisponible || !svgConInteraccion)) {
     return null;
   }
+
+  const vistaSegura = normalizarVista(vista);
 
   return (
     <div className="plano-demo">
@@ -259,13 +499,32 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
         ) : null}
 
         <div className="plano-demo-scroll">
-          <div className="plano-demo-stage">
+          <div
+            ref={svgContainerRef}
+            className={`plano-demo-stage ${isPanning ? 'is-dragging' : ''}`}
+            onPointerCancel={cancelarPointer}
+            onPointerDown={iniciarPointer}
+            onPointerLeave={cancelarPointer}
+            onPointerMove={moverPointer}
+            onPointerUp={terminarPointer}
+            onWheel={manejarWheel}
+          >
+            <div
+              className="plano-demo-controls"
+              onClick={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <button type="button" onClick={() => actualizarZoom(ZOOM_STEP)} aria-label="Acercar plano">+</button>
+              <button type="button" onClick={() => actualizarZoom(-ZOOM_STEP)} aria-label="Alejar plano">-</button>
+              <button type="button" onClick={restablecerVista}>Restablecer</button>
+            </div>
             <div
               className="plano-demo-svg-inline"
-              onClick={manejarClickSvg}
               onKeyDown={manejarKeyDownSvg}
-              onMouseLeave={() => setTooltip(null)}
-              onMouseMove={manejarMouseMoveSvg}
+              onPointerLeave={() => setTooltip(null)}
+              style={{
+                transform: `translate(${vistaSegura.translateX}px, ${vistaSegura.translateY}px) scale(${vistaSegura.zoom})`,
+              }}
               dangerouslySetInnerHTML={{ __html: svgConInteraccion }}
             />
 

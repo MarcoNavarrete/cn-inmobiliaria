@@ -61,6 +61,17 @@
   margin-top: 1rem;
 }
 
+.admin-unidades-list-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(150px, 0.7fr)) auto;
+  gap: 0.85rem;
+  align-items: end;
+  margin: 1rem 0;
+  border-radius: 10px;
+  padding: 0.85rem;
+  background: rgba(26, 61, 124, 0.04);
+}
+
 .admin-unidades-form .is-full,
 .admin-unidades-upload.is-full {
   grid-column: 1 / -1;
@@ -85,6 +96,19 @@
   padding: 0.72rem 0.8rem;
   color: var(--azul-oscuro);
   font: inherit;
+}
+
+.admin-unidades-filter-actions,
+.admin-unidades-pagination,
+.admin-unidades-pagination div {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.admin-unidades-filter-actions {
+  align-self: end;
 }
 
 .admin-unidades-check {
@@ -120,6 +144,193 @@
   font-weight: 800;
 }
 
+.admin-unidades-diagnostico {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(26, 61, 124, 0.08);
+  padding-top: 1rem;
+}
+
+.admin-unidades-import {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(26, 61, 124, 0.08);
+  padding-top: 1rem;
+}
+
+.admin-unidades-diagnostico-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-unidades-import-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-unidades-diagnostico-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.admin-unidades-diagnostico h3 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+}
+
+.admin-unidades-import h3,
+.admin-unidades-import h4 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+}
+
+.admin-unidades-diagnostico p {
+  margin: 0.25rem 0 0;
+  color: var(--gris-elegante);
+  font-weight: 700;
+}
+
+.admin-unidades-import p {
+  margin: 0.25rem 0 0;
+  color: var(--gris-elegante);
+  font-weight: 700;
+}
+
+.admin-unidades-diagnostico-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-unidades-import-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-unidades-diagnostico-grid article {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 10px;
+  padding: 0.85rem;
+  background: rgba(26, 61, 124, 0.04);
+}
+
+.admin-unidades-import-summary article {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 10px;
+  padding: 0.85rem;
+  background: rgba(26, 61, 124, 0.04);
+}
+
+.admin-unidades-diagnostico-grid article span {
+  color: var(--gris-elegante);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-unidades-import-summary article span {
+  color: var(--gris-elegante);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-unidades-diagnostico-grid article strong {
+  color: var(--azul-oscuro);
+  font-size: 1.5rem;
+}
+
+.admin-unidades-import-summary article strong {
+  color: var(--azul-oscuro);
+  font-size: 1.5rem;
+}
+
+.admin-unidades-diagnostico-grid article.is-ok {
+  background: rgba(33, 99, 58, 0.08);
+}
+
+.admin-unidades-import-summary article.is-ok {
+  background: rgba(33, 99, 58, 0.08);
+}
+
+.admin-unidades-diagnostico-grid article.is-warning {
+  background: rgba(242, 201, 76, 0.18);
+}
+
+.admin-unidades-import-summary article.is-warning {
+  background: rgba(242, 201, 76, 0.18);
+}
+
+.admin-unidades-diagnostico-grid article.is-danger {
+  background: rgba(143, 45, 36, 0.08);
+}
+
+.admin-unidades-import-summary article.is-danger {
+  background: rgba(143, 45, 36, 0.08);
+}
+
+.admin-unidades-import-errors {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-unidades-diagnostico-details {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.admin-unidades-diagnostico-details details {
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.admin-unidades-diagnostico-details summary {
+  cursor: pointer;
+  color: var(--azul-oscuro);
+  font-weight: 900;
+}
+
+.admin-unidades-diagnostico-details ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  max-height: 190px;
+  overflow: auto;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-unidades-diagnostico-details li {
+  border-radius: 999px;
+  padding: 0.35rem 0.55rem;
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.admin-unidades-diagnostico-details details p {
+  margin: 0.65rem 0 0;
+}
+
 .admin-unidades-check input {
   width: 18px;
   height: 18px;
@@ -130,7 +341,10 @@
 .admin-unidades-card-head button,
 .admin-unidades-form-actions button,
 .admin-unidades-actions button,
-.admin-unidades-upload-actions button {
+.admin-unidades-upload-actions button,
+.admin-unidades-filter-actions button,
+.admin-unidades-pagination button,
+.admin-unidades-diagnostico-actions button {
   min-height: 40px;
   border: 1px solid rgba(26, 61, 124, 0.12);
   border-radius: 8px;
@@ -144,10 +358,34 @@
 }
 
 .admin-unidades-form-actions button,
+.admin-unidades-filter-actions button[type="submit"],
 .admin-unidades-primary {
   border-color: transparent;
   background: var(--azul-oscuro);
   color: var(--blanco);
+}
+
+.admin-unidades-pagination {
+  justify-content: space-between;
+  margin: 0.9rem 0;
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: rgba(26, 61, 124, 0.05);
+}
+
+.admin-unidades-pagination span {
+  color: var(--azul-oscuro);
+  font-weight: 900;
+}
+
+.admin-unidades-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.admin-unidades-diagnostico-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .admin-unidades-actions .is-danger {
@@ -255,6 +493,37 @@
   }
 
   .admin-unidades-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-unidades-list-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-unidades-diagnostico-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-unidades-import-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-unidades-list-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-unidades-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-unidades-diagnostico-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-unidades-import-summary {
     grid-template-columns: 1fr;
   }
 }
