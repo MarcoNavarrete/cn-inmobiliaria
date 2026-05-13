@@ -1,9 +1,8 @@
-// src/components/WhatsAppFlotante.js
 import React from 'react';
 import './WhatsAppFlotante.css';
 
 export default function WhatsAppFlotante() {
-  const numeroWhatsApp = '+5215540859798'; // Asegúrate que incluya "521" (México) + número
+  const numeroWhatsApp = '5215540859798';
 
   return (
     <div className="whatsapp-flotante">
@@ -12,9 +11,10 @@ export default function WhatsAppFlotante() {
         target="_blank"
         rel="noopener noreferrer"
         className="whatsapp-icono"
+        aria-label="Enviar mensaje por WhatsApp"
       >
-        <span className="tooltip">Tu nuevo hogar está a un mensaje de distancia</span>
-        <img src="./assets/whatsapp.png" alt="WhatsApp" />
+        <span className="tooltip">Tu nuevo hogar esta a un mensaje</span>
+        <img src="./assets/whatsapp.png" alt="" />
       </a>
     </div>
   );

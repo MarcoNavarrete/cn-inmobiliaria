@@ -1,5 +1,5 @@
 .detalle-desarrollo-page {
-  background: #f6f8fb;
+  background: var(--cn-bg);
   color: var(--azul-oscuro);
 }
 
@@ -17,7 +17,7 @@
   background:
     linear-gradient(90deg, rgba(9, 22, 35, 0.92), rgba(26, 61, 124, 0.62)),
     radial-gradient(circle at 72% 25%, rgba(203, 161, 53, 0.24), transparent 30%),
-    #071521;
+    var(--cn-primary);
 }
 
 .detalle-desarrollo-hero > div {
@@ -80,7 +80,7 @@
   border-radius: 8px;
   padding: 0.7rem 1rem;
   background: var(--dorado-suave);
-  color: #071521;
+  color: var(--cn-primary);
   border: 0;
   cursor: pointer;
   font: inherit;
@@ -531,7 +531,7 @@
 .modelo-card a:hover,
 .modelo-card button:hover {
   background: var(--dorado-suave);
-  color: #071521;
+  color: var(--cn-primary);
 }
 
 .modelo-card button.modelo-card-secondary {
@@ -542,7 +542,7 @@
 
 .modelo-card button.modelo-card-secondary:hover {
   background: var(--dorado-suave);
-  color: #071521;
+  color: var(--cn-primary);
 }
 
 .detalle-desarrollo-final-cta {

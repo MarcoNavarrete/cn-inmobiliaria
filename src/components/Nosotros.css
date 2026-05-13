@@ -1,42 +1,58 @@
-/* src/components/Nosotros.css */
 .nosotros {
-  padding: 3rem 2rem;
-  background-color: var(--azul-claro);
-}
-
-.nosotros h2 {
-  font-family: var(--fuente-titulos);
-  font-size: 2rem;
-  color: var(--azul-oscuro);
-  text-align: center;
-  margin-bottom: 2rem;
+  padding: 4.5rem 1.25rem;
+  background: var(--cn-bg);
 }
 
 .nosotros-contenido {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 440px);
+  gap: clamp(2rem, 5vw, 4rem);
   align-items: center;
-  justify-content: center;
+  width: min(1180px, 100%);
+  margin: 0 auto;
 }
 
 .texto {
-  flex: 1;
-  min-width: 280px;
-  max-width: 500px;
+  max-width: 680px;
+  color: var(--cn-muted);
   font-size: 1rem;
-  line-height: 1.6;
-  color: var(--gris-elegante);
+  line-height: 1.75;
+}
+
+.nosotros-eyebrow {
+  margin: 0 0 0.55rem;
+  color: var(--cn-gold);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.nosotros h2 {
+  margin: 0 0 1rem;
+  color: var(--cn-primary);
+  font-family: var(--fuente-titulos);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.05;
+}
+
+.texto p {
+  margin: 0 0 1rem;
 }
 
 .imagen {
-  flex: 1;
-  min-width: 280px;
-  max-width: 400px;
+  min-width: 0;
 }
 
 .imagen img {
   width: 100%;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  display: block;
+  border-radius: 18px;
+  box-shadow: var(--cn-shadow-hover);
+}
+
+@media (max-width: 840px) {
+  .nosotros-contenido {
+    grid-template-columns: 1fr;
+  }
 }

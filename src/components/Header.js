@@ -72,7 +72,7 @@ export default function Header() {
   );
 
   return (
-    <header className="header">
+    <header className={`header ${location.pathname === '/' ? 'is-home' : 'is-solid'}`}>
       <div className="logo">
         <Link to="/" onClick={cerrarMenus}>
           <img src="./assets/logo.png" alt="CN Inmobiliaria" />

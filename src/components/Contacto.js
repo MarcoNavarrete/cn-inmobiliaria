@@ -1,31 +1,62 @@
-// src/components/Contacto.js
 import React from 'react';
 import './Contacto.css';
 
+const whatsappNumber = '5215540859798';
+const phoneNumber = '7717581695';
+const mapsUrl = 'https://www.google.com/maps?q=Calle%20Mariano%20Abasolo%2023%20Centro%20Pachuca%20Hidalgo&output=embed';
+const mapsLink = 'https://www.google.com/maps/search/?api=1&query=Calle%20Mariano%20Abasolo%2023%20Centro%20Pachuca%20Hidalgo';
+
 export default function Contacto() {
   return (
-    <section className="contacto" data-aos="fade-up" data-aos-duration="1200">
-      <h2>Contáctanos</h2>
-      <div className="contacto-contenido">
-        <div className="info">
-          <p><strong>📍 Dirección:</strong> Calle Mariano Abasolo #23, Col. Centro, Pachuca, Hidalgo</p>
-          <p><strong>📞 Teléfono:</strong> (771) 7581695</p>
-          <p><strong>📱 WhatsApp:</strong> 55 4085 9798</p>
-          <p><strong>🕒 Horario:</strong> Lunes a viernes · 9:00am – 6:00pm</p>
+    <section id="contacto" className="contacto" data-aos="fade-up" data-aos-duration="1200">
+      <div className="contacto-shell">
+        <div className="contacto-head">
+          <p>Contactanos</p>
+          <h2>Agenda una asesoria para encontrar tu siguiente propiedad</h2>
         </div>
-        <div className="mapa">
-          <iframe 
-          title="Mapa de ubicación de las oficinas de CN Inmobiliaria"
-          src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3746.18688934441!2d-98.74338322476767!3d20.12624928130677!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMjDCsDA3JzM0LjUiTiA5OMKwNDQnMjYuOSJX!5e0!3m2!1ses!2smx!4v1753320075276!5m2!1ses!2smx" 
-          width="100%" 
-          height="450"
-          style={{ border: 0 }} 
-          allowfullscreen="" 
-          loading="lazy" 
-          referrerpolicy="no-referrer-when-downgrade">
-            <p>Mapa de ubicación de CN INMOBILIARIA</p>
 
-          </iframe>
+        <div className="contacto-contenido">
+          <div className="info">
+            <div className="info-item">
+              <span>Oficina</span>
+              <strong>Calle Mariano Abasolo #23, Col. Centro, Pachuca, Hidalgo</strong>
+            </div>
+            <div className="info-item">
+              <span>Telefono</span>
+              <strong>(771) 758 1695</strong>
+            </div>
+            <div className="info-item">
+              <span>WhatsApp</span>
+              <strong>55 4085 9798</strong>
+            </div>
+            <div className="info-item">
+              <span>Correo</span>
+              <strong>Correo por confirmar</strong>
+            </div>
+            <div className="info-item">
+              <span>Horario</span>
+              <strong>Lunes a viernes - 9:00 a.m. a 6:00 p.m.</strong>
+            </div>
+
+            <div className="contacto-acciones">
+              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">Enviar WhatsApp</a>
+              <a href={`tel:${phoneNumber}`}>Llamar</a>
+              <a href={mapsLink} target="_blank" rel="noopener noreferrer">Ver ubicacion</a>
+            </div>
+          </div>
+
+          <div className="mapa">
+            <iframe
+              title="Mapa de ubicacion de CN Inmobiliaria"
+              src={mapsUrl}
+              width="100%"
+              height="420"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
         </div>
       </div>
     </section>

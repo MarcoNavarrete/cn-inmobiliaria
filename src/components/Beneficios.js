@@ -1,24 +1,29 @@
-// src/components/Beneficios.js
 import React from 'react';
 import './Beneficios.css';
 
 export default function Beneficios() {
   return (
     <section className="beneficios" data-aos="fade-right" data-aos-delay="200">
-      <h2>¿Por qué elegir CN INMOBILIARIA?</h2>
+      <div className="beneficios-head">
+        <p>Por que CN</p>
+        <h2>Asesoria inmobiliaria con criterio, tecnologia y acompanamiento real</h2>
+      </div>
       <div className="beneficio-lista">
-        <div className="beneficio">
-          <h3>🔒 Confianza</h3>
-          <p>Nuestra experiencia te brindará seguridad en cada proceso.</p>
-        </div>
-        <div className="beneficio">
-          <h3>🤝 Atención personalizada</h3>
-          <p>Te acompañamos desde el primer clic hasta que recibes las llaves de tu nuevo hogar.</p>
-        </div>
-        <div className="beneficio">
-          <h3>💡 Tecnología innovadora</h3>
-          <p>Explora propiedades con visitas virtuales interactivas desde cualquier lugar.</p>
-        </div>
+        <article className="beneficio">
+          <span>01</span>
+          <h3>Confianza patrimonial</h3>
+          <p>Revisamos cada oportunidad con enfoque profesional para que tomes decisiones claras.</p>
+        </article>
+        <article className="beneficio">
+          <span>02</span>
+          <h3>Atencion personalizada</h3>
+          <p>Te acompanamos desde la primera busqueda hasta la negociacion y cierre.</p>
+        </article>
+        <article className="beneficio">
+          <span>03</span>
+          <h3>Experiencia digital</h3>
+          <p>Integramos recorridos, imagenes y herramientas para evaluar propiedades con mayor detalle.</p>
+        </article>
       </div>
     </section>
   );

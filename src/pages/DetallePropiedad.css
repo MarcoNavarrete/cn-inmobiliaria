@@ -1,5 +1,5 @@
 .detalle {
-  padding: 2rem;
+  padding: 2.5rem 1.25rem;
   max-width: 1100px;
   margin: auto;
   display: flex;
@@ -8,8 +8,8 @@
 }
 
 .carrusel {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  border-radius: 10px;
+  box-shadow: var(--cn-shadow);
+  border-radius: 18px;
   overflow: hidden;
 }
 
@@ -18,7 +18,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #eef4f8, #f8fbfd);
+  background: linear-gradient(135deg, #ececea, #f8f7f3);
 }
 
 .contenido h1 {
@@ -44,7 +44,7 @@
   justify-content: center;
   gap: 0.45rem;
   min-height: 42px;
-  border: 1px solid rgba(26, 61, 124, 0.12);
+  border: 1px solid var(--cn-border);
   border-radius: 999px;
   padding: 0.6rem 0.9rem;
   background: var(--blanco);
@@ -52,7 +52,7 @@
   font: inherit;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(16, 35, 58, 0.08);
+  box-shadow: var(--cn-shadow);
 }
 
 .detalle-favorito-btn span {
@@ -60,8 +60,8 @@
 }
 
 .detalle-favorito-btn.is-active {
-  background: #8f2d24;
-  color: var(--blanco);
+  background: var(--cn-gold);
+  color: var(--cn-primary);
 }
 
 .detalle-favorito-btn:disabled {
@@ -104,9 +104,9 @@
 .recorrido-virtual {
   margin: 1.5rem 0;
   padding: 1.25rem;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(238, 244, 248, 0.95), rgba(248, 251, 253, 0.95));
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-radius: 18px;
+  background: var(--blanco);
+  box-shadow: var(--cn-shadow);
 }
 
 .recorrido-encabezado h2 {
@@ -403,12 +403,12 @@
 }
 
 .tour360-hotspot-scene .tour360-hotspot-marker {
-  background: linear-gradient(135deg, #cba135, #9d7721);
+  background: linear-gradient(135deg, var(--cn-gold), var(--cn-gold-dark));
   color: #ffffff;
 }
 
 .tour360-hotspot-info .tour360-hotspot-marker {
-  background: linear-gradient(135deg, #1a3d7c, #315c96);
+  background: linear-gradient(135deg, var(--cn-primary), var(--cn-primary-soft));
   color: #ffffff;
 }
 
@@ -500,7 +500,7 @@
   padding: 0.8rem 1.4rem;
   background-color: var(--azul-oscuro);
   color: var(--blanco);
-  border-radius: 6px;
+  border-radius: 999px;
   text-decoration: none;
   font-weight: bold;
   transition: background-color 0.3s ease;
@@ -524,7 +524,7 @@
   background-color: var(--azul-oscuro);
   color: var(--blanco);
   padding: 0.8rem 1.4rem;
-  border-radius: 6px;
+  border-radius: 999px;
   text-decoration: none;
   font-weight: bold;
   transition: background-color 0.3s ease;
@@ -675,7 +675,7 @@
   background-color: var(--azul-oscuro);
   color: var(--blanco);
   padding: 0.8rem 1.4rem;
-  border-radius: 6px;
+  border-radius: 999px;
   text-decoration: none;
   font-weight: bold;
   transition: background-color 0.3s ease;
