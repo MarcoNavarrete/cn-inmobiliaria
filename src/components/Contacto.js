@@ -1,10 +1,17 @@
 import React from 'react';
 import './Contacto.css';
 
-const whatsappNumber = '5215540859798';
+const whatsappNumber = '5217716707794';
 const phoneNumber = '7717581695';
-const mapsUrl = 'https://www.google.com/maps?q=Calle%20Mariano%20Abasolo%2023%20Centro%20Pachuca%20Hidalgo&output=embed';
-const mapsLink = 'https://www.google.com/maps/search/?api=1&query=Calle%20Mariano%20Abasolo%2023%20Centro%20Pachuca%20Hidalgo';
+
+// Dirección mostrada al usuario como referencia.
+// El mapa usa coordenadas exactas para evitar errores de geolocalización por dirección.
+const officeAddress = 'Calle Mariano Abasolo #23, Col. Centro, Pachuca, Hidalgo';
+const officeLat = 20.126249;
+const officeLng = -98.740774;
+
+const mapsUrl = `https://www.google.com/maps?q=${officeLat},${officeLng}&z=19&output=embed`;
+const mapsLink = `https://www.google.com/maps/search/?api=1&query=${officeLat},${officeLng}`;
 
 export default function Contacto() {
   return (
@@ -19,7 +26,7 @@ export default function Contacto() {
           <div className="info">
             <div className="info-item">
               <span>Oficina</span>
-              <strong>Calle Mariano Abasolo #23, Col. Centro, Pachuca, Hidalgo</strong>
+              <strong>{officeAddress}</strong>
             </div>
             <div className="info-item">
               <span>Telefono</span>
@@ -27,7 +34,7 @@ export default function Contacto() {
             </div>
             <div className="info-item">
               <span>WhatsApp</span>
-              <strong>55 4085 9798</strong>
+              <strong>771 670 7794</strong>
             </div>
             <div className="info-item">
               <span>Correo</span>
