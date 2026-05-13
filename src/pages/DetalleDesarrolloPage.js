@@ -44,6 +44,26 @@ const whatsappHref = (desarrollo, modelo) => {
   return `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`;
 };
 
+const cleanText = (value) => String(value || '').trim();
+
+const buildApartarMessage = (unit, desarrollo) => {
+  const manzana = cleanText(unit?.manzana || unit?.manzanaNombre);
+  const lote = cleanText(unit?.lote || unit?.loteNumero || unit?.codigoLote || unit?.codigoUnidad || unit?.codigo);
+  const codigo = cleanText(unit?.codigoUnidad || unit?.codigo);
+  const modelo = cleanText(unit?.modeloNombre || unit?.modelo || unit?.nombreModelo);
+  const desarrolloNombre = cleanText(desarrollo?.nombre || desarrollo?.titulo || desarrollo?.slug);
+  const unidadTexto = [
+    manzana ? `Manzana ${manzana}` : '',
+    lote ? `lote ${lote}` : '',
+  ].filter(Boolean).join(' ') || (codigo ? `unidad ${codigo}` : 'unidad seleccionada');
+  const modeloTexto = modelo && modelo !== 'Modelo por confirmar' ? ` del modelo ${modelo}` : '';
+  const desarrolloTexto = desarrolloNombre ? ` del desarrollo ${desarrolloNombre}` : '';
+
+  return `Me interesa la casa ${unidadTexto}${modeloTexto}${desarrolloTexto}. Quiero apartar.`
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 export default function DetalleDesarrolloPage() {
   const { id: slug } = useParams();
   const [desarrollo, setDesarrollo] = useState(null);
@@ -66,8 +86,10 @@ export default function DetalleDesarrolloPage() {
   });
   const [prospectoModal, setProspectoModal] = useState({
     isOpen: false,
+    initialMessage: '',
     modelo: null,
     origen: 'DESARROLLO',
+    unidad: null,
   });
   const [mostrarPlanoInteractivo, setMostrarPlanoInteractivo] = useState(false);
 
@@ -189,11 +211,13 @@ export default function DetalleDesarrolloPage() {
     });
   };
 
-  const abrirModalProspecto = (modelo = null) => {
+  const abrirModalProspecto = (modelo = null, opciones = {}) => {
     setProspectoModal({
       isOpen: true,
+      initialMessage: opciones.initialMessage || '',
       modelo,
-      origen: modelo ? 'MODELO' : 'DESARROLLO',
+      origen: opciones.origen || (modelo ? 'MODELO' : 'DESARROLLO'),
+      unidad: opciones.unidad || null,
     });
   };
 
@@ -204,8 +228,36 @@ export default function DetalleDesarrolloPage() {
     }));
   };
 
-  const abrirWhatsapp = ({ desarrollo: desarrolloActual, modelo }) => {
+  const abrirWhatsapp = ({ desarrollo: desarrolloActual, mensaje, modelo }) => {
+    if (mensaje) {
+      const telefono =
+        normalizeWhatsAppNumber(desarrolloActual.telefonoContacto) ||
+        normalizeWhatsAppNumber(DEFAULT_WHATSAPP_NUMBER);
+      window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     window.open(whatsappHref(desarrolloActual, modelo), '_blank', 'noopener,noreferrer');
+  };
+
+  const abrirApartadoUnidad = (unidad) => {
+    if (!unidad) {
+      return;
+    }
+
+    const modeloNombre = cleanText(unidad.modeloNombre || unidad.modelo || unidad.nombreModelo);
+    const modelo = unidad.modeloId || modeloNombre
+      ? {
+        id: unidad.modeloId || null,
+        nombre: modeloNombre || 'Modelo por confirmar',
+      }
+      : null;
+
+    abrirModalProspecto(modelo, {
+      initialMessage: buildApartarMessage(unidad, desarrollo),
+      origen: 'PLANO_UNIDAD',
+      unidad,
+    });
   };
 
   const abrirLightbox = (images, initialIndex, title) => {
@@ -415,6 +467,7 @@ export default function DetalleDesarrolloPage() {
             </div>
             <PlanoInteractivoDemo
               desarrolloId={desarrollo.id}
+              onApartarUnidad={abrirApartadoUnidad}
               requireRealSvg
               onUnavailable={ocultarPlanoInteractivo}
             />
@@ -532,11 +585,13 @@ export default function DetalleDesarrolloPage() {
 
       <ProspectoDesarrolloModal
         desarrollo={desarrollo}
+        initialMessage={prospectoModal.initialMessage}
         isOpen={prospectoModal.isOpen}
         modelo={prospectoModal.modelo}
         onClose={cerrarModalProspecto}
         onSuccess={abrirWhatsapp}
         origen={prospectoModal.origen}
+        unidad={prospectoModal.unidad}
       />
       <ImageLightbox
         images={lightbox.images}

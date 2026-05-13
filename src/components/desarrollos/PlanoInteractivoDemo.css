@@ -45,6 +45,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  border: 1px solid rgba(26, 61, 124, 0.08);
   border-radius: 999px;
   padding: 0.35rem 0.55rem;
   background: rgba(26, 61, 124, 0.06);
@@ -58,6 +59,7 @@
   height: 12px;
   border: 1px solid rgba(7, 21, 33, 0.18);
   border-radius: 999px;
+  background: currentColor;
 }
 
 .plano-demo-scroll {
@@ -203,15 +205,15 @@
 }
 
 .is-disponible {
-  fill: #3f9d5b;
+  fill: #22c55e;
 }
 
 .is-apartado {
-  fill: #f2c94c;
+  fill: #facc15;
 }
 
 .is-vendido {
-  fill: #c94b44;
+  fill: #ef4444;
 }
 
 .is-construccion {
@@ -219,7 +221,57 @@
 }
 
 .is-bloqueado {
-  fill: #9aa4ad;
+  fill: #9ca3af;
+}
+
+.plano-demo-legend span.is-disponible {
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
+}
+
+.plano-demo-legend span.is-disponible i {
+  border-color: #22c55e;
+  background: #22c55e;
+}
+
+.plano-demo-legend span.is-apartado {
+  background: rgba(250, 204, 21, 0.16);
+  color: #713f12;
+}
+
+.plano-demo-legend span.is-apartado i {
+  border-color: #facc15;
+  background: #facc15;
+}
+
+.plano-demo-legend span.is-vendido {
+  background: rgba(239, 68, 68, 0.12);
+  color: #7f1d1d;
+}
+
+.plano-demo-legend span.is-vendido i {
+  border-color: #ef4444;
+  background: #ef4444;
+}
+
+.plano-demo-legend span.is-construccion {
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--azul-oscuro);
+}
+
+.plano-demo-legend span.is-construccion i {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+.plano-demo-legend span.is-bloqueado {
+  background: rgba(156, 163, 175, 0.16);
+  color: #374151;
+}
+
+.plano-demo-legend span.is-bloqueado i {
+  border-color: #9ca3af;
+  background: #9ca3af;
 }
 
 .plano-demo-tooltip {

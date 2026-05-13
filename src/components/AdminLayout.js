@@ -320,6 +320,10 @@ export default function AdminLayout() {
                 <FaBuilding aria-hidden="true" />
                 <span>Desarrollos inmobiliarios</span>
               </NavLink>
+              <NavLink to="/admin/proyectos-inmobiliarios">
+                <FaBuilding aria-hidden="true" />
+                <span>Proyectos inmobiliarios</span>
+              </NavLink>
             </>
           ) : null}
           <Link to="/">Volver al sitio</Link>

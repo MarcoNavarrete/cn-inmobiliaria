@@ -26,8 +26,10 @@ const adaptUnidad = (unidad = {}) => {
 
   return {
     unidadId: toText(pickFirst(unidad.unidadId, unidad.id, unidad.Id)),
+    desarrolloUnidadId: toText(pickFirst(unidad.desarrolloUnidadId, unidad.unidadId, unidad.id, unidad.Id)),
     codigoUnidad,
     manzana: toText(pickFirst(unidad.manzana, unidad.manzanaNombre, unidad.etapa)),
+    lote: toText(pickFirst(unidad.lote, unidad.loteNumero, unidad.numeroLote, unidad.codigoLote)),
     modeloId: toText(pickFirst(unidad.modeloId, unidad.desarrolloModeloId)),
     modeloNombre: toText(pickFirst(unidad.modeloNombre, unidad.modelo, unidad.nombreModelo), 'Modelo por confirmar'),
     precio: toNumberOrNull(pickFirst(unidad.precio, unidad.precioVenta, unidad.precioDesde)),

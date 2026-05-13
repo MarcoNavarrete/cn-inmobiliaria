@@ -14,11 +14,13 @@ const getErrorMessage = (err) =>
 
 export default function ProspectoDesarrolloModal({
   desarrollo,
+  initialMessage = '',
   isOpen,
   modelo = null,
   onClose,
   onSuccess,
   origen,
+  unidad = null,
 }) {
   const [form, setForm] = useState(FORM_INICIAL);
   const [guardando, setGuardando] = useState(false);
@@ -27,17 +29,21 @@ export default function ProspectoDesarrolloModal({
 
   useEffect(() => {
     if (isOpen) {
+      const mensajeInicial = initialMessage || (
+        modelo
+          ? `Me interesa el modelo ${modelo.nombre} del desarrollo ${desarrollo?.nombre || ''}.`
+          : `Me interesa el desarrollo ${desarrollo?.nombre || ''}.`
+      );
+
       setForm({
         ...FORM_INICIAL,
-        mensaje: modelo
-          ? `Me interesa el modelo ${modelo.nombre} del desarrollo ${desarrollo?.nombre || ''}.`
-          : `Me interesa el desarrollo ${desarrollo?.nombre || ''}.`,
+        mensaje: mensajeInicial,
       });
       setError('');
       setPuedeAbrirWhatsapp(false);
       setGuardando(false);
     }
-  }, [desarrollo?.nombre, isOpen, modelo]);
+  }, [desarrollo?.nombre, initialMessage, isOpen, modelo]);
 
   const titulo = useMemo(
     () => (modelo ? `Me interesa ${modelo.nombre}` : 'Solicitar informacion'),
@@ -57,7 +63,7 @@ export default function ProspectoDesarrolloModal({
   };
 
   const abrirWhatsapp = () => {
-    onSuccess?.({ desarrollo, modelo });
+    onSuccess?.({ desarrollo, mensaje: form.mensaje, modelo, unidad });
     onClose?.();
   };
 
@@ -81,6 +87,8 @@ export default function ProspectoDesarrolloModal({
     try {
       await crearProspectoDesarrollo(desarrollo.id, {
         modeloId: modelo?.id || null,
+        unidadId: unidad?.unidadId || unidad?.id || null,
+        desarrolloUnidadId: unidad?.desarrolloUnidadId || unidad?.unidadId || unidad?.id || null,
         nombre,
         telefono,
         email,

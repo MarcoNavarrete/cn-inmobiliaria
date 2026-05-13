@@ -12,6 +12,21 @@ const ESTATUS_LABELS = {
   BLOQUEADO: 'Bloqueado',
 };
 
+const normalizeStatus = (status) =>
+  String(status || '')
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_');
+
+const getStatusClass = (status) => `is-${normalizeStatus(status).toLowerCase()}`;
+
+const getStatusLabel = (status) => {
+  const normalized = normalizeStatus(status);
+  return ESTATUS_LABELS[normalized] || String(status || 'Sin estatus');
+};
+
 const ZOOM_MIN = 0.4;
 const ZOOM_MAX = 3;
 const ZOOM_STEP = 0.2;
@@ -85,7 +100,12 @@ const buildDemoSvg = () => `
   </svg>
 `;
 
-export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = false, onUnavailable }) {
+export default function PlanoInteractivoDemo({
+  desarrolloId,
+  onApartarUnidad,
+  requireRealSvg = false,
+  onUnavailable,
+}) {
   const svgContainerRef = useRef(null);
   const dragStartRef = useRef(null);
   const isDraggingRef = useRef(false);
@@ -230,7 +250,7 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
       const element = svg.querySelector(`#${CSS.escape(unidad.svgElementId)}`);
       if (!element) return;
 
-      element.classList.add('plano-demo-unit', `is-${unidad.estatus.toLowerCase()}`);
+      element.classList.add('plano-demo-unit', getStatusClass(unidad.estatus));
       element.setAttribute('data-svg-element-id', unidad.svgElementId);
       element.setAttribute('data-unidad-id', unidad.unidadId || unidad.id || unidad.codigoUnidad || unidad.svgElementId);
       element.setAttribute('role', 'button');
@@ -487,7 +507,10 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
           </div>
           <div className="plano-demo-legend">
             {Object.keys(ESTATUS_LABELS).map((estatus) => (
-              <span key={estatus}><i className={`is-${estatus.toLowerCase()}`} />{ESTATUS_LABELS[estatus]}</span>
+              <span key={estatus} className={getStatusClass(estatus)}>
+                <i />
+                {ESTATUS_LABELS[estatus]}
+              </span>
             ))}
           </div>
         </div>
@@ -532,7 +555,7 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
               <div className="plano-demo-tooltip" style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}>
                 <strong>Unidad {tooltip.unidad.codigoUnidad}</strong>
                 <span>{tooltip.unidad.modeloNombre}</span>
-                <span>{ESTATUS_LABELS[tooltip.unidad.estatus]}</span>
+                <span>{getStatusLabel(tooltip.unidad.estatus)}</span>
                 <span>{formatCurrency(tooltip.unidad.precio)}</span>
               </div>
             ) : null}
@@ -551,10 +574,12 @@ export default function PlanoInteractivoDemo({ desarrolloId, requireRealSvg = fa
               <div><dt>Precio</dt><dd>{formatCurrency(unidadSeleccionada.precio)}</dd></div>
               <div><dt>Terreno</dt><dd>{unidadSeleccionada.terrenoM2 ? `${unidadSeleccionada.terrenoM2} m2` : 'Sin dato'}</dd></div>
               <div><dt>Construccion</dt><dd>{unidadSeleccionada.construccionM2 ? `${unidadSeleccionada.construccionM2} m2` : 'Sin dato'}</dd></div>
-              <div><dt>Estatus</dt><dd>{ESTATUS_LABELS[unidadSeleccionada.estatus] || unidadSeleccionada.estatus}</dd></div>
+              <div><dt>Estatus</dt><dd>{getStatusLabel(unidadSeleccionada.estatus)}</dd></div>
             </dl>
-            {['DISPONIBLE', 'CONSTRUCCION'].includes(unidadSeleccionada.estatus) ? (
-              <button type="button">Apartar unidad</button>
+            {['DISPONIBLE', 'CONSTRUCCION'].includes(normalizeStatus(unidadSeleccionada.estatus)) ? (
+              <button type="button" onClick={() => onApartarUnidad?.(unidadSeleccionada)}>
+                Apartar unidad
+              </button>
             ) : (
               <span className="plano-demo-panel-note">Esta unidad no esta disponible para apartado.</span>
             )}

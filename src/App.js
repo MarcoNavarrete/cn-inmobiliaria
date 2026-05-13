@@ -27,6 +27,8 @@ import AdminPropiedadesPage from './pages/AdminPropiedadesPage';
 import AdminProspectosPage from './pages/AdminProspectosPage';
 import AdminUsuariosPage from './pages/AdminUsuariosPage';
 import AdminDesarrollosPage from './pages/admin/AdminDesarrollosPage';
+import AdminProyectosInmobiliariosPage from './pages/admin/AdminProyectosInmobiliariosPage';
+import AdminProyectosInmobiliariosPlaceholderPage from './pages/admin/AdminProyectosInmobiliariosPlaceholderPage';
 import AdminDesarrolloFormPage from './pages/admin/AdminDesarrolloFormPage';
 import AdminDesarrolloImagenesPage from './pages/admin/AdminDesarrolloImagenesPage';
 import AdminDesarrolloAmenidadesPage from './pages/admin/AdminDesarrolloAmenidadesPage';
@@ -104,6 +106,14 @@ function App() {
           <Route index element={<AdminDashboardPage />} />
           <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="propiedades" element={<AdminPropiedadesPage />} />
+          <Route path="proyectos-inmobiliarios" element={<AdminProyectosInmobiliariosPage />} />
+          <Route path="proyectos-inmobiliarios/nuevo" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="nuevo" />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/editar" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="editar" />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/unidades" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="unidades" />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/modelos" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="modelos" />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/plano" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="plano" />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/imagenes" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="imagenes" />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/prospectos" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="prospectos" />} />
           <Route path="desarrollos" element={<AdminDesarrollosPage />} />
           <Route path="desarrollos/nuevo" element={<AdminDesarrolloFormPage />} />
           <Route path="desarrollos/:desarrolloId/editar" element={<AdminDesarrolloFormPage />} />
