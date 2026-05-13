@@ -28,6 +28,7 @@ import AdminProspectosPage from './pages/AdminProspectosPage';
 import AdminUsuariosPage from './pages/AdminUsuariosPage';
 import AdminDesarrollosPage from './pages/admin/AdminDesarrollosPage';
 import AdminProyectosInmobiliariosPage from './pages/admin/AdminProyectosInmobiliariosPage';
+import AdminProyectoInmobiliarioFormPage from './pages/admin/AdminProyectoInmobiliarioFormPage';
 import AdminProyectosInmobiliariosPlaceholderPage from './pages/admin/AdminProyectosInmobiliariosPlaceholderPage';
 import AdminDesarrolloFormPage from './pages/admin/AdminDesarrolloFormPage';
 import AdminDesarrolloImagenesPage from './pages/admin/AdminDesarrolloImagenesPage';
@@ -107,8 +108,8 @@ function App() {
           <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="propiedades" element={<AdminPropiedadesPage />} />
           <Route path="proyectos-inmobiliarios" element={<AdminProyectosInmobiliariosPage />} />
-          <Route path="proyectos-inmobiliarios/nuevo" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="nuevo" />} />
-          <Route path="proyectos-inmobiliarios/:proyectoId/editar" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="editar" />} />
+          <Route path="proyectos-inmobiliarios/nuevo" element={<AdminProyectoInmobiliarioFormPage />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/editar" element={<AdminProyectoInmobiliarioFormPage />} />
           <Route path="proyectos-inmobiliarios/:proyectoId/unidades" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="unidades" />} />
           <Route path="proyectos-inmobiliarios/:proyectoId/modelos" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="modelos" />} />
           <Route path="proyectos-inmobiliarios/:proyectoId/plano" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="plano" />} />
