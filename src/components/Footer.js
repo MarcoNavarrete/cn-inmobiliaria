@@ -13,6 +13,7 @@ export default function Footer() {
           <a href="#/">Inicio</a>
           <a href="#/propiedades">Propiedades</a>
           <a href="#/desarrollos">Desarrollos</a>
+          <a href="#/proyectos-inmobiliarios">Proyectos inmobiliarios</a>
           <a href="#/contacto">Contacto</a>
         </nav>
       </div>

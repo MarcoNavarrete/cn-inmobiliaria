@@ -14,6 +14,8 @@ import DetallePropiedad from './pages/DetallePropiedad';
 import PropiedadesPage from './pages/PropiedadesPage';
 import DesarrollosPage from './pages/DesarrollosPage';
 import DetalleDesarrolloPage from './pages/DetalleDesarrolloPage';
+import ProyectosInmobiliariosPage from './pages/ProyectosInmobiliariosPage';
+import ProyectoInmobiliarioDetallePage from './pages/ProyectoInmobiliarioDetallePage';
 import FavoritosPage from './pages/FavoritosPage';
 import MiCuentaPage from './pages/MiCuentaPage';
 import MisSolicitudesPage from './pages/MisSolicitudesPage';
@@ -29,6 +31,12 @@ import AdminUsuariosPage from './pages/AdminUsuariosPage';
 import AdminDesarrollosPage from './pages/admin/AdminDesarrollosPage';
 import AdminProyectosInmobiliariosPage from './pages/admin/AdminProyectosInmobiliariosPage';
 import AdminProyectoInmobiliarioFormPage from './pages/admin/AdminProyectoInmobiliarioFormPage';
+import AdminProyectoUnidadesPage from './pages/admin/AdminProyectoUnidadesPage';
+import AdminProyectoModelosPage from './pages/admin/AdminProyectoModelosPage';
+import AdminProyectoPlanoPage from './pages/admin/AdminProyectoPlanoPage';
+import AdminProyectoImagenesPage from './pages/admin/AdminProyectoImagenesPage';
+import AdminProyectoProspectosPage from './pages/admin/AdminProyectoProspectosPage';
+import AdminProyectoApartadosPage from './pages/admin/AdminProyectoApartadosPage';
 import AdminProyectosInmobiliariosPlaceholderPage from './pages/admin/AdminProyectosInmobiliariosPlaceholderPage';
 import AdminDesarrolloFormPage from './pages/admin/AdminDesarrolloFormPage';
 import AdminDesarrolloImagenesPage from './pages/admin/AdminDesarrolloImagenesPage';
@@ -72,6 +80,8 @@ function App() {
         <Route path="/propiedades" element={<PropiedadesPage />} />
         <Route path="/desarrollos" element={<DesarrollosPage />} />
         <Route path="/desarrollos/:id" element={<DetalleDesarrolloPage />} />
+        <Route path="/proyectos-inmobiliarios" element={<ProyectosInmobiliariosPage />} />
+        <Route path="/proyectos-inmobiliarios/:slug" element={<ProyectoInmobiliarioDetallePage />} />
         <Route path="/favoritos" element={<FavoritosPage />} />
         <Route path="/mis-solicitudes" element={<MisSolicitudesPage />} />
         <Route
@@ -110,10 +120,12 @@ function App() {
           <Route path="proyectos-inmobiliarios" element={<AdminProyectosInmobiliariosPage />} />
           <Route path="proyectos-inmobiliarios/nuevo" element={<AdminProyectoInmobiliarioFormPage />} />
           <Route path="proyectos-inmobiliarios/:proyectoId/editar" element={<AdminProyectoInmobiliarioFormPage />} />
-          <Route path="proyectos-inmobiliarios/:proyectoId/unidades" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="unidades" />} />
-          <Route path="proyectos-inmobiliarios/:proyectoId/modelos" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="modelos" />} />
-          <Route path="proyectos-inmobiliarios/:proyectoId/plano" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="plano" />} />
-          <Route path="proyectos-inmobiliarios/:proyectoId/imagenes" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="imagenes" />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/unidades" element={<AdminProyectoUnidadesPage />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/modelos" element={<AdminProyectoModelosPage />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/plano" element={<AdminProyectoPlanoPage />} />
+          <Route path="proyectos-inmobiliarios/:proyectoId/imagenes" element={<AdminProyectoImagenesPage />} />
+          <Route path="proyectos-inmobiliarios/prospectos" element={<AdminProyectoProspectosPage />} />
+          <Route path="proyectos-inmobiliarios/apartados" element={<AdminProyectoApartadosPage />} />
           <Route path="proyectos-inmobiliarios/:proyectoId/prospectos" element={<AdminProyectosInmobiliariosPlaceholderPage modulo="prospectos" />} />
           <Route path="desarrollos" element={<AdminDesarrollosPage />} />
           <Route path="desarrollos/nuevo" element={<AdminDesarrolloFormPage />} />

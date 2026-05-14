@@ -416,7 +416,11 @@ export default function AdminProyectoInmobiliarioFormPage() {
               <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/modelos`}>Modelos</Link>
               <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/plano`}>Plano</Link>
               <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imagenes</Link>
-              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/prospectos`}>Prospectos</Link>
+              <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyectoId}`}>Prospectos</Link>
+              <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyectoId}`}>Apartados</Link>
+              {form.slug ? (
+                <a href={`#/proyectos-inmobiliarios/${form.slug}`} target="_blank" rel="noopener noreferrer">Ver landing publica</a>
+              ) : null}
             </>
           ) : null}
         </section>

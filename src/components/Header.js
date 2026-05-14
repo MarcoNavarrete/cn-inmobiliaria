@@ -95,6 +95,7 @@ export default function Header() {
         <Link to="/" onClick={cerrarMenus}>Inicio</Link>
         <Link to="/propiedades" onClick={cerrarMenus}>Propiedades</Link>
         <Link to="/desarrollos" onClick={cerrarMenus}>Desarrollos</Link>
+        <Link to="/proyectos-inmobiliarios" onClick={cerrarMenus}>Proyectos inmobiliarios</Link>
         <Link to="/nosotros" onClick={cerrarMenus}>Nosotros</Link>
         <Link to="/contacto" onClick={cerrarMenus}>Contacto</Link>
 

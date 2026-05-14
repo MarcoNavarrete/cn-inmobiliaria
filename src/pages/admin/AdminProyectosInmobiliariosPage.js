@@ -263,7 +263,11 @@ export default function AdminProyectosInmobiliariosPage() {
                             <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/modelos`}>Modelos</Link>
                             <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/plano`}>Plano</Link>
                             <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/imagenes`}>Imagenes</Link>
-                            <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/prospectos`}>Prospectos</Link>
+                            <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyecto.id}`}>Prospectos</Link>
+                            <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyecto.id}`}>Apartados</Link>
+                            {proyecto.slug ? (
+                              <a href={`#/proyectos-inmobiliarios/${proyecto.slug}`} target="_blank" rel="noopener noreferrer">Ver landing publica</a>
+                            ) : null}
                             <button
                               type="button"
                               onClick={() => alternarActivo(proyecto)}

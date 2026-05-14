@@ -1,0 +1,269 @@
+.admin-proyecto-apartados {
+  width: min(1280px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+  color: var(--azul-oscuro);
+}
+
+.admin-proyecto-apartados-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-proyecto-apartados-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--dorado-suave);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-proyecto-apartados h1,
+.admin-proyecto-apartados h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+}
+
+.admin-proyecto-apartados h1 {
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+.admin-proyecto-apartados-hero span {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--gris-elegante);
+  font-weight: 800;
+}
+
+.admin-proyecto-apartados-hero-actions,
+.admin-proyecto-apartados-actions,
+.admin-proyecto-apartados-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.admin-proyecto-apartados button,
+.admin-proyecto-apartados a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-proyecto-apartados-hero-actions button,
+.admin-proyecto-apartados-filtros button[type="submit"],
+.admin-proyecto-apartados-modal-actions button[type="submit"] {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
+.admin-proyecto-apartados-security {
+  margin: 0 0 1.25rem;
+  border: 1px solid rgba(203, 161, 53, 0.24);
+  border-radius: 12px;
+  padding: 0.95rem 1rem;
+  background: rgba(203, 161, 53, 0.12);
+  color: #735817;
+  font-weight: 900;
+}
+
+.admin-proyecto-apartados-filtros,
+.admin-proyecto-apartados-card {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(16, 35, 58, 0.08);
+}
+
+.admin-proyecto-apartados-filtros {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(150px, 190px) auto;
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.admin-proyecto-apartados label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-proyecto-apartados label span {
+  color: rgba(26, 61, 124, 0.88);
+  font-weight: 700;
+}
+
+.admin-proyecto-apartados input,
+.admin-proyecto-apartados textarea,
+.admin-proyecto-apartados select {
+  width: 100%;
+  padding: 0.68rem 0.75rem;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  color: var(--azul-oscuro);
+  font: inherit;
+}
+
+.admin-proyecto-apartados-feedback,
+.admin-proyecto-apartados-empty,
+.admin-proyecto-apartados-warning {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: rgba(26, 61, 124, 0.06);
+}
+
+.admin-proyecto-apartados-feedback.is-error {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.08);
+}
+
+.admin-proyecto-apartados-feedback.is-ok {
+  color: #21633a;
+  background: rgba(33, 99, 58, 0.08);
+}
+
+.admin-proyecto-apartados-warning {
+  background: rgba(203, 161, 53, 0.14);
+  color: #735817;
+  font-weight: 900;
+}
+
+.admin-proyecto-apartados-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-proyecto-apartados-table {
+  width: 100%;
+  min-width: 1320px;
+  border-collapse: collapse;
+}
+
+.admin-proyecto-apartados-table th,
+.admin-proyecto-apartados-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(26, 61, 124, 0.08);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-proyecto-apartados-table th {
+  color: rgba(26, 61, 124, 0.82);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.admin-proyecto-apartados-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  font-size: 0.8rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.admin-proyecto-apartados-status.is-vigente {
+  background: rgba(33, 99, 58, 0.12);
+  color: #21633a;
+}
+
+.admin-proyecto-apartados-status.is-vencido,
+.admin-proyecto-apartados-status.is-cancelado {
+  background: rgba(89, 99, 110, 0.14);
+  color: #59636e;
+}
+
+.admin-proyecto-apartados-status.is-convertido {
+  background: rgba(18, 86, 65, 0.14);
+  color: #125641;
+}
+
+.admin-proyecto-apartados-actions {
+  min-width: 220px;
+}
+
+.admin-proyecto-apartados-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+  padding: 1rem;
+  background: rgba(7, 21, 33, 0.68);
+}
+
+.admin-proyecto-apartados-modal {
+  width: min(820px, 100%);
+  margin: 2rem 0;
+  border-radius: 12px;
+  background: var(--blanco);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.admin-proyecto-apartados-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(26, 61, 124, 0.08);
+}
+
+.admin-proyecto-apartados-modal-head > button {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.admin-proyecto-apartados-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.admin-proyecto-apartados-form-grid .is-full {
+  grid-column: 1 / -1;
+}
+
+.admin-proyecto-apartados-modal-actions {
+  padding: 0 1rem 1rem;
+}
+
+.admin-proyecto-apartados button:disabled,
+.admin-proyecto-apartados select:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+@media (max-width: 940px) {
+  .admin-proyecto-apartados-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-proyecto-apartados-filtros,
+  .admin-proyecto-apartados-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
