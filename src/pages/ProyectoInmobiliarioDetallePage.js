@@ -376,14 +376,14 @@ export default function ProyectoInmobiliarioDetallePage() {
               <p className="proyecto-publico-eyebrow">Modelos</p>
               <h2>Prototipos disponibles</h2>
             </div>
-            <div className="proyecto-publico-modelos">
+            <div className="proyecto-modelos-grid">
               {modelos.map((modelo) => (
-                <article key={modelo.id} className="proyecto-publico-modelo-card">
-                    <div className={`proyecto-publico-modelo-media ${modelo.imagenPrincipalUrl ? '' : 'is-placeholder'}`}>
+                <article key={modelo.id} className="proyecto-modelo-card">
+                  <div className={`proyecto-modelo-media ${modelo.imagenPrincipalUrl ? '' : 'is-placeholder'}`}>
                     {modelo.imagenPrincipalUrl ? (
                       <button
                         type="button"
-                        className="proyecto-publico-modelo-image-button"
+                        className="proyecto-modelo-image-button"
                         onClick={() => setModeloImagenModal({
                           src: resolveApiAssetUrl(modelo.imagenPrincipalUrl),
                           title: modelo.nombre,
@@ -391,13 +391,15 @@ export default function ProyectoInmobiliarioDetallePage() {
                       >
                         <img src={resolveApiAssetUrl(modelo.imagenPrincipalUrl)} alt={modelo.nombre} />
                       </button>
-                    ) : <span>Imagen proximamente</span>}
+                    ) : <span>Sin imagen del modelo</span>}
                   </div>
-                  <div className="proyecto-publico-modelo-body">
-                    <h3>{modelo.nombre}</h3>
-                    <strong>{modelo.precioDesdeTexto}</strong>
+                  <div className="proyecto-modelo-info">
+                    <div className="proyecto-modelo-header">
+                      <h3>{modelo.nombre}</h3>
+                      <strong>{modelo.precioDesdeTexto}</strong>
+                    </div>
                     <p>{modelo.descripcion || 'Modelo disponible dentro del proyecto.'}</p>
-                    <dl>
+                    <dl className="proyecto-modelo-features">
                       <div><dt>Recamaras</dt><dd>{modelo.recamaras}</dd></div>
                       <div><dt>Banos</dt><dd>{modelo.banos}{modelo.mediosBanos ? ` + ${modelo.mediosBanos}/2` : ''}</dd></div>
                       <div><dt>Estac.</dt><dd>{modelo.estacionamientos}</dd></div>
@@ -405,7 +407,7 @@ export default function ProyectoInmobiliarioDetallePage() {
                       <div><dt>Terreno</dt><dd>{formatArea(modelo.superficieTerrenoM2)}</dd></div>
                       <div><dt>Construccion</dt><dd>{formatArea(modelo.superficieConstruccionM2)}</dd></div>
                     </dl>
-                    <div className="proyecto-publico-modelo-actions">
+                    <div className="proyecto-modelo-actions">
                       {modelo.imagenPrincipalUrl ? (
                         <button
                           type="button"

@@ -2,7 +2,7 @@ const DEFAULT_API_BASE_URL = 'https://localhost:7206';
 const DEFAULT_FRONTEND_ASSETS_BASE_URL = process.env.PUBLIC_URL || '/';
 const AUTH_TOKEN_KEY = 'cn_inmobiliaria_auth_token';
 const SESSION_EXPIRED_MESSAGE = 'Tu sesion ha expirado. Inicia sesion nuevamente para continuar.';
-const FORBIDDEN_MESSAGE = 'No tienes permisos para realizar esta accion.';
+const FORBIDDEN_MESSAGE = 'No tienes permiso para acceder a esta sección.';
 const AUTH_STORAGE_KEYS = [
   AUTH_TOKEN_KEY,
   'token',
@@ -133,7 +133,7 @@ const getErrorMessage = (data, fallback) => {
   return data?.mensaje || data?.message || fallback;
 };
 
-const handleApiResponse = async (response, path) => {
+const handleApiResponse = async (response, path, options = {}) => {
   const data = await parseResponseBody(response);
 
   if (response.status === 401 && !isAuthEndpoint(path)) {
@@ -142,7 +142,9 @@ const handleApiResponse = async (response, path) => {
   }
 
   if (response.status === 403 && !isAuthEndpoint(path)) {
-    handleForbidden();
+    if (!options.suppressForbiddenAlert) {
+      handleForbidden();
+    }
     throw createApiError(FORBIDDEN_MESSAGE, response.status, data, 'FORBIDDEN');
   }
 
@@ -201,7 +203,7 @@ export const resolveApiAssetUrl = (value) => {
 };
 
 export const getJson = async (path, options = {}) => {
-  const { query, signal } = options;
+  const { query, signal, suppressForbiddenAlert } = options;
   const response = await fetch(buildUrl(path, query), {
     method: 'GET',
     signal,
@@ -211,7 +213,7 @@ export const getJson = async (path, options = {}) => {
     },
   });
 
-  return handleApiResponse(response, path);
+  return handleApiResponse(response, path, { suppressForbiddenAlert });
 };
 
 export const requestJson = async (path, options = {}) => {
@@ -221,6 +223,7 @@ export const requestJson = async (path, options = {}) => {
     method = 'GET',
     query,
     signal,
+    suppressForbiddenAlert,
   } = options;
 
   const response = await fetch(buildUrl(path, query), {
@@ -235,7 +238,7 @@ export const requestJson = async (path, options = {}) => {
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
 
-  return handleApiResponse(response, path);
+  return handleApiResponse(response, path, { suppressForbiddenAlert });
 };
 
 export const requestFormData = async (path, options = {}) => {
@@ -245,6 +248,7 @@ export const requestFormData = async (path, options = {}) => {
     method = 'POST',
     query,
     signal,
+    suppressForbiddenAlert,
   } = options;
 
   const response = await fetch(buildUrl(path, query), {
@@ -258,5 +262,5 @@ export const requestFormData = async (path, options = {}) => {
     body,
   });
 
-  return handleApiResponse(response, path);
+  return handleApiResponse(response, path, { suppressForbiddenAlert });
 };

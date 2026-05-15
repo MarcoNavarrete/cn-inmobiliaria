@@ -155,6 +155,13 @@
   font-weight: 800;
 }
 
+.admin-proyecto-plano-intro,
+.admin-proyecto-plano-tech-note {
+  margin: 0 0 1rem;
+  color: var(--gris-elegante);
+  font-weight: 700;
+}
+
 .admin-proyecto-plano-upload {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 180px;
@@ -208,6 +215,11 @@
   margin-bottom: 0.85rem;
 }
 
+.admin-proyecto-plano-stats.is-diagnostico {
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  margin-bottom: 0.85rem;
+}
+
 .admin-proyecto-plano-stats div {
   display: grid;
   gap: 0.2rem;
@@ -225,6 +237,46 @@
 
 .admin-proyecto-plano-stats strong {
   font-size: 1.55rem;
+}
+
+.admin-proyecto-plano-stats .is-ok {
+  background: rgba(33, 99, 58, 0.1);
+}
+
+.admin-proyecto-plano-stats .is-ok strong {
+  color: #21633a;
+}
+
+.admin-proyecto-plano-stats .is-warning {
+  background: rgba(203, 161, 53, 0.16);
+}
+
+.admin-proyecto-plano-stats .is-warning strong {
+  color: #735817;
+}
+
+.admin-proyecto-plano-stats .is-danger {
+  background: rgba(143, 45, 36, 0.1);
+}
+
+.admin-proyecto-plano-stats .is-danger strong {
+  color: #8f2d24;
+}
+
+.admin-proyecto-plano-stats .is-info {
+  background: rgba(26, 61, 124, 0.08);
+}
+
+.admin-proyecto-plano-stats .is-info strong {
+  color: var(--azul-oscuro);
+}
+
+.admin-proyecto-plano-stats .is-muted {
+  background: rgba(89, 99, 110, 0.1);
+}
+
+.admin-proyecto-plano-stats .is-muted strong {
+  color: #59636e;
 }
 
 .admin-proyecto-plano-svg-ids {

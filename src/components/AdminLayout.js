@@ -1,11 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  FaBuilding,
+  FaArrowLeft,
   FaBell,
+  FaBuilding,
+  FaChartBar,
+  FaClipboardList,
+  FaCog,
+  FaFolderOpen,
   FaHome,
   FaImages,
+  FaProjectDiagram,
+  FaSignOutAlt,
   FaTachometerAlt,
+  FaUserCheck,
+  FaUsers,
 } from 'react-icons/fa';
 import { cerrarSesion } from '../services/authService';
 import { obtenerMenu } from '../services/menuService';
@@ -14,17 +23,37 @@ import {
   marcarTodasNotificacionesLeidas,
   obtenerNotificaciones,
 } from '../services/notificacionesService';
+import useAuthSession from '../hooks/useAuthSession';
 import './AdminLayout.css';
 
+const ROLES_INTERNOS_CN = ['ASESOR', 'SUPERVISOR', 'ADMIN', 'SUPERADMIN'];
+
 const ICONOS_MENU = {
+  arrowleft: FaArrowLeft,
+  apartados: FaClipboardList,
   building: FaBuilding,
+  chart: FaChartBar,
+  charts: FaChartBar,
+  configuracion: FaCog,
+  config: FaCog,
   dashboard: FaTachometerAlt,
+  estadisticas: FaChartBar,
+  folderopen: FaFolderOpen,
   home: FaHome,
   image: FaImages,
   images: FaImages,
   inmueble: FaBuilding,
-  propiedades: FaBuilding,
-  tour: FaImages,
+  properties: FaHome,
+  propiedades: FaHome,
+  project: FaProjectDiagram,
+  projects: FaProjectDiagram,
+  proyecto: FaProjectDiagram,
+  proyectos: FaProjectDiagram,
+  prospectos: FaUserCheck,
+  signout: FaSignOutAlt,
+  usuarios: FaUsers,
+  users: FaUsers,
+  usercheck: FaUserCheck,
 };
 
 const normalizeList = (value) => {
@@ -43,21 +72,89 @@ const normalizeList = (value) => {
   return [];
 };
 
-const ordenarMenu = (items) =>
-  normalizeList(items)
-    .filter((item) => item?.activo !== false)
-    .map((item) => ({
-      ...item,
-      children: ordenarMenu(item.children),
-    }))
-    .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+const limpiarLabel = (value) => String(value || '').trim().replace(/^[-\s]+/, '');
 
 const normalizarRuta = (ruta) => {
-  if (!ruta) {
+  const value = String(ruta || '').trim();
+
+  if (!value) {
+    return '';
+  }
+
+  const limpia = value.split(/[?#]/)[0].replace(/\/+$/, '');
+
+  if (!limpia) {
     return '/admin';
   }
 
-  return ruta.startsWith('/') ? ruta : `/${ruta}`;
+  return limpia.startsWith('/') ? limpia : `/${limpia}`;
+};
+
+const canonizarRuta = (ruta) => {
+  const value = normalizarRuta(ruta);
+
+  if (value === '/admin/dashboard') {
+    return '/admin';
+  }
+
+  return value;
+};
+
+const obtenerIconoPorRuta = (item) => {
+  const ruta = canonizarRuta(item?.ruta);
+  const nombre = limpiarLabel(item?.nombre).toLowerCase();
+
+  if (ruta === '/admin') return FaTachometerAlt;
+  if (ruta === '/admin/usuarios' || nombre.includes('usuarios')) return FaUsers;
+  if (ruta === '/admin/desarrollos' || nombre.includes('desarrollos')) return FaBuilding;
+  if (ruta === '/admin/proyectos-inmobiliarios' || nombre.includes('proyectos inmobiliarios')) return FaProjectDiagram;
+  if (ruta === '/admin/prospectos' || nombre.includes('prospectos')) return FaUserCheck;
+  if (ruta === '/admin/apartados' || nombre.includes('apartados')) return FaClipboardList;
+  if (ruta === '/admin/catalogos' || nombre.includes('catalog')) return FaFolderOpen;
+  if (ruta === '/admin/configuracion' || nombre.includes('config')) return FaCog;
+  if (nombre.includes('estad')) return FaChartBar;
+  if (nombre.includes('volver al sitio')) return FaArrowLeft;
+  if (nombre.includes('cerrar sesion')) return FaSignOutAlt;
+
+  return null;
+};
+
+const puntuarItemMenu = (item) => {
+  let score = 0;
+
+  if (limpiarLabel(item.nombre)) score += 4;
+  if (canonizarRuta(item.ruta)) score += 3;
+  if (item.icono || obtenerIconoPorRuta(item)) score += 2;
+  if (!/^[-\s]/.test(String(item.nombre || ''))) score += 1;
+  if ((item.children || []).length > 0) score += 1;
+
+  return score;
+};
+
+const limpiarMenu = (items) => {
+  const normalizados = normalizeList(items)
+    .filter((item) => item?.activo !== false)
+    .map((item) => ({
+      ...item,
+      nombre: limpiarLabel(item.nombre),
+      ruta: canonizarRuta(item.ruta),
+      children: limpiarMenu(item.children),
+    }))
+    .filter((item) => item.nombre || item.ruta || item.children.length > 0)
+    .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+
+  const porRuta = new Map();
+
+  normalizados.forEach((item) => {
+    const key = item.ruta || `__sin_ruta__${item.nombre}`;
+    const actual = porRuta.get(key);
+
+    if (!actual || puntuarItemMenu(item) > puntuarItemMenu(actual)) {
+      porRuta.set(key, item);
+    }
+  });
+
+  return Array.from(porRuta.values());
 };
 
 const resumirTexto = (value, maxLength = 110) => {
@@ -110,23 +207,20 @@ const formatearFechaRelativa = (value) => {
 };
 
 function MenuIcon({ icono }) {
-  const Icon = ICONOS_MENU[String(icono || '').trim().toLowerCase()];
-
-  if (!Icon) {
-    return <span className="admin-nav-icon-fallback" aria-hidden="true">-</span>;
-  }
+  const Icon = ICONOS_MENU[String(icono || '').trim().toLowerCase().replace(/[\s_-]+/g, '')] || FaHome;
 
   return <Icon aria-hidden="true" />;
 }
 
 function MenuItem({ item }) {
   const children = item.children || [];
+  const icono = item.icono || obtenerIconoPorRuta(item);
 
   return (
     <div className="admin-nav-item">
-      <NavLink to={normalizarRuta(item.ruta)} end={normalizarRuta(item.ruta) === '/admin'}>
-        <MenuIcon icono={item.icono} />
-        <span>{item.nombre}</span>
+      <NavLink to={item.ruta || '/admin'} end={canonizarRuta(item.ruta) === '/admin'}>
+        <MenuIcon icono={icono} />
+        <span>{limpiarLabel(item.nombre)}</span>
       </NavLink>
       {children.length > 0 ? (
         <div className="admin-nav-children">
@@ -141,6 +235,9 @@ function MenuItem({ item }) {
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { cargando: cargandoSesion, rolGlobal, esAdminCn, tieneAccesoEmpresarial } = useAuthSession();
+  const esUsuarioInternoCn = ROLES_INTERNOS_CN.includes(String(rolGlobal || '').toUpperCase());
   const [menu, setMenu] = useState([]);
   const [notificaciones, setNotificaciones] = useState([]);
   const [cargandoMenu, setCargandoMenu] = useState(true);
@@ -150,6 +247,19 @@ export default function AdminLayout() {
   const [errorNotificaciones, setErrorNotificaciones] = useState('');
 
   const noLeidas = notificaciones.filter((notificacion) => !notificacion.leida).length;
+  const mostrarMenuEmpresarial = !esUsuarioInternoCn && tieneAccesoEmpresarial;
+  const puedeVerAdmin = esAdminCn || tieneAccesoEmpresarial || esUsuarioInternoCn;
+  const menuInterno = limpiarMenu([
+    { nombre: 'Dashboard', ruta: '/admin', icono: 'dashboard' },
+    ...menu,
+    { nombre: 'Desarrollos inmobiliarios', ruta: '/admin/desarrollos', icono: 'building' },
+    { nombre: 'Proyectos inmobiliarios', ruta: '/admin/proyectos-inmobiliarios', icono: 'project' },
+  ]);
+  const menuEmpresarial = limpiarMenu([
+    { nombre: 'Proyectos inmobiliarios', ruta: '/admin/proyectos-inmobiliarios', icono: 'project' },
+    { nombre: 'Prospectos', ruta: '/admin/proyectos-inmobiliarios/prospectos', icono: 'prospectos' },
+    { nombre: 'Apartados', ruta: '/admin/proyectos-inmobiliarios/apartados', icono: 'apartados' },
+  ]);
 
   const cargarNotificaciones = useCallback(async (options = {}) => {
     const { silencioso = false, signal } = options;
@@ -175,15 +285,23 @@ export default function AdminLayout() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let controller;
 
     const cargarMenu = async () => {
+      if (!esUsuarioInternoCn) {
+        setMenu([]);
+        setErrorMenu('');
+        setCargandoMenu(false);
+        return;
+      }
+
+      controller = new AbortController();
       setCargandoMenu(true);
       setErrorMenu('');
 
       try {
         const data = await obtenerMenu({ signal: controller.signal });
-        setMenu(ordenarMenu(data));
+        setMenu(limpiarMenu(data));
       } catch (err) {
         if (err.name !== 'AbortError') {
           setErrorMenu(err.data?.mensaje || err.data?.message || err.message || 'No fue posible cargar el menu.');
@@ -197,8 +315,22 @@ export default function AdminLayout() {
 
     cargarMenu();
 
-    return () => controller.abort();
-  }, []);
+    return () => {
+      controller?.abort();
+    };
+  }, [esUsuarioInternoCn]);
+
+  useEffect(() => {
+    if (!cargandoSesion && !puedeVerAdmin) {
+      navigate('/', { replace: true });
+    }
+  }, [cargandoSesion, navigate, puedeVerAdmin]);
+
+  useEffect(() => {
+    if (!cargandoSesion && mostrarMenuEmpresarial && location.pathname === '/admin') {
+      navigate('/admin/proyectos-inmobiliarios', { replace: true });
+    }
+  }, [cargandoSesion, location.pathname, mostrarMenuEmpresarial, navigate]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -305,33 +437,42 @@ export default function AdminLayout() {
               </div>
             ) : null}
           </div>
-          {cargandoMenu ? <span className="admin-nav-status">Cargando menu...</span> : null}
-          {errorMenu ? <span className="admin-nav-status is-error">{errorMenu}</span> : null}
-          {!cargandoMenu && !errorMenu ? (
+          {cargandoSesion || (esUsuarioInternoCn && cargandoMenu) ? <span className="admin-nav-status">Cargando menu...</span> : null}
+          {esUsuarioInternoCn && errorMenu ? <span className="admin-nav-status is-error">{errorMenu}</span> : null}
+          {!cargandoSesion && !puedeVerAdmin ? (
+            <span className="admin-nav-status is-error">No tienes permiso para acceder a esta sección.</span>
+          ) : null}
+          {!cargandoSesion && esUsuarioInternoCn && !cargandoMenu && !errorMenu ? (
             <>
-              <NavLink to="/admin" end>
-                <FaTachometerAlt aria-hidden="true" />
-                <span>Dashboard</span>
-              </NavLink>
-              {menu.map((item) => (
+              {menuInterno.map((item) => (
                 <MenuItem key={item.menuId || item.ruta || item.nombre} item={item} />
               ))}
-              <NavLink to="/admin/desarrollos">
-                <FaBuilding aria-hidden="true" />
-                <span>Desarrollos inmobiliarios</span>
-              </NavLink>
-              <NavLink to="/admin/proyectos-inmobiliarios">
-                <FaBuilding aria-hidden="true" />
-                <span>Proyectos inmobiliarios</span>
-              </NavLink>
+              {esAdminCn ? (
+                <NavLink to="/admin/usuarios">
+                  <MenuIcon icono="usuarios" />
+                  <span>Usuarios</span>
+                </NavLink>
+              ) : null}
             </>
           ) : null}
-          <Link to="/">Volver al sitio</Link>
-          <button type="button" onClick={salir}>Cerrar sesion</button>
+          {!cargandoSesion && mostrarMenuEmpresarial ? (
+            <>
+              {menuEmpresarial.map((item) => (
+                <MenuItem key={item.menuId || item.ruta || item.nombre} item={item} />
+              ))}
+            </>
+          ) : null}
+          <Link to="/">
+            <MenuIcon icono="arrowleft" />
+            <span>Volver al sitio</span>
+          </Link>
+          <button type="button" onClick={salir}>
+            <MenuIcon icono="signout" />
+            <span>Cerrar sesion</span>
+          </button>
         </div>
       </nav>
-      <Outlet />
+      {!cargandoSesion && puedeVerAdmin ? <Outlet /> : null}
     </div>
   );
 }
-

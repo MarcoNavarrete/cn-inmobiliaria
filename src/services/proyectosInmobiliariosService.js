@@ -1,4 +1,4 @@
-import { getJson, requestJson } from './apiClient';
+import { getJson, requestFormData, requestJson } from './apiClient';
 import {
   cleanQuery,
   formatCurrency,
@@ -10,6 +10,14 @@ import {
 } from './proyectosInmobiliariosUtils';
 
 const BASE_URL = '/api/admin/proyectos-inmobiliarios';
+
+const adaptProyectoResponse = (response) =>
+  adaptProyectoInmobiliario(
+    response?.proyecto ||
+    response?.data?.proyecto ||
+    response?.data ||
+    response
+  );
 
 const buildUbicacion = (item = {}) =>
   [
@@ -106,3 +114,19 @@ export const setProyectoPublicacion = (proyectoId, { estatusPublicacion, mostrar
     method: 'PATCH',
     body: { estatusPublicacion, mostrarEnPublico },
   });
+
+const subirArchivoProyecto = (proyectoId, ruta, file) => {
+  const body = new FormData();
+  body.append('file', file);
+
+  return requestFormData(`${BASE_URL}/${proyectoId}${ruta}`, {
+    method: 'POST',
+    body,
+  }).then(adaptProyectoResponse);
+};
+
+export const subirImagenPrincipal = (proyectoId, file) =>
+  subirArchivoProyecto(proyectoId, '/imagen-principal/upload', file);
+
+export const subirLogoProyecto = (proyectoId, file) =>
+  subirArchivoProyecto(proyectoId, '/logo/upload', file);

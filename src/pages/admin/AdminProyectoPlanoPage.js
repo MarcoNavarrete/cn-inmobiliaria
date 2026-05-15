@@ -4,6 +4,7 @@ import { resolveApiAssetUrl } from '../../services/apiClient';
 import { obtenerPlano, guardarPlano, subirPlanoSvg } from '../../services/proyectoPlanoService';
 import { listarUnidades } from '../../services/proyectoUnidadesService';
 import { obtenerProyecto } from '../../services/proyectosInmobiliariosService';
+import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
 import './AdminProyectoPlanoPage.css';
 
 const FORM_INICIAL = {
@@ -35,7 +36,7 @@ const ESTATUS_COLORES = {
 };
 
 const SCRIPT_PROTOCOL = ['java', 'script:'].join('');
-const SVG_TAGS_DETECTABLES = new Set(['path', 'polygon', 'rect', 'circle', 'ellipse', 'g', 'polyline']);
+const SVG_TAGS_DETECTABLES = new Set(['path', 'polygon', 'rect', 'circle', 'ellipse', 'g', 'polyline', 'line']);
 const SVG_TAGS_EXCLUIDOS = new Set([
   'svg',
   'defs',
@@ -49,7 +50,17 @@ const SVG_TAGS_EXCLUIDOS = new Set([
   'title',
   'desc',
 ]);
-const MAX_IDS_PREVIEW = 100;
+const MAX_DIAGNOSTICO_ROWS = 200;
+const SVG_UNIDAD_PREFIXES = [
+  'unidad-',
+  'lote-',
+  'casa-',
+  'depto-',
+  'departamento-',
+  'local-',
+  'oficina-',
+  'macrolote-',
+];
 const CSV_COLUMNS = [
   'unidadId',
   'codigo',
@@ -152,14 +163,26 @@ const getUnidadModelo = (unidad) => unidad?.modeloNombre || unidad?.modelo || '-
 
 const getUnidadId = (unidad) => unidad?.unidadId || unidad?.id || '';
 
-const generarCodigoDesdeSvgId = (svgElementId) =>
-  String(svgElementId || '')
+const normalizeSvgElementId = (value) => String(value || '').trim();
+
+const esSvgIdUnidadProbable = (svgElementId) => {
+  const normalized = normalizeSvgElementId(svgElementId).toLowerCase();
+  return SVG_UNIDAD_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+};
+
+const generarCodigoDesdeSvgElementId = (svgElementId) => {
+  const normalized = normalizeSvgElementId(svgElementId);
+  const withoutUnidadPrefix = normalized.replace(/^unidad-/i, '');
+  const code = withoutUnidadPrefix
     .trim()
     .replace(/_/g, '-')
     .replace(/[^a-zA-Z0-9-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
     .toUpperCase();
+
+  return code || normalized.toUpperCase();
+};
 
 const getTipoUnidadDefault = (tipoProyecto) => {
   switch (String(tipoProyecto || '').toUpperCase()) {
@@ -197,6 +220,9 @@ const descargarArchivoCsv = (filename, rows) => {
 };
 
 export default function AdminProyectoPlanoPage() {
+  const permisosEmpresa = usePermisosEmpresa();
+  const { esAdminCn } = permisosEmpresa;
+  const puedeSubirPlano = permisosEmpresa.puedeSubirPlano;
   const { proyectoId } = useParams();
   const planoRef = useRef(null);
   const [proyecto, setProyecto] = useState(null);
@@ -204,7 +230,6 @@ export default function AdminProyectoPlanoPage() {
   const [unidades, setUnidades] = useState([]);
   const [form, setForm] = useState(FORM_INICIAL);
   const [archivoSvg, setArchivoSvg] = useState(null);
-  const [mostrarAvanzado, setMostrarAvanzado] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [svgLoading, setSvgLoading] = useState(false);
@@ -216,10 +241,10 @@ export default function AdminProyectoPlanoPage() {
   const [mensaje, setMensaje] = useState('');
 
   const svgPreviewUrl = useMemo(() => resolveApiAssetUrl(form.svgUrl), [form.svgUrl]);
-  const unidadesConSvg = useMemo(() => unidades.filter((unidad) => unidad.svgElementId), [unidades]);
-  const unidadesSinSvg = useMemo(() => unidades.filter((unidad) => !unidad.svgElementId), [unidades]);
+  const unidadesConSvg = useMemo(() => unidades.filter((unidad) => normalizeSvgElementId(unidad.svgElementId)), [unidades]);
+  const unidadesSinSvg = useMemo(() => unidades.filter((unidad) => !normalizeSvgElementId(unidad.svgElementId)), [unidades]);
   const unidadesPorSvgId = useMemo(
-    () => Object.fromEntries(unidadesConSvg.map((unidad) => [unidad.svgElementId, unidad])),
+    () => Object.fromEntries(unidadesConSvg.map((unidad) => [normalizeSvgElementId(unidad.svgElementId), unidad])),
     [unidadesConSvg]
   );
   const svgElementIdDuplicados = useMemo(() => {
@@ -353,7 +378,9 @@ export default function AdminProyectoPlanoPage() {
     const unidadesNoEncontradas = [];
 
     unidadesConSvg.forEach((unidad) => {
-      const element = svg.querySelector(`#${escapeCssId(unidad.svgElementId)}`);
+      const svgElementId = normalizeSvgElementId(unidad.svgElementId);
+      const selectedSvgElementId = normalizeSvgElementId(unidadSeleccionada?.svgElementId);
+      const element = svg.querySelector(`#${escapeCssId(svgElementId)}`);
       if (!element) {
         unidadesNoEncontradas.push(unidad);
         return;
@@ -365,20 +392,20 @@ export default function AdminProyectoPlanoPage() {
       clases.add('admin-plano-unit');
       clases.add(getStatusClass(estatus));
 
-      if (unidadSeleccionada?.svgElementId === unidad.svgElementId) {
+      if (selectedSvgElementId === svgElementId) {
         clases.add('is-selected');
       }
 
       element.setAttribute('class', [...clases].join(' '));
-      element.setAttribute('data-svg-element-id', unidad.svgElementId);
-      element.setAttribute('data-unidad-id', unidad.id || unidad.unidadId || unidad.svgElementId);
+      element.setAttribute('data-svg-element-id', svgElementId);
+      element.setAttribute('data-unidad-id', unidad.id || unidad.unidadId || svgElementId);
       element.setAttribute('data-estatus', estatus);
       element.setAttribute('data-codigo', unidad.codigo || '');
       element.setAttribute('role', 'button');
       element.setAttribute('tabindex', '0');
       element.style.fill = colores.fill;
       element.style.stroke = colores.stroke;
-      element.style.strokeWidth = unidadSeleccionada?.svgElementId === unidad.svgElementId ? '4' : '2';
+      element.style.strokeWidth = selectedSvgElementId === svgElementId ? '4' : '2';
       element.style.cursor = 'pointer';
       element.style.transition = 'fill 0.16s ease, stroke 0.16s ease, stroke-width 0.16s ease, opacity 0.16s ease';
       unidadesMapeadas.push(unidad);
@@ -404,7 +431,7 @@ export default function AdminProyectoPlanoPage() {
     return [...svg.querySelectorAll('[id]')]
       .map((element) => {
         const tagName = element.tagName.toLowerCase();
-        const svgElementId = element.getAttribute('id');
+        const svgElementId = normalizeSvgElementId(element.getAttribute('id'));
 
         if (!svgElementId || idsVisitados.has(svgElementId)) return null;
         idsVisitados.add(svgElementId);
@@ -414,10 +441,13 @@ export default function AdminProyectoPlanoPage() {
         }
 
         const unidad = unidadesPorSvgId[svgElementId] || null;
+        const esUnidadProbable = esSvgIdUnidadProbable(svgElementId);
 
         return {
+          id: svgElementId,
           svgElementId,
           tagName,
+          esUnidadProbable,
           yaTieneUnidad: Boolean(unidad),
           unidadId: unidad ? getUnidadId(unidad) : null,
           codigoUnidad: unidad?.codigo || unidad?.nombre || null,
@@ -428,35 +458,37 @@ export default function AdminProyectoPlanoPage() {
       .filter(Boolean);
   }, [svgMarkup, unidadesPorSvgId]);
 
-  const diagnosticoSvgIds = useMemo(() => {
-    const vinculados = svgIdsDetectados.filter((item) => item.yaTieneUnidad).length;
-    return {
-      total: svgIdsDetectados.length,
-      vinculados,
-      sinUnidad: svgIdsDetectados.length - vinculados,
-    };
-  }, [svgIdsDetectados]);
+  const diagnosticoSvg = useMemo(() => {
+    const idsUnidadSvg = svgIdsDetectados.filter((item) => item.esUnidadProbable);
+    const otrosIdsInformativos = svgIdsDetectados.filter((item) => !item.esUnidadProbable);
+    const idsUnidadSvgSet = new Set(idsUnidadSvg.map((item) => item.svgElementId));
+    const unidadesConSvgElementId = unidades.filter((unidad) => normalizeSvgElementId(unidad.svgElementId));
+    const unidadesSvgElementIdSet = new Set(unidadesConSvgElementId.map((unidad) => normalizeSvgElementId(unidad.svgElementId)));
+    const vinculadas = unidades.filter((unidad) => {
+      const svgElementId = normalizeSvgElementId(unidad.svgElementId);
+      return svgElementId && idsUnidadSvgSet.has(svgElementId);
+    });
+    const sinSvgElementId = unidades.filter((unidad) => !normalizeSvgElementId(unidad.svgElementId));
+    const cnNoExisteEnSvg = unidadesConSvgElementId.filter((unidad) => !idsUnidadSvgSet.has(normalizeSvgElementId(unidad.svgElementId)));
+    const svgUnidadSinAsignar = idsUnidadSvg.filter((item) => !unidadesSvgElementIdSet.has(item.svgElementId));
 
-  const diagnostico = useMemo(() => {
-    const total = unidades.length;
-    const mapeadas = svgInteractivo.unidadesMapeadas.length;
-
     return {
-      total,
-      conSvg: unidadesConSvg.length,
-      sinSvg: unidadesSinSvg.length,
-      mapeadas,
-      noEncontradas: svgInteractivo.unidadesNoEncontradas.length,
-      porcentajeMapeado: total ? Math.round((mapeadas / total) * 100) : 0,
+      idsUnidadSvg,
+      unidadesCn: unidades,
+      vinculadas,
+      sinSvgElementId,
+      cnNoExisteEnSvg,
+      svgUnidadSinAsignar,
+      otrosIdsInformativos,
     };
-  }, [svgInteractivo, unidades.length, unidadesConSvg.length, unidadesSinSvg.length]);
+  }, [svgIdsDetectados, unidades]);
 
   const filasCsvDesdeSvg = useMemo(() => {
     const tipoUnidadDefault = getTipoUnidadDefault(proyecto?.tipoProyecto);
 
-    return svgIdsDetectados.map((item) => {
+    return diagnosticoSvg.idsUnidadSvg.map((item) => {
       const unidad = item.unidad;
-      const codigoSugerido = generarCodigoDesdeSvgId(item.svgElementId);
+      const codigoSugerido = generarCodigoDesdeSvgElementId(item.svgElementId);
 
       if (unidad) {
         return {
@@ -508,7 +540,7 @@ export default function AdminProyectoPlanoPage() {
         accion: 'UPSERT',
       };
     });
-  }, [proyecto?.tipoProyecto, svgIdsDetectados]);
+  }, [diagnosticoSvg.idsUnidadSvg, proyecto?.tipoProyecto]);
 
   const actualizarCampo = (event) => {
     const { name, value } = event.target;
@@ -635,7 +667,7 @@ export default function AdminProyectoPlanoPage() {
     }
 
     if (filasCsvDesdeSvg.length === 0) {
-      setError('No se detectaron elementos con id en el SVG. Revisa el archivo en Inkscape y asigna IDs a los lotes/unidades.');
+      setError('No se detectaron IDs de unidad en el SVG. Para que un elemento sea considerado unidad vendible, su id debe iniciar con unidad-.');
       return;
     }
 
@@ -644,11 +676,11 @@ export default function AdminProyectoPlanoPage() {
       ...filasCsvDesdeSvg.map((fila) => CSV_COLUMNS.map((column) => fila[column])),
     ];
     const filename = proyecto?.slug
-      ? `${proyecto.slug}-unidades-desde-svg.csv`
-      : `proyecto-${proyectoId}-unidades-desde-svg.csv`;
+      ? `${proyecto.slug}-ids-unidad.csv`
+      : `proyecto-${proyectoId}-ids-unidad.csv`;
 
     descargarArchivoCsv(filename, rows);
-    setMensaje('CSV generado desde los IDs del SVG.');
+    setMensaje('CSV generado desde los IDs unidad del SVG.');
   };
 
   const getUnidadFromEvent = (event) => {
@@ -823,8 +855,13 @@ export default function AdminProyectoPlanoPage() {
       {error ? <p className="admin-proyecto-plano-feedback is-error">{error}</p> : null}
 
       <section className="admin-proyecto-plano-grid">
+        {puedeSubirPlano ? (
         <form className="admin-proyecto-plano-card" onSubmit={subirSvg}>
-          <h2>Configuracion del plano</h2>
+          <h2>Plano interactivo</h2>
+          <p className="admin-proyecto-plano-intro">
+            Sube el archivo SVG del plano. Los elementos del SVG deben tener IDs para poder vincularlos con unidades.
+            Para unidades vendibles, recomendamos que los IDs del SVG comiencen con unidad-.
+          </p>
           {!plano ? <p className="admin-proyecto-plano-empty">Este proyecto aun no tiene plano configurado.</p> : null}
           <label>
             <span>Nombre</span>
@@ -861,65 +898,76 @@ export default function AdminProyectoPlanoPage() {
           <p className="admin-proyecto-plano-warning">El SVG sera publico y no debe contener informacion sensible, datos privados ni documentos internos.</p>
           <button type="submit" disabled={guardando}>{guardando ? 'Subiendo...' : 'Subir SVG del plano'}</button>
 
-          <details className="admin-proyecto-plano-advanced" open={mostrarAvanzado} onToggle={(event) => setMostrarAvanzado(event.currentTarget.open)}>
-            <summary>Configuracion avanzada por URL</summary>
-            <label>
-              <span>SvgUrl</span>
-              <input name="svgUrl" value={form.svgUrl} onChange={actualizarCampo} placeholder="/uploads/proyectos/1/plano.svg" />
-              <small>URL publica del archivo SVG del plano. Usar solo si ya existe un archivo publicado.</small>
-            </label>
-            <label>
-              <span>ImagenFondoUrl</span>
-              <input name="imagenFondoUrl" value={form.imagenFondoUrl} onChange={actualizarCampo} />
-              <small>Imagen de fondo opcional si se requiere.</small>
-            </label>
-            {!form.svgUrl.trim() ? (
-              <p className="admin-proyecto-plano-warning">Aun no se ha configurado un SVG para el plano interactivo.</p>
-            ) : null}
-            <button type="button" onClick={guardar} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar URL manual'}</button>
-          </details>
+          {esAdminCn ? (
+            <details className="admin-proyecto-plano-advanced">
+              <summary>Configuracion tecnica avanzada</summary>
+              <p className="admin-proyecto-plano-tech-note">
+                Permite guardar manualmente una URL publica del SVG. Uso recomendado solo para soporte tecnico.
+              </p>
+              <label>
+                <span>SvgUrl</span>
+                <input name="svgUrl" value={form.svgUrl} onChange={actualizarCampo} placeholder="/uploads/proyectos/1/plano.svg" />
+                <small>URL publica del archivo SVG del plano. Usar solo si ya existe un archivo publicado.</small>
+              </label>
+              <label>
+                <span>ImagenFondoUrl</span>
+                <input name="imagenFondoUrl" value={form.imagenFondoUrl} onChange={actualizarCampo} />
+                <small>Imagen de fondo opcional si se requiere.</small>
+              </label>
+              {!form.svgUrl.trim() ? (
+                <p className="admin-proyecto-plano-warning">Aun no se ha configurado un SVG para el plano interactivo.</p>
+              ) : null}
+              <button type="button" onClick={guardar} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar URL manual'}</button>
+            </details>
+          ) : null}
         </form>
+        ) : (
+          <section className="admin-proyecto-plano-card">
+            <h2>Configuracion del plano</h2>
+            <p className="admin-proyecto-plano-empty">Tu usuario tiene permisos de consulta. No puedes subir SVG, editar URLs ni modificar la configuracion del plano.</p>
+          </section>
+        )}
 
         <section className="admin-proyecto-plano-card">
-          <h2>Diagnostico de mapeo</h2>
-          <div className="admin-proyecto-plano-stats">
-            <div><span>Total unidades activas</span><strong>{diagnostico.total}</strong></div>
-            <div><span>Con svgElementId</span><strong>{diagnostico.conSvg}</strong></div>
-            <div><span>Sin svgElementId</span><strong>{diagnostico.sinSvg}</strong></div>
-            <div><span>Mapeadas en SVG</span><strong>{diagnostico.mapeadas}</strong></div>
-            <div><span>No encontradas</span><strong>{diagnostico.noEncontradas}</strong></div>
-            <div><span>Mapeado real</span><strong>{diagnostico.porcentajeMapeado}%</strong></div>
+          <div className="admin-proyecto-plano-section-head">
+            <div>
+              <h2>Diagnostico de mapeo SVG</h2>
+              <p>Solo los IDs que parecen representar unidades se comparan contra unidades vendibles. Amenidades, calles, areas verdes y etiquetas son informativas.</p>
+            </div>
           </div>
-          <div className="admin-proyecto-plano-svg-ids">
-            <div className="admin-proyecto-plano-section-head">
-              <div>
-                <h3>Elementos detectados en el SVG</h3>
-                <p>Usa estos IDs para crear una plantilla de unidades vinculada al plano.</p>
+          {svgMarkup && !svgError ? (
+            <div className="admin-proyecto-plano-svg-ids">
+              <div className="admin-proyecto-plano-stats is-diagnostico">
+                <div className="is-info"><span>IDs unidad en SVG</span><strong>{diagnosticoSvg.idsUnidadSvg.length}</strong></div>
+                <div className="is-info"><span>Unidades en CN</span><strong>{diagnosticoSvg.unidadesCn.length}</strong></div>
+                <div className="is-ok"><span>Vinculadas</span><strong>{diagnosticoSvg.vinculadas.length}</strong></div>
+                <div className={diagnosticoSvg.sinSvgElementId.length ? 'is-warning' : 'is-ok'}><span>Sin svgElementId</span><strong>{diagnosticoSvg.sinSvgElementId.length}</strong></div>
+                <div className={diagnosticoSvg.cnNoExisteEnSvg.length ? 'is-danger' : 'is-ok'}><span>CN no existe en SVG</span><strong>{diagnosticoSvg.cnNoExisteEnSvg.length}</strong></div>
+                <div className={diagnosticoSvg.svgUnidadSinAsignar.length ? 'is-warning' : 'is-ok'}><span>SVG sin asignar</span><strong>{diagnosticoSvg.svgUnidadSinAsignar.length}</strong></div>
+                <div className="is-muted"><span>Otros IDs informativos</span><strong>{diagnosticoSvg.otrosIdsInformativos.length}</strong></div>
               </div>
-            </div>
-            <div className="admin-proyecto-plano-stats is-compact">
-              <div><span>Total IDs detectados</span><strong>{diagnosticoSvgIds.total}</strong></div>
-              <div><span>Ya vinculados</span><strong>{diagnosticoSvgIds.vinculados}</strong></div>
-              <div><span>Sin unidad</span><strong>{diagnosticoSvgIds.sinUnidad}</strong></div>
-            </div>
             <div className="admin-proyecto-plano-svg-actions">
-              <button
-                type="button"
-                onClick={descargarCsvDesdeSvg}
-                disabled={!form.svgUrl.trim() || svgLoading || Boolean(svgError) || svgIdsDetectados.length === 0}
-              >
-                Descargar CSV desde SVG
-              </button>
-              <Link
-                to={`/admin/proyectos-inmobiliarios/${proyectoId}/unidades`}
-                state={{ abrirImportCsv: true }}
-              >
-                Ir a importar CSV
-              </Link>
+              {puedeSubirPlano ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={descargarCsvDesdeSvg}
+                    disabled={!form.svgUrl.trim() || svgLoading || Boolean(svgError) || diagnosticoSvg.idsUnidadSvg.length === 0}
+                  >
+                    Exportar IDs unidad a CSV
+                  </button>
+                  <Link
+                    to={`/admin/proyectos-inmobiliarios/${proyectoId}/unidades`}
+                    state={{ abrirImportCsv: true }}
+                  >
+                    Ir a importar CSV
+                  </Link>
+                </>
+              ) : null}
             </div>
             <p className="admin-proyecto-plano-empty">
-              Descarga este CSV, completalo en Excel y subelo desde la pantalla de Unidades usando Importar CSV.
-              Para vincular unidades al plano interactivo, conserva la columna svgElementId.
+              Este CSV se genera desde los IDs del SVG. Completalo en Excel y subelo desde la pantalla de Unidades para crear o actualizar unidades masivamente.
+              Para que un elemento sea considerado unidad vendible, su id debe iniciar con unidad-.
             </p>
             {!form.svgUrl.trim() ? (
               <p className="admin-proyecto-plano-empty">Primero sube o configura el SVG del plano.</p>
@@ -928,41 +976,83 @@ export default function AdminProyectoPlanoPage() {
             ) : svgMarkup && svgIdsDetectados.length === 0 ? (
               <p className="admin-proyecto-plano-empty">No se detectaron elementos con id en el SVG. Revisa el archivo en Inkscape y asigna IDs a los lotes/unidades.</p>
             ) : null}
-            {svgIdsDetectados.length > 0 ? (
               <details className="admin-proyecto-plano-svg-list">
-                <summary>Ver IDs detectados</summary>
-                {svgIdsDetectados.length > MAX_IDS_PREVIEW ? (
-                  <p className="admin-proyecto-plano-note">Mostrando los primeros {MAX_IDS_PREVIEW} IDs detectados.</p>
-                ) : null}
+                <summary>Unidades sin svgElementId ({diagnosticoSvg.sinSvgElementId.length})</summary>
+                {diagnosticoSvg.sinSvgElementId.length > MAX_DIAGNOSTICO_ROWS ? <p className="admin-proyecto-plano-note">Mostrando los primeros {MAX_DIAGNOSTICO_ROWS} registros.</p> : null}
                 <div className="admin-proyecto-plano-table-wrap">
                   <table className="admin-proyecto-plano-table is-svg-ids">
-                    <thead>
-                      <tr>
-                        <th>svgElementId</th>
-                        <th>Tipo elemento</th>
-                        <th>Estado</th>
-                        <th>Unidad/Codigo</th>
-                      </tr>
-                    </thead>
+                    <thead><tr><th>unidadId</th><th>Codigo</th><th>Tipo</th><th>Estatus</th></tr></thead>
                     <tbody>
-                      {svgIdsDetectados.slice(0, MAX_IDS_PREVIEW).map((item) => (
-                        <tr key={item.svgElementId}>
-                          <td><strong>{item.svgElementId}</strong></td>
-                          <td>{item.tagName}</td>
-                          <td>
-                            <span className={`admin-proyecto-plano-link-status ${item.yaTieneUnidad ? 'is-linked' : 'is-unlinked'}`}>
-                              {item.yaTieneUnidad ? 'Vinculado' : 'Sin unidad'}
-                            </span>
-                          </td>
-                          <td>{item.codigoUnidad || '-'}</td>
+                      {diagnosticoSvg.sinSvgElementId.slice(0, MAX_DIAGNOSTICO_ROWS).map((unidad) => (
+                        <tr key={getUnidadId(unidad)}>
+                          <td>{getUnidadId(unidad)}</td>
+                          <td><strong>{unidad.codigo || '-'}</strong></td>
+                          <td>{unidad.tipoUnidad || '-'}</td>
+                          <td>{getStatusLabel(unidad.estatus)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </details>
-            ) : null}
-          </div>
+              <details className="admin-proyecto-plano-svg-list">
+                <summary>svgElementId en CN que no existen como unidad-* en el SVG ({diagnosticoSvg.cnNoExisteEnSvg.length})</summary>
+                {diagnosticoSvg.cnNoExisteEnSvg.length > MAX_DIAGNOSTICO_ROWS ? <p className="admin-proyecto-plano-note">Mostrando los primeros {MAX_DIAGNOSTICO_ROWS} registros.</p> : null}
+                <div className="admin-proyecto-plano-table-wrap">
+                  <table className="admin-proyecto-plano-table is-svg-ids">
+                    <thead><tr><th>unidadId</th><th>Codigo</th><th>svgElementId</th><th>Estatus</th></tr></thead>
+                    <tbody>
+                      {diagnosticoSvg.cnNoExisteEnSvg.slice(0, MAX_DIAGNOSTICO_ROWS).map((unidad) => (
+                        <tr key={getUnidadId(unidad)}>
+                          <td>{getUnidadId(unidad)}</td>
+                          <td><strong>{unidad.codigo || '-'}</strong></td>
+                          <td>{unidad.svgElementId || '-'}</td>
+                          <td>{getStatusLabel(unidad.estatus)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+              <details className="admin-proyecto-plano-svg-list">
+                <summary>IDs unidad-* del SVG sin asignar ({diagnosticoSvg.svgUnidadSinAsignar.length})</summary>
+                {diagnosticoSvg.svgUnidadSinAsignar.length > MAX_DIAGNOSTICO_ROWS ? <p className="admin-proyecto-plano-note">Mostrando los primeros {MAX_DIAGNOSTICO_ROWS} registros.</p> : null}
+                <div className="admin-proyecto-plano-table-wrap">
+                  <table className="admin-proyecto-plano-table is-svg-ids">
+                    <thead><tr><th>svgElementId</th><th>Tipo elemento</th><th>Codigo sugerido</th></tr></thead>
+                    <tbody>
+                      {diagnosticoSvg.svgUnidadSinAsignar.slice(0, MAX_DIAGNOSTICO_ROWS).map((item) => (
+                        <tr key={item.svgElementId}>
+                          <td><strong>{item.svgElementId}</strong></td>
+                          <td>{item.tagName}</td>
+                          <td>{generarCodigoDesdeSvgElementId(item.svgElementId)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+              <details className="admin-proyecto-plano-svg-list">
+                <summary>Otros IDs detectados, solo informativo ({diagnosticoSvg.otrosIdsInformativos.length})</summary>
+                {diagnosticoSvg.otrosIdsInformativos.length > MAX_DIAGNOSTICO_ROWS ? <p className="admin-proyecto-plano-note">Mostrando los primeros {MAX_DIAGNOSTICO_ROWS} registros.</p> : null}
+                <div className="admin-proyecto-plano-table-wrap">
+                  <table className="admin-proyecto-plano-table is-svg-ids">
+                    <thead><tr><th>ID</th><th>Tipo elemento</th></tr></thead>
+                    <tbody>
+                      {diagnosticoSvg.otrosIdsInformativos.slice(0, MAX_DIAGNOSTICO_ROWS).map((item) => (
+                        <tr key={item.svgElementId}>
+                          <td><strong>{item.svgElementId}</strong></td>
+                          <td>{item.tagName}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            </div>
+          ) : (
+            <p className="admin-proyecto-plano-empty">Sube o configura un SVG valido para ver el diagnostico de mapeo.</p>
+          )}
           {!form.svgUrl.trim() ? (
             <p className="admin-proyecto-plano-empty">Primero configura el SVG del plano para iniciar el mapeo interactivo.</p>
           ) : unidades.length === 0 ? (

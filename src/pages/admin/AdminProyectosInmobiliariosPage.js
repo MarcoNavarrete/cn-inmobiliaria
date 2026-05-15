@@ -5,6 +5,7 @@ import {
   setProyectoActivo,
   setProyectoPublicacion,
 } from '../../services/proyectosInmobiliariosService';
+import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
 import './AdminProyectosInmobiliariosPage.css';
 
 const FILTROS_INICIALES = {
@@ -48,6 +49,9 @@ const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No fue posible procesar la accion.';
 
 export default function AdminProyectosInmobiliariosPage() {
+  const permisosEmpresa = usePermisosEmpresa();
+  const puedeCrearProyecto = permisosEmpresa.puedeCrearProyecto;
+  const puedeEditarProyecto = permisosEmpresa.puedeEditarProyecto;
   const [proyectos, setProyectos] = useState([]);
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
   const [cargando, setCargando] = useState(true);
@@ -155,9 +159,11 @@ export default function AdminProyectosInmobiliariosPage() {
           <p className="admin-proyectos-eyebrow">Proyectos inmobiliarios</p>
           <h1>Administracion de proyectos</h1>
         </div>
-        <Link className="admin-proyectos-primary" to="/admin/proyectos-inmobiliarios/nuevo">
-          Nuevo proyecto
-        </Link>
+        {puedeCrearProyecto ? (
+          <Link className="admin-proyectos-primary" to="/admin/proyectos-inmobiliarios/nuevo">
+            Nuevo proyecto
+          </Link>
+        ) : null}
       </section>
 
       <section className="admin-proyectos-filtros">
@@ -258,7 +264,7 @@ export default function AdminProyectosInmobiliariosPage() {
                         <td data-label="Creacion">{proyecto.fechaCreacion}</td>
                         <td data-label="Acciones">
                           <div className="admin-proyectos-actions">
-                            <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/editar`}>Editar</Link>
+                            {puedeEditarProyecto ? <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/editar`}>Editar</Link> : null}
                             <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/unidades`}>Unidades</Link>
                             <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/modelos`}>Modelos</Link>
                             <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/plano`}>Plano</Link>
@@ -268,21 +274,25 @@ export default function AdminProyectosInmobiliariosPage() {
                             {proyecto.slug ? (
                               <a href={`#/proyectos-inmobiliarios/${proyecto.slug}`} target="_blank" rel="noopener noreferrer">Ver landing publica</a>
                             ) : null}
-                            <button
-                              type="button"
-                              onClick={() => alternarActivo(proyecto)}
-                              disabled={disabled}
-                            >
-                              {disabled ? 'Procesando...' : proyecto.activo ? 'Desactivar' : 'Activar'}
-                            </button>
-                            <button
-                              type="button"
-                              className={proyecto.estatusPublicacion === 'PUBLICADO' ? 'is-warning' : ''}
-                              onClick={() => alternarPublicacion(proyecto)}
-                              disabled={disabled}
-                            >
-                              {proyecto.estatusPublicacion === 'PUBLICADO' ? 'Pausar' : 'Publicar'}
-                            </button>
+                            {puedeEditarProyecto ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => alternarActivo(proyecto)}
+                                  disabled={disabled}
+                                >
+                                  {disabled ? 'Procesando...' : proyecto.activo ? 'Desactivar' : 'Activar'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={proyecto.estatusPublicacion === 'PUBLICADO' ? 'is-warning' : ''}
+                                  onClick={() => alternarPublicacion(proyecto)}
+                                  disabled={disabled}
+                                >
+                                  {proyecto.estatusPublicacion === 'PUBLICADO' ? 'Pausar' : 'Publicar'}
+                                </button>
+                              </>
+                            ) : null}
                           </div>
                         </td>
                       </tr>

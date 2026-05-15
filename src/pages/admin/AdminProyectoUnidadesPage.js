@@ -12,6 +12,7 @@ import {
   setUnidadEstatus,
 } from '../../services/proyectoUnidadesService';
 import { obtenerProyecto } from '../../services/proyectosInmobiliariosService';
+import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
 import './AdminProyectoUnidadesPage.css';
 
 const TIPOS_UNIDAD = ['LOTE', 'CASA', 'DEPARTAMENTO', 'LOCAL', 'OFICINA', 'MACROLOTE', 'OTRO'];
@@ -159,6 +160,9 @@ const buildPayload = (form, proyectoId) => ({
 });
 
 export default function AdminProyectoUnidadesPage() {
+  const permisosEmpresa = usePermisosEmpresa();
+  const puedeEditarUnidades = permisosEmpresa.puedeEditarUnidades;
+  const puedeImportarCsv = permisosEmpresa.puedeImportarCsv;
   const { proyectoId } = useParams();
   const [proyecto, setProyecto] = useState(null);
   const [modelos, setModelos] = useState([]);
@@ -512,10 +516,11 @@ export default function AdminProyectoUnidadesPage() {
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imagenes</Link>
           <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyectoId}`}>Prospectos</Link>
           <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyectoId}`}>Apartados</Link>
-          <button type="button" onClick={abrirNuevaUnidad}>Nueva unidad</button>
+          {puedeEditarUnidades ? <button type="button" onClick={abrirNuevaUnidad}>Nueva unidad</button> : null}
         </div>
       </section>
 
+      {puedeImportarCsv ? (
       <section className="admin-proyecto-unidades-csv-card">
         <div>
           <p className="admin-proyecto-unidades-eyebrow">Carga masiva CSV</p>
@@ -531,6 +536,7 @@ export default function AdminProyectoUnidadesPage() {
           <button type="button" onClick={abrirCsvModal}>Importar CSV</button>
         </div>
       </section>
+      ) : null}
 
       <form className="admin-proyecto-unidades-filtros" onSubmit={aplicarFiltros}>
         <label>
@@ -626,21 +632,25 @@ export default function AdminProyectoUnidadesPage() {
                     <td data-label="SvgElementId">{unidad.svgElementId || '-'}</td>
                     <td data-label="Acciones">
                       <div className="admin-proyecto-unidades-actions">
-                        <button type="button" onClick={() => abrirEditarUnidad(unidad)}>Editar</button>
-                        <select
-                          value={unidad.estatus}
-                          onChange={(event) => cambiarEstatus(unidad, event.target.value)}
-                          disabled={accionando === `${unidad.id}-estatus`}
-                        >
-                          {ESTATUS_UNIDAD.map((estatus) => <option key={estatus} value={estatus}>{estatus}</option>)}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => alternarActivo(unidad)}
-                          disabled={accionando === `${unidad.id}-activo`}
-                        >
-                          {unidad.activo ? 'Desactivar' : 'Activar'}
-                        </button>
+                        {puedeEditarUnidades ? (
+                          <>
+                            <button type="button" onClick={() => abrirEditarUnidad(unidad)}>Editar</button>
+                            <select
+                              value={unidad.estatus}
+                              onChange={(event) => cambiarEstatus(unidad, event.target.value)}
+                              disabled={accionando === `${unidad.id}-estatus`}
+                            >
+                              {ESTATUS_UNIDAD.map((estatus) => <option key={estatus} value={estatus}>{estatus}</option>)}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => alternarActivo(unidad)}
+                              disabled={accionando === `${unidad.id}-activo`}
+                            >
+                              {unidad.activo ? 'Desactivar' : 'Activar'}
+                            </button>
+                          </>
+                        ) : null}
                         {unidad.svgElementId ? (
                           <button type="button" onClick={() => copiarSvgElementId(unidad.svgElementId)}>
                             Copiar SVG

@@ -7,6 +7,7 @@ import {
 } from '../../services/proyectoApartadosService';
 import { listarUnidades } from '../../services/proyectoUnidadesService';
 import { listarProyectos } from '../../services/proyectosInmobiliariosService';
+import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
 import './AdminProyectoApartadosPage.css';
 
 const ESTATUS_APARTADO = ['VIGENTE', 'VENCIDO', 'CANCELADO', 'CONVERTIDO'];
@@ -50,6 +51,8 @@ const buildPayload = (form) => ({
 });
 
 export default function AdminProyectoApartadosPage() {
+  const permisosEmpresa = usePermisosEmpresa();
+  const puedeOperarApartados = permisosEmpresa.puedeOperarApartados;
   const [searchParams, setSearchParams] = useSearchParams();
   const [proyectos, setProyectos] = useState([]);
   const [apartados, setApartados] = useState([]);
@@ -274,7 +277,7 @@ export default function AdminProyectoApartadosPage() {
           <Link to="/admin/proyectos-inmobiliarios">Volver al listado</Link>
           {filtros.proyectoId ? <Link to={`/admin/proyectos-inmobiliarios/${filtros.proyectoId}/unidades`}>Unidades</Link> : null}
           <Link to="/admin/proyectos-inmobiliarios/prospectos">Prospectos</Link>
-          <button type="button" onClick={abrirNuevoApartado}>Nuevo apartado</button>
+          {puedeOperarApartados ? <button type="button" onClick={abrirNuevoApartado}>Nuevo apartado</button> : null}
         </div>
       </section>
 
@@ -339,7 +342,7 @@ export default function AdminProyectoApartadosPage() {
                       <td>{apartado.observaciones || '-'}</td>
                       <td>
                         <div className="admin-proyecto-apartados-actions">
-                          <button type="button" onClick={() => abrirCambioEstatus(apartado)}>Cambiar estatus</button>
+                          {puedeOperarApartados ? <button type="button" onClick={() => abrirCambioEstatus(apartado)}>Cambiar estatus</button> : null}
                           {apartado.proyectoId ? <Link to={`/admin/proyectos-inmobiliarios/${apartado.proyectoId}/unidades`}>Ver unidades</Link> : null}
                         </div>
                       </td>

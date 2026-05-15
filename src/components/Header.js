@@ -3,9 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import './Header.css';
 import './Logo.css';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { cerrarSesion, getCurrentUser } from '../services/authService';
-
-const ROLES_PANEL = ['ASESOR', 'SUPERVISOR', 'ADMIN', 'SUPERADMIN'];
+import { cerrarSesion } from '../services/authService';
+import useAuthSession from '../hooks/useAuthSession';
 
 export default function Header() {
   const location = useLocation();
@@ -13,26 +12,15 @@ export default function Header() {
   const cuentaRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [cuentaOpen, setCuentaOpen] = useState(false);
-  const [usuario, setUsuario] = useState(() => getCurrentUser());
-  const puedeVerPanel = ROLES_PANEL.includes(String(usuario?.rol || '').toUpperCase());
+  const { usuario, cargando, esAdminCn, tieneAccesoEmpresarial, rolGlobal } = useAuthSession();
+  const puedeVerPanel = esAdminCn || tieneAccesoEmpresarial;
+  const esPanelEmpresa = String(rolGlobal || '').toUpperCase() === 'USUARIO' && tieneAccesoEmpresarial;
   const usuarioLabel = usuario?.nombre || usuario?.email || 'Usuario';
 
   useEffect(() => {
-    setUsuario(getCurrentUser());
     setMenuOpen(false);
     setCuentaOpen(false);
   }, [location.pathname]);
-
-  useEffect(() => {
-    const actualizarSesion = () => setUsuario(getCurrentUser());
-    window.addEventListener('auth-change', actualizarSesion);
-    window.addEventListener('storage', actualizarSesion);
-
-    return () => {
-      window.removeEventListener('auth-change', actualizarSesion);
-      window.removeEventListener('storage', actualizarSesion);
-    };
-  }, []);
 
   useEffect(() => {
     const cerrarAlClickFuera = (event) => {
@@ -66,7 +54,11 @@ export default function Header() {
       <Link to="/mis-solicitudes" onClick={cerrarMenus}>Mis solicitudes</Link>
       <Link to="/cliente/mis-busquedas" onClick={cerrarMenus}>Mis busquedas</Link>
       <Link to="/cliente/mis-alertas" onClick={cerrarMenus}>Mis alertas</Link>
-      {puedeVerPanel ? <Link to="/admin" onClick={cerrarMenus}>Panel</Link> : null}
+      {puedeVerPanel ? (
+        <Link to={esPanelEmpresa ? '/admin/proyectos-inmobiliarios' : '/admin'} onClick={cerrarMenus}>
+          {esPanelEmpresa ? 'Panel de empresa' : 'Panel'}
+        </Link>
+      ) : null}
       <button type="button" className="nav-button" onClick={salir}>Cerrar sesion</button>
     </>
   );
@@ -96,8 +88,6 @@ export default function Header() {
         <Link to="/propiedades" onClick={cerrarMenus}>Propiedades</Link>
         <Link to="/desarrollos" onClick={cerrarMenus}>Desarrollos</Link>
         <Link to="/proyectos-inmobiliarios" onClick={cerrarMenus}>Proyectos inmobiliarios</Link>
-        <Link to="/nosotros" onClick={cerrarMenus}>Nosotros</Link>
-        <Link to="/contacto" onClick={cerrarMenus}>Contacto</Link>
 
         {usuario ? (
           <>
@@ -121,6 +111,8 @@ export default function Header() {
               {cuentaLinks}
             </div>
           </>
+        ) : cargando ? (
+          <span className="nav-user" title="Cargando cuenta">Cargando...</span>
         ) : (
           <div className="auth-links">
             <Link to="/login" onClick={cerrarMenus}>Iniciar sesion</Link>

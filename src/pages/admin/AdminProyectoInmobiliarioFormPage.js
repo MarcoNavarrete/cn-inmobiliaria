@@ -1,15 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
+import { resolveApiAssetUrl } from '../../services/apiClient';
 import { listarEmpresas } from '../../services/empresasInmobiliariasService';
 import {
   actualizarProyecto,
   crearProyecto,
   obtenerProyecto,
+  subirImagenPrincipal,
+  subirLogoProyecto,
 } from '../../services/proyectosInmobiliariosService';
 import './AdminProyectoInmobiliarioFormPage.css';
 
 const FORM_INICIAL = {
   empresaId: '',
+  empresaNombre: '',
   tipoProyecto: 'LOTEO',
   nombre: '',
   slug: '',
@@ -53,6 +58,9 @@ const ESTATUS_PUBLICACION = [
   'ARCHIVADO',
 ];
 
+const EXTENSIONES_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No fue posible guardar el proyecto.';
 
@@ -77,8 +85,45 @@ const generarSlug = (value) =>
 const pickProyectoId = (value) =>
   value?.proyectoId || value?.id || value?.Id || value?.data?.proyectoId || value?.data?.id || '';
 
+const getExtension = (file) => String(file?.name || '').split('.').pop().toLowerCase();
+
+const revokePreviewUrl = (value) => {
+  if (typeof value === 'string' && value.startsWith('blob:')) {
+    URL.revokeObjectURL(value);
+  }
+};
+
+const validarArchivoImagen = (file, etiqueta) => {
+  if (!file) return '';
+
+  const extension = getExtension(file);
+  if (!EXTENSIONES_PERMITIDAS.includes(extension)) {
+    return `${etiqueta} debe ser JPG, JPEG, PNG o WEBP.`;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return `${etiqueta} no debe pesar mas de 10MB.`;
+  }
+
+  return '';
+};
+
+const normalizarEmpresaSesion = (empresa = {}) => {
+  const id = toInputValue(empresa.id || empresa.empresaId || empresa.idEmpresa);
+
+  return {
+    id,
+    empresaId: id,
+    nombre: empresa.nombre || empresa.razonSocial || empresa.nombreEmpresa || 'Sin nombre',
+    razonSocial: empresa.razonSocial || '',
+    rolEmpresa: String(empresa.rolEmpresa || empresa.rol || empresa.rolUsuario || empresa.tipoRol || '').toUpperCase(),
+    activo: empresa.activo !== false && empresa.esActivo !== false,
+  };
+};
+
 const mapProyectoToForm = (proyecto = {}) => ({
-  empresaId: toInputValue(proyecto.empresaId),
+  empresaId: toInputValue(proyecto.empresaId || proyecto.empresa?.id || proyecto.empresa?.empresaId),
+  empresaNombre: proyecto.empresaNombre || proyecto.empresa?.nombre || proyecto.empresa?.razonSocial || '',
   tipoProyecto: proyecto.tipoProyecto || 'LOTEO',
   nombre: proyecto.nombre || '',
   slug: proyecto.slug || '',
@@ -139,67 +184,237 @@ const buildPayload = (form) => ({
 
 export default function AdminProyectoInmobiliarioFormPage() {
   const { proyectoId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const esEdicion = Boolean(proyectoId);
-  const [empresas, setEmpresas] = useState([]);
+  const permisosEmpresa = usePermisosEmpresa();
+  const { cargando: cargandoSesion, esAdminCn, puedeEditarProyecto, empresas: empresasSesion } = permisosEmpresa;
+  const [empresasCatalogo, setEmpresasCatalogo] = useState([]);
   const [form, setForm] = useState(FORM_INICIAL);
-  const [cargando, setCargando] = useState(true);
+  const [imagenPrincipalFile, setImagenPrincipalFile] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [imagenPrincipalPreview, setImagenPrincipalPreview] = useState('');
+  const [logoPreview, setLogoPreview] = useState('');
+  const [cargandoProyecto, setCargandoProyecto] = useState(true);
+  const [cargandoEmpresas, setCargandoEmpresas] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [permisoDenegado, setPermisoDenegado] = useState('');
 
-  const empresaPreferidaId = useMemo(() => {
-    const cn = empresas.find((empresa) => /cn/i.test(empresa.nombre || empresa.razonSocial || ''));
-    return String((cn || empresas[0])?.id || '');
-  }, [empresas]);
+  const empresasSesionNormalizadas = useMemo(
+    () => (Array.isArray(empresasSesion) ? empresasSesion : []).map(normalizarEmpresaSesion).filter((empresa) => empresa.id),
+    [empresasSesion]
+  );
 
-  const cargarDatos = useCallback(async (options = {}) => {
-    setCargando(true);
+  const empresasSesionAdministrables = useMemo(
+    () => empresasSesionNormalizadas.filter((empresa) => empresa.activo && empresa.rolEmpresa === 'ADMIN_EMPRESA'),
+    [empresasSesionNormalizadas]
+  );
+
+  const empresasDisponibles = esAdminCn ? empresasCatalogo : empresasSesionAdministrables;
+  const puedeCrearProyecto = esAdminCn || empresasSesionAdministrables.length > 0;
+  const puedeCambiarEmpresa = esAdminCn || (!esEdicion && empresasDisponibles.length > 1);
+  const empresasOpciones = useMemo(() => {
+    if (!esAdminCn || !form.empresaId) {
+      return empresasDisponibles;
+    }
+
+    if (empresasDisponibles.some((empresa) => String(empresa.id) === String(form.empresaId))) {
+      return empresasDisponibles;
+    }
+
+    return [
+      {
+        id: form.empresaId,
+        nombre: form.empresaNombre || `Empresa ${form.empresaId}`,
+      },
+      ...empresasDisponibles,
+    ];
+  }, [esAdminCn, empresasDisponibles, form.empresaId, form.empresaNombre]);
+
+  const empresaSeleccionada = useMemo(
+    () => empresasDisponibles.find((empresa) => String(empresa.id) === String(form.empresaId)) || null,
+    [empresasDisponibles, form.empresaId]
+  );
+  const empresaVisible = empresaSeleccionada || (esEdicion ? { nombre: form.empresaNombre || 'Sin empresa' } : null);
+  const imagenPrincipalPreviewUrl = imagenPrincipalPreview || resolveApiAssetUrl(form.imagenPrincipalUrl);
+  const logoPreviewUrl = logoPreview || resolveApiAssetUrl(form.logoUrl);
+
+  const limpiarPreview = React.useCallback((setter) => {
+    setter((actual) => {
+      revokePreviewUrl(actual);
+      return '';
+    });
+  }, []);
+
+  const limpiarArchivosSeleccionados = React.useCallback(() => {
+    setImagenPrincipalFile(null);
+    setLogoFile(null);
+    limpiarPreview(setImagenPrincipalPreview);
+    limpiarPreview(setLogoPreview);
+  }, [limpiarPreview]);
+
+  const prepararArchivo = (file, etiqueta, setFile, setPreview) => {
+    limpiarPreview(setPreview);
+
+    if (!file) {
+      setFile(null);
+      return;
+    }
+
+    const errorArchivo = validarArchivoImagen(file, etiqueta);
+    if (errorArchivo) {
+      setFile(null);
+      setError(errorArchivo);
+      return;
+    }
+
     setError('');
+    setFile(file);
+    setPreview(URL.createObjectURL(file));
+  };
 
-    try {
-      const empresasData = await listarEmpresas({ soloActivas: true, signal: options.signal });
-      setEmpresas(empresasData);
-
-      if (esEdicion) {
-        const proyecto = await obtenerProyecto(proyectoId, { signal: options.signal });
-        setForm(mapProyectoToForm(proyecto));
-      } else {
-        const cn = empresasData.find((empresa) => /cn/i.test(empresa.nombre || empresa.razonSocial || ''));
-        setForm({
-          ...FORM_INICIAL,
-          empresaId: String((cn || empresasData[0])?.id || ''),
-        });
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        setError(getApiErrorMessage(err));
-      }
-    } finally {
-      if (!options.signal?.aborted) {
-        setCargando(false);
-      }
+  useEffect(() => () => {
+    if (imagenPrincipalPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(imagenPrincipalPreview);
     }
-  }, [esEdicion, proyectoId]);
+    if (logoPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(logoPreview);
+    }
+  }, [imagenPrincipalPreview, logoPreview]);
 
   useEffect(() => {
+    if (cargandoSesion) {
+      return undefined;
+    }
+
     const controller = new AbortController();
-    cargarDatos({ signal: controller.signal });
+
+    const cargarDatos = async () => {
+      setCargandoProyecto(true);
+      setCargandoEmpresas(false);
+      setError('');
+      setMensaje('');
+      setPermisoDenegado('');
+      limpiarArchivosSeleccionados();
+
+      try {
+        let catalogo = [];
+
+        if (esAdminCn) {
+          setCargandoEmpresas(true);
+          catalogo = await listarEmpresas({ soloActivas: true, signal: controller.signal });
+          if (!controller.signal.aborted) {
+            setEmpresasCatalogo(catalogo);
+          }
+        } else {
+          setEmpresasCatalogo([]);
+        }
+
+        const empresasBase = esAdminCn ? catalogo : empresasSesionAdministrables;
+
+        if (!esEdicion) {
+          if (!puedeCrearProyecto || empresasBase.length === 0) {
+            setPermisoDenegado('No tienes permiso para crear proyectos.');
+            setForm(FORM_INICIAL);
+            return;
+          }
+
+          const empresaInicial = empresasBase[0];
+          setForm({
+            ...FORM_INICIAL,
+            empresaId: empresaInicial?.id || '',
+            empresaNombre: empresaInicial?.nombre || empresaInicial?.razonSocial || '',
+          });
+          return;
+        }
+
+        if (!puedeEditarProyecto) {
+          setPermisoDenegado('No tienes permiso para editar este proyecto.');
+          setForm(FORM_INICIAL);
+          return;
+        }
+
+        const proyecto = await obtenerProyecto(proyectoId, { signal: controller.signal });
+        const proyectoEmpresaId = toInputValue(proyecto.empresaId || proyecto.empresa?.id || proyecto.empresa?.empresaId);
+
+        if (!esAdminCn && empresasBase.length > 0) {
+          const tieneAccesoAEmpresa = empresasBase.some((empresa) => String(empresa.id) === String(proyectoEmpresaId));
+          if (!tieneAccesoAEmpresa) {
+            setPermisoDenegado('No tienes permiso para editar este proyecto.');
+            setForm(FORM_INICIAL);
+            return;
+          }
+        }
+
+        setForm({
+          ...mapProyectoToForm(proyecto),
+          empresaId: proyectoEmpresaId,
+          empresaNombre: proyecto.empresaNombre || proyecto.empresa?.nombre || proyecto.empresa?.razonSocial || '',
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          if (err.status === 403) {
+            setPermisoDenegado(esEdicion ? 'No tienes permiso para editar este proyecto.' : 'No tienes permiso para crear proyectos.');
+          } else {
+            setError(getApiErrorMessage(err));
+          }
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setCargandoProyecto(false);
+          setCargandoEmpresas(false);
+        }
+      }
+    };
+
+    cargarDatos();
+
     return () => controller.abort();
-  }, [cargarDatos]);
+  }, [
+    cargandoSesion,
+    limpiarArchivosSeleccionados,
+    esAdminCn,
+    esEdicion,
+    empresasSesionAdministrables,
+    puedeCrearProyecto,
+    puedeEditarProyecto,
+    proyectoId,
+  ]);
 
   useEffect(() => {
-    if (!esEdicion && !form.empresaId && empresaPreferidaId) {
-      setForm((actual) => ({ ...actual, empresaId: empresaPreferidaId }));
+    const state = location.state || {};
+
+    if (state.mensaje) {
+      setMensaje(state.mensaje);
     }
-  }, [empresaPreferidaId, esEdicion, form.empresaId]);
+
+    if (state.error) {
+      setError(state.error);
+    }
+
+    if (state.mensaje || state.error) {
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.pathname, location.state, navigate]);
 
   const actualizarCampo = (event) => {
     const { checked, name, type, value } = event.target;
-    setForm((actual) => ({
-      ...actual,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+
+    setForm((actual) => {
+      const siguiente = {
+        ...actual,
+        [name]: type === 'checkbox' ? checked : value,
+      };
+
+      if (name === 'empresaId') {
+        const empresa = empresasDisponibles.find((item) => String(item.id) === String(value));
+        siguiente.empresaNombre = empresa?.nombre || empresa?.razonSocial || '';
+      }
+
+      return siguiente;
+    });
   };
 
   const generarSlugDesdeNombre = () => {
@@ -209,7 +424,29 @@ export default function AdminProyectoInmobiliarioFormPage() {
     }));
   };
 
+  const subirArchivosSiExisten = async (proyectoGuardadoId) => {
+    let proyectoActualizado = null;
+
+    if (imagenPrincipalFile) {
+      proyectoActualizado = await subirImagenPrincipal(proyectoGuardadoId, imagenPrincipalFile);
+    }
+
+    if (logoFile) {
+      proyectoActualizado = await subirLogoProyecto(proyectoGuardadoId, logoFile) || proyectoActualizado;
+    }
+
+    return proyectoActualizado;
+  };
+
   const validar = () => {
+    if (!esEdicion && !puedeCrearProyecto) {
+      return 'No tienes permiso para crear proyectos.';
+    }
+
+    if (esEdicion && !puedeEditarProyecto) {
+      return 'No tienes permiso para editar este proyecto.';
+    }
+
     if (!Number(form.empresaId)) return 'Selecciona una empresa inmobiliaria.';
     if (!form.tipoProyecto) return 'Selecciona el tipo de proyecto.';
     if (!form.nombre.trim()) return 'El nombre es requerido.';
@@ -252,20 +489,38 @@ export default function AdminProyectoInmobiliarioFormPage() {
 
     try {
       const payload = buildPayload(form);
+      let proyectoGuardadoId = proyectoId;
 
       if (esEdicion) {
         await actualizarProyecto(proyectoId, payload);
-        setMensaje('Proyecto actualizado correctamente.');
+        proyectoGuardadoId = proyectoId;
       } else {
         const response = await crearProyecto(payload);
-        const nuevoId = pickProyectoId(response);
-        setMensaje('Proyecto creado correctamente.');
+        proyectoGuardadoId = pickProyectoId(response);
+      }
 
-        if (nuevoId) {
-          navigate(`/admin/proyectos-inmobiliarios/${nuevoId}/editar`, { replace: true });
-        } else {
-          navigate('/admin/proyectos-inmobiliarios', { replace: true });
-        }
+      if (!proyectoGuardadoId) {
+        throw new Error('No fue posible identificar el proyecto guardado.');
+      }
+
+      if (imagenPrincipalFile || logoFile) {
+        await subirArchivosSiExisten(proyectoGuardadoId);
+      }
+
+      if (esEdicion) {
+        const proyectoActualizado = await obtenerProyecto(proyectoGuardadoId);
+        setForm({
+          ...mapProyectoToForm(proyectoActualizado),
+          empresaId: toInputValue(proyectoActualizado.empresaId || proyectoActualizado.empresa?.id || proyectoActualizado.empresa?.empresaId),
+          empresaNombre: proyectoActualizado.empresaNombre || proyectoActualizado.empresa?.nombre || proyectoActualizado.empresa?.razonSocial || '',
+        });
+        limpiarArchivosSeleccionados();
+        setMensaje('Proyecto actualizado correctamente.');
+      } else {
+        navigate(`/admin/proyectos-inmobiliarios/${proyectoGuardadoId}/editar`, {
+          replace: true,
+          state: { mensaje: 'Proyecto creado correctamente.' },
+        });
       }
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -274,10 +529,27 @@ export default function AdminProyectoInmobiliarioFormPage() {
     }
   };
 
-  if (cargando) {
+  if (cargandoSesion || cargandoProyecto || (esAdminCn && cargandoEmpresas)) {
     return (
       <main className="admin-proyecto-form">
         <p className="admin-proyecto-form-feedback">Cargando proyecto...</p>
+      </main>
+    );
+  }
+
+  if (permisoDenegado) {
+    return (
+      <main className="admin-proyecto-form">
+        <section className="admin-proyecto-form-hero">
+          <div>
+            <p className="admin-proyecto-form-eyebrow">Proyectos inmobiliarios</p>
+            <h1>{esEdicion ? 'Editar proyecto' : 'Nuevo proyecto'}</h1>
+          </div>
+          <Link className="admin-proyecto-form-secondary" to="/admin/proyectos-inmobiliarios">
+            Volver al listado
+          </Link>
+        </section>
+        <p className="admin-proyecto-form-feedback is-error">{permisoDenegado}</p>
       </main>
     );
   }
@@ -301,14 +573,21 @@ export default function AdminProyectoInmobiliarioFormPage() {
         <section className="admin-proyecto-form-card">
           <h2>Datos principales</h2>
           <div className="admin-proyecto-form-grid">
-            <label>
+            <label className={puedeCambiarEmpresa ? '' : 'is-full'}>
               <span>Empresa inmobiliaria</span>
-              <select name="empresaId" value={form.empresaId} onChange={actualizarCampo} required>
-                <option value="">Selecciona empresa</option>
-                {empresas.map((empresa) => (
-                  <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>
-                ))}
-              </select>
+              {puedeCambiarEmpresa ? (
+                <select name="empresaId" value={form.empresaId} onChange={actualizarCampo} required>
+                  <option value="">Selecciona empresa</option>
+                  {empresasOpciones.map((empresa) => (
+                    <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="admin-proyecto-form-readonly">
+                  <strong>{empresaVisible?.nombre || 'Empresa asignada'}</strong>
+                  <span>{esEdicion ? 'No puedes cambiar la empresa de este proyecto.' : 'Empresa asignada a tu cuenta.'}</span>
+                </div>
+              )}
             </label>
             <label>
               <span>Tipo de proyecto</span>
@@ -364,8 +643,77 @@ export default function AdminProyectoInmobiliarioFormPage() {
             <label><span>Superficie desde m2</span><input name="superficieDesdeM2" type="number" min="0" step="0.01" value={form.superficieDesdeM2} onChange={actualizarCampo} /></label>
             <label><span>Superficie hasta m2</span><input name="superficieHastaM2" type="number" min="0" step="0.01" value={form.superficieHastaM2} onChange={actualizarCampo} /></label>
             <label><span>Total unidades</span><input name="totalUnidades" type="number" min="0" step="1" value={form.totalUnidades} onChange={actualizarCampo} /></label>
-            <label className="is-full"><span>Imagen principal URL</span><input name="imagenPrincipalUrl" value={form.imagenPrincipalUrl} onChange={actualizarCampo} /></label>
-            <label className="is-full"><span>Logo URL</span><input name="logoUrl" value={form.logoUrl} onChange={actualizarCampo} /></label>
+            {puedeEditarProyecto ? (
+              <div className="admin-proyecto-form-media-grid is-full">
+                <section className="admin-proyecto-form-media-card">
+                  <div className="admin-proyecto-form-media-head">
+                    <div>
+                      <span>Imagen principal</span>
+                      <p>Imagen publica que se mostrara como portada del proyecto.</p>
+                    </div>
+                  </div>
+                  <div className="admin-proyecto-form-media-preview">
+                    {imagenPrincipalPreviewUrl ? (
+                      <img src={imagenPrincipalPreviewUrl} alt="Vista previa de imagen principal" />
+                    ) : (
+                      <span>Sin imagen principal</span>
+                    )}
+                  </div>
+                  <label className="admin-proyecto-form-file">
+                    <span>Seleccionar archivo</span>
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                      onChange={(event) => {
+                        prepararArchivo(event.target.files?.[0], 'La imagen principal', setImagenPrincipalFile, setImagenPrincipalPreview);
+                        event.target.value = '';
+                      }}
+                    />
+                    <small>JPG, JPEG, PNG o WEBP. Tamano maximo 10MB.</small>
+                  </label>
+                  {form.imagenPrincipalUrl ? (
+                    <p className="admin-proyecto-form-media-current">URL actual: {form.imagenPrincipalUrl}</p>
+                  ) : null}
+                  {imagenPrincipalFile ? (
+                    <p className="admin-proyecto-form-media-current">Archivo seleccionado: {imagenPrincipalFile.name}</p>
+                  ) : null}
+                </section>
+
+                <section className="admin-proyecto-form-media-card">
+                  <div className="admin-proyecto-form-media-head">
+                    <div>
+                      <span>Logo del proyecto</span>
+                      <p>Opcional. Si no se carga logo del proyecto, se usara el logo de la empresa o CN.</p>
+                    </div>
+                  </div>
+                  <div className="admin-proyecto-form-media-preview is-logo">
+                    {logoPreviewUrl ? (
+                      <img src={logoPreviewUrl} alt="Vista previa del logo del proyecto" />
+                    ) : (
+                      <span>Sin logo del proyecto</span>
+                    )}
+                  </div>
+                  <label className="admin-proyecto-form-file">
+                    <span>Seleccionar archivo</span>
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                      onChange={(event) => {
+                        prepararArchivo(event.target.files?.[0], 'El logo del proyecto', setLogoFile, setLogoPreview);
+                        event.target.value = '';
+                      }}
+                    />
+                    <small>JPG, JPEG, PNG o WEBP. Tamano maximo 10MB.</small>
+                  </label>
+                  {form.logoUrl ? (
+                    <p className="admin-proyecto-form-media-current">URL actual: {form.logoUrl}</p>
+                  ) : null}
+                  {logoFile ? (
+                    <p className="admin-proyecto-form-media-current">Archivo seleccionado: {logoFile.name}</p>
+                  ) : null}
+                </section>
+              </div>
+            ) : null}
             <label className="admin-proyecto-form-check is-full">
               <input name="usarLogoEmpresa" type="checkbox" checked={form.usarLogoEmpresa} onChange={actualizarCampo} />
               <span>Usar logo de empresa</span>
@@ -373,7 +721,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
             <p className="admin-proyecto-form-help is-full">
               {form.usarLogoEmpresa
                 ? 'Si el proyecto no tiene logo propio, se usara el logo de la empresa. Si la empresa no tiene logo, se usara el logo de CN.'
-                : 'Este proyecto usara el logo general de CN, salvo que se capture un Logo URL especifico.'}
+                : 'Este proyecto usara el logo general de CN, salvo que se capture un logo especifico.'}
             </p>
           </div>
         </section>
@@ -408,7 +756,9 @@ export default function AdminProyectoInmobiliarioFormPage() {
         </section>
 
         <section className="admin-proyecto-form-actions">
-          <button type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar'}</button>
+          <button type="submit" disabled={guardando || (!puedeCrearProyecto && !esEdicion)}>
+            {guardando ? 'Guardando...' : 'Guardar'}
+          </button>
           <Link to="/admin/proyectos-inmobiliarios">Cancelar</Link>
           {esEdicion ? (
             <>

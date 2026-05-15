@@ -8,6 +8,13 @@ import {
   resetPasswordUsuario,
 } from '../services/adminUsuariosService';
 import { obtenerRoles } from '../services/catalogosService';
+import { listarEmpresas } from '../services/empresasInmobiliariasService';
+import {
+  ROLES_EMPRESA,
+  asignarUsuarioEmpresa,
+  listarEmpresaUsuarios,
+  setEmpresaUsuarioActivo,
+} from '../services/empresasUsuariosService';
 import './AdminUsuariosPage.css';
 
 const ROLES_FALLBACK = [
@@ -24,7 +31,11 @@ const FORM_INICIAL = {
   rol: 'USUARIO',
   maxPublicaciones: '',
   passwordTemporal: '',
+  empresaId: '',
+  rolEmpresa: 'ADMIN_EMPRESA',
 };
+
+const ROLES_GLOBAL_CN = ['ADMIN', 'SUPERADMIN'];
 
 const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No fue posible procesar la solicitud.';
@@ -36,22 +47,43 @@ const buildFormFromUsuario = (usuario) => ({
   rol: usuario.rol,
   maxPublicaciones: usuario.maxPublicaciones ?? '',
   passwordTemporal: '',
+  empresaId: '',
+  rolEmpresa: 'ADMIN_EMPRESA',
 });
+
+const pickUsuarioIdFromResponse = (response) =>
+  (typeof response === 'string' || typeof response === 'number' ? response : '') ||
+  response?.usuarioId ||
+  response?.UsuarioId ||
+  response?.id ||
+  response?.Id ||
+  response?.data?.usuarioId ||
+  response?.data?.UsuarioId ||
+  response?.data?.id ||
+  response?.data?.Id ||
+  '';
 
 export default function AdminUsuariosPage() {
   const [usuarios, setUsuarios] = useState([]);
   const [roles, setRoles] = useState(ROLES_FALLBACK);
+  const [empresas, setEmpresas] = useState([]);
+  const [relacionesEmpresa, setRelacionesEmpresa] = useState([]);
   const [form, setForm] = useState(FORM_INICIAL);
   const [panelAbierto, setPanelAbierto] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [cargandoRoles, setCargandoRoles] = useState(true);
+  const [cargandoEmpresas, setCargandoEmpresas] = useState(true);
+  const [cargandoRelaciones, setCargandoRelaciones] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [accionandoRelacionId, setAccionandoRelacionId] = useState('');
   const [accionandoId, setAccionandoId] = useState('');
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
 
   const esEdicion = Boolean(form.id);
   const rolesDisponibles = roles.length > 0 ? roles : ROLES_FALLBACK;
+  const tieneEmpresaSeleccionada = Boolean(form.empresaId);
+  const rolGlobalConEmpresa = tieneEmpresaSeleccionada && ROLES_GLOBAL_CN.includes(String(form.rol || '').toUpperCase());
 
   const cargarUsuarios = useCallback(async (options = {}) => {
     setCargando(true);
@@ -103,8 +135,60 @@ export default function AdminUsuariosPage() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const cargarEmpresas = async () => {
+      setCargandoEmpresas(true);
+
+      try {
+        const data = await listarEmpresas({ soloActivas: true, signal: controller.signal });
+        setEmpresas(data);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          setError(getApiErrorMessage(err));
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setCargandoEmpresas(false);
+        }
+      }
+    };
+
+    cargarEmpresas();
+
+    return () => controller.abort();
+  }, []);
+
+  const cargarRelacionesUsuario = useCallback(async (usuarioId, options = {}) => {
+    if (!usuarioId) {
+      setRelacionesEmpresa([]);
+      return;
+    }
+
+    setCargandoRelaciones(true);
+
+    try {
+      const data = await listarEmpresaUsuarios({
+        usuarioId,
+        soloActivos: false,
+        signal: options.signal,
+      });
+      setRelacionesEmpresa(data);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setError(getApiErrorMessage(err));
+      }
+    } finally {
+      if (!options.signal?.aborted) {
+        setCargandoRelaciones(false);
+      }
+    }
+  }, []);
+
   const abrirNuevo = () => {
     setForm(FORM_INICIAL);
+    setRelacionesEmpresa([]);
     setPanelAbierto(true);
     setError('');
     setMensaje('');
@@ -112,6 +196,7 @@ export default function AdminUsuariosPage() {
 
   const abrirEdicion = (usuario) => {
     setForm(buildFormFromUsuario(usuario));
+    cargarRelacionesUsuario(usuario.id);
     setPanelAbierto(true);
     setError('');
     setMensaje('');
@@ -120,6 +205,7 @@ export default function AdminUsuariosPage() {
   const cerrarPanel = () => {
     setPanelAbierto(false);
     setForm(FORM_INICIAL);
+    setRelacionesEmpresa([]);
   };
 
   const actualizarCampo = (event) => {
@@ -132,21 +218,52 @@ export default function AdminUsuariosPage() {
 
   const guardarUsuario = async (event) => {
     event.preventDefault();
+    if (form.empresaId && !form.rolEmpresa) {
+      setError('Selecciona el rol empresarial.');
+      return;
+    }
+
     setGuardando(true);
     setError('');
     setMensaje('');
 
     try {
+      let usuarioId = form.id;
+
       if (esEdicion) {
         await actualizarUsuario(form.id, form);
-        setMensaje('Usuario actualizado correctamente.');
       } else {
-        await crearUsuario(form);
-        setMensaje('Usuario creado correctamente.');
+        const response = await crearUsuario(form);
+        usuarioId = pickUsuarioIdFromResponse(response);
+
+        if (!usuarioId) {
+          const usuariosActualizados = await obtenerAdminUsuarios();
+          const usuarioCreado = usuariosActualizados.find((usuario) =>
+            String(usuario.email || '').trim().toLowerCase() === String(form.email || '').trim().toLowerCase()
+          );
+          usuarioId = usuarioCreado?.id || '';
+        }
+      }
+
+      if (form.empresaId) {
+        if (!usuarioId) {
+          throw new Error('Usuario guardado, pero no fue posible identificar su usuarioId para asignarlo a la empresa.');
+        }
+
+        await asignarUsuarioEmpresa({
+          empresaId: form.empresaId,
+          usuarioId,
+          rolEmpresa: form.rolEmpresa,
+          activo: true,
+        });
       }
 
       cerrarPanel();
       await cargarUsuarios();
+      setMensaje(form.empresaId
+        ? 'Usuario guardado y asignado a empresa correctamente.'
+        : esEdicion ? 'Usuario actualizado correctamente.' : 'Usuario creado correctamente.'
+      );
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -197,6 +314,24 @@ export default function AdminUsuariosPage() {
     );
   };
 
+  const alternarRelacionEmpresa = async (relacion) => {
+    const siguiente = !relacion.activo;
+
+    setAccionandoRelacionId(relacion.id);
+    setError('');
+    setMensaje('');
+
+    try {
+      await setEmpresaUsuarioActivo(relacion.id, siguiente);
+      setMensaje(`Relacion con empresa ${siguiente ? 'activada' : 'desactivada'} correctamente.`);
+      await cargarRelacionesUsuario(form.id);
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setAccionandoRelacionId('');
+    }
+  };
+
   return (
     <main className="admin-usuarios">
       <section className="admin-usuarios-hero">
@@ -213,6 +348,7 @@ export default function AdminUsuariosPage() {
       {error ? <p className="admin-usuarios-feedback is-error">{error}</p> : null}
       {cargando ? <p className="admin-usuarios-feedback">Cargando usuarios...</p> : null}
       {cargandoRoles ? <p className="admin-usuarios-feedback">Cargando roles...</p> : null}
+      {cargandoEmpresas ? <p className="admin-usuarios-feedback">Cargando empresas inmobiliarias...</p> : null}
 
       {!cargando ? (
         <section className="admin-usuarios-card">
@@ -277,7 +413,7 @@ export default function AdminUsuariosPage() {
       ) : null}
 
       {panelAbierto ? (
-        <aside className="admin-usuarios-panel" aria-label={esEdicion ? 'Editar usuario' : 'Crear usuario'}>
+        <aside className="admin-usuarios-panel" role="dialog" aria-modal="true" aria-label={esEdicion ? 'Editar usuario' : 'Crear usuario'}>
           <div className="admin-usuarios-panel-card">
             <div className="admin-usuarios-panel-head">
               <h2>{esEdicion ? 'Editar usuario' : 'Nuevo usuario'}</h2>
@@ -300,6 +436,7 @@ export default function AdminUsuariosPage() {
                     <option key={rol.id} value={rol.id}>{rol.nombre}</option>
                   ))}
                 </select>
+                <small>El rol global controla permisos internos de CN. Para empresas externas, usar Usuario.</small>
               </label>
               <label>
                 <span>Max publicaciones</span>
@@ -322,6 +459,84 @@ export default function AdminUsuariosPage() {
                     required
                   />
                 </label>
+              ) : null}
+
+              <section className="admin-usuarios-empresa-section">
+                <div>
+                  <h3>Permisos en Proyectos Inmobiliarios</h3>
+                  <p>Para clientes externos, usa rol global USUARIO y asigna aqui la empresa y el rol empresarial. No uses ADMIN ni SUPERADMIN para clientes externos.</p>
+                </div>
+                <label>
+                  <span>Empresa inmobiliaria</span>
+                  <select name="empresaId" value={form.empresaId} onChange={actualizarCampo} disabled={cargandoEmpresas}>
+                    <option value="">Sin empresa asignada</option>
+                    {empresas.map((empresa) => (
+                      <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Rol empresarial</span>
+                  <select name="rolEmpresa" value={form.rolEmpresa} onChange={actualizarCampo} disabled={!form.empresaId}>
+                    {ROLES_EMPRESA.map((rolEmpresa) => (
+                      <option key={rolEmpresa} value={rolEmpresa}>{rolEmpresa}</option>
+                    ))}
+                  </select>
+                </label>
+                {rolGlobalConEmpresa ? (
+                  <p className="admin-usuarios-warning">
+                    Este usuario tendra permisos globales CN ademas de permisos empresariales.
+                  </p>
+                ) : null}
+              </section>
+
+              {esEdicion ? (
+                <section className="admin-usuarios-empresa-section">
+                  <div>
+                    <h3>Empresas asignadas</h3>
+                    <p>Agregar una empresa y guardar actualiza o crea la relacion con ese rol empresarial.</p>
+                  </div>
+                  {cargandoRelaciones ? <p className="admin-usuarios-relation-empty">Cargando empresas asignadas...</p> : null}
+                  {!cargandoRelaciones && relacionesEmpresa.length === 0 ? (
+                    <p className="admin-usuarios-relation-empty">Este usuario no tiene empresas asignadas.</p>
+                  ) : null}
+                  {!cargandoRelaciones && relacionesEmpresa.length > 0 ? (
+                    <div className="admin-usuarios-relations-wrap">
+                      <table className="admin-usuarios-relations-table">
+                        <thead>
+                          <tr>
+                            <th>Empresa</th>
+                            <th>Rol empresarial</th>
+                            <th>Activo</th>
+                            <th>Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {relacionesEmpresa.map((relacion) => (
+                            <tr key={relacion.id || `${relacion.empresaId}-${relacion.usuarioId}`}>
+                              <td>{relacion.empresaNombre}</td>
+                              <td><span className="admin-usuarios-pill">{relacion.rolEmpresa}</span></td>
+                              <td>
+                                <span className={`admin-usuarios-status ${relacion.activo ? 'is-active' : 'is-inactive'}`}>
+                                  {relacion.activo ? 'Activo' : 'Inactivo'}
+                                </span>
+                              </td>
+                              <td>
+                                <button
+                                  type="button"
+                                  onClick={() => alternarRelacionEmpresa(relacion)}
+                                  disabled={!relacion.id || accionandoRelacionId === relacion.id}
+                                >
+                                  {relacion.activo ? 'Desactivar' : 'Activar'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : null}
+                </section>
               ) : null}
               <div className="admin-usuarios-form-actions">
                 <button type="submit" className="admin-usuarios-primary" disabled={guardando}>

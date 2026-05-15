@@ -1,12 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { resolveApiAssetUrl } from '../../services/apiClient';
 import {
   actualizarModelo,
   crearModelo,
   listarModelos,
   setModeloActivo,
+  subirImagenPrincipalModelo,
 } from '../../services/proyectoModelosService';
 import { obtenerProyecto } from '../../services/proyectosInmobiliariosService';
+import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
 import './AdminProyectoModelosPage.css';
 
 const FORM_INICIAL = {
@@ -21,10 +24,12 @@ const FORM_INICIAL = {
   superficieTerrenoM2: '',
   superficieConstruccionM2: '',
   precioDesde: '',
-  imagenPrincipalUrl: '',
   tour360Url: '',
   orden: '0',
 };
+
+const EXTENSIONES_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No fue posible procesar la accion.';
@@ -36,6 +41,23 @@ const toNumberOrNull = (value) => {
   if (value === '' || value === null || value === undefined) return null;
   const number = Number(value);
   return Number.isNaN(number) ? null : number;
+};
+
+const getFileExtension = (file) => String(file?.name || '').split('.').pop().toLowerCase();
+
+const validarArchivoImagen = (file) => {
+  if (!file) return '';
+
+  const extension = getFileExtension(file);
+  if (!EXTENSIONES_PERMITIDAS.includes(extension)) {
+    return 'Selecciona una imagen JPG, JPEG, PNG o WEBP.';
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return 'La imagen no debe pesar mas de 10MB.';
+  }
+
+  return '';
 };
 
 const generarSlug = (value) =>
@@ -59,7 +81,6 @@ const mapModeloToForm = (modelo = {}) => ({
   superficieTerrenoM2: toInputValue(modelo.superficieTerrenoM2),
   superficieConstruccionM2: toInputValue(modelo.superficieConstruccionM2),
   precioDesde: toInputValue(modelo.precioDesde),
-  imagenPrincipalUrl: modelo.imagenPrincipalUrl || '',
   tour360Url: modelo.tour360Url || '',
   orden: toInputValue(modelo.orden || 0),
 });
@@ -77,12 +98,19 @@ const buildPayload = (form, proyectoId) => ({
   superficieTerrenoM2: toNumberOrNull(form.superficieTerrenoM2),
   superficieConstruccionM2: toNumberOrNull(form.superficieConstruccionM2),
   precioDesde: toNumberOrNull(form.precioDesde),
-  imagenPrincipalUrl: form.imagenPrincipalUrl.trim() || null,
   tour360Url: form.tour360Url.trim() || null,
   orden: toNumberOrNull(form.orden) ?? 0,
 });
 
+const getPreviewUrl = (modelo, imagenPreview) =>
+  imagenPreview || resolveApiAssetUrl(modelo?.imagenPrincipalUrl || '');
+
+const pickModeloId = (value) =>
+  value?.modeloId || value?.id || value?.Id || value?.data?.modeloId || value?.data?.id || '';
+
 export default function AdminProyectoModelosPage() {
+  const permisosEmpresa = usePermisosEmpresa();
+  const puedeEditarModelo = permisosEmpresa.puedeEditarModelos;
   const { proyectoId } = useParams();
   const [proyecto, setProyecto] = useState(null);
   const [modelos, setModelos] = useState([]);
@@ -91,6 +119,8 @@ export default function AdminProyectoModelosPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modeloEditando, setModeloEditando] = useState(null);
   const [form, setForm] = useState(FORM_INICIAL);
+  const [imagenFile, setImagenFile] = useState(null);
+  const [imagenPreview, setImagenPreview] = useState('');
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [accionando, setAccionando] = useState('');
@@ -129,6 +159,12 @@ export default function AdminProyectoModelosPage() {
     return () => controller.abort();
   }, [cargarDatos]);
 
+  useEffect(() => () => {
+    if (imagenPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(imagenPreview);
+    }
+  }, [imagenPreview]);
+
   const modelosFiltrados = useMemo(() => {
     const term = busqueda.trim().toLowerCase();
     if (!term) return modelos;
@@ -143,9 +179,37 @@ export default function AdminProyectoModelosPage() {
     setForm((actual) => ({ ...actual, [name]: value }));
   };
 
+  const limpiarImagenSeleccionada = () => {
+    setImagenFile(null);
+    setImagenPreview((actual) => {
+      if (actual?.startsWith('blob:')) {
+        URL.revokeObjectURL(actual);
+      }
+      return '';
+    });
+  };
+
+  const seleccionarImagen = (file) => {
+    limpiarImagenSeleccionada();
+    setError('');
+    setMensaje('');
+
+    if (!file) return;
+
+    const errorArchivo = validarArchivoImagen(file);
+    if (errorArchivo) {
+      setError(errorArchivo);
+      return;
+    }
+
+    setImagenFile(file);
+    setImagenPreview(URL.createObjectURL(file));
+  };
+
   const abrirNuevoModelo = () => {
     setModeloEditando(null);
     setForm(FORM_INICIAL);
+    limpiarImagenSeleccionada();
     setError('');
     setModalOpen(true);
   };
@@ -153,6 +217,7 @@ export default function AdminProyectoModelosPage() {
   const abrirEditarModelo = (modelo) => {
     setModeloEditando(modelo);
     setForm(mapModeloToForm(modelo));
+    limpiarImagenSeleccionada();
     setError('');
     setModalOpen(true);
   };
@@ -162,6 +227,7 @@ export default function AdminProyectoModelosPage() {
     setModalOpen(false);
     setModeloEditando(null);
     setForm(FORM_INICIAL);
+    limpiarImagenSeleccionada();
   };
 
   const generarSlugDesdeNombre = () => {
@@ -207,17 +273,26 @@ export default function AdminProyectoModelosPage() {
 
     try {
       const payload = buildPayload(form, proyectoId);
+      let modeloGuardadoId = modeloEditando?.id || '';
 
       if (modeloEditando) {
         await actualizarModelo(modeloEditando.id, payload);
-        setMensaje('Modelo actualizado correctamente.');
       } else {
-        await crearModelo(proyectoId, payload);
-        setMensaje('Modelo creado correctamente.');
+        const response = await crearModelo(proyectoId, payload);
+        modeloGuardadoId = pickModeloId(response);
+      }
+
+      if (!modeloGuardadoId) {
+        throw new Error('No fue posible identificar el modelo guardado.');
+      }
+
+      if (imagenFile) {
+        await subirImagenPrincipalModelo(modeloGuardadoId, imagenFile);
       }
 
       cerrarModal();
       await cargarDatos();
+      setMensaje(modeloEditando ? 'Modelo actualizado correctamente.' : 'Modelo creado correctamente.');
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -270,7 +345,7 @@ export default function AdminProyectoModelosPage() {
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imagenes</Link>
           <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyectoId}`}>Prospectos</Link>
           <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyectoId}`}>Apartados</Link>
-          <button type="button" onClick={abrirNuevoModelo}>Nuevo modelo</button>
+          {puedeEditarModelo ? <button type="button" onClick={abrirNuevoModelo}>Nuevo modelo</button> : null}
         </div>
       </section>
 
@@ -350,10 +425,14 @@ export default function AdminProyectoModelosPage() {
                     </td>
                     <td data-label="Acciones">
                       <div className="admin-proyecto-modelos-actions">
-                        <button type="button" onClick={() => abrirEditarModelo(modelo)}>Editar</button>
-                        <button type="button" onClick={() => alternarActivo(modelo)} disabled={accionando === modelo.id}>
-                          {modelo.activo ? 'Desactivar' : 'Activar'}
-                        </button>
+                        {puedeEditarModelo ? (
+                          <>
+                            <button type="button" onClick={() => abrirEditarModelo(modelo)}>Editar</button>
+                            <button type="button" onClick={() => alternarActivo(modelo)} disabled={accionando === modelo.id}>
+                              {modelo.activo ? 'Desactivar' : 'Activar'}
+                            </button>
+                          </>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -388,11 +467,45 @@ export default function AdminProyectoModelosPage() {
                 <label><span>Superficie construccion m2</span><input name="superficieConstruccionM2" type="number" min="0" step="0.01" value={form.superficieConstruccionM2} onChange={actualizarCampo} /></label>
                 <label><span>Precio desde</span><input name="precioDesde" type="number" min="0" step="0.01" value={form.precioDesde} onChange={actualizarCampo} /></label>
                 <label><span>Orden</span><input name="orden" type="number" min="0" step="1" value={form.orden} onChange={actualizarCampo} /></label>
-                <label className="is-full"><span>Imagen principal URL</span><input name="imagenPrincipalUrl" value={form.imagenPrincipalUrl} onChange={actualizarCampo} /></label>
+                {puedeEditarModelo ? (
+                  <div className="admin-proyecto-modelos-image-upload is-full">
+                    <div className="admin-proyecto-modelos-image-upload-head">
+                      <div>
+                        <span>Imagen principal del modelo</span>
+                        <p>Imagen publica que se mostrara en la ficha del modelo.</p>
+                      </div>
+                    </div>
+                    <div className="admin-proyecto-modelos-image-preview">
+                      {getPreviewUrl(modeloEditando, imagenPreview) ? (
+                        <img src={getPreviewUrl(modeloEditando, imagenPreview)} alt="Vista previa de imagen principal del modelo" />
+                      ) : (
+                        <span>Sin imagen del modelo</span>
+                      )}
+                    </div>
+                    <label className="admin-proyecto-modelos-file">
+                      <span>Seleccionar archivo</span>
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                        onChange={(event) => {
+                          seleccionarImagen(event.target.files?.[0]);
+                          event.target.value = '';
+                        }}
+                      />
+                      <small>JPG, JPEG, PNG o WEBP. Tamano maximo 10MB.</small>
+                    </label>
+                    {modeloEditando?.imagenPrincipalUrl ? (
+                      <p className="admin-proyecto-modelos-image-current">URL actual: {modeloEditando.imagenPrincipalUrl}</p>
+                    ) : null}
+                    {imagenFile ? (
+                      <p className="admin-proyecto-modelos-image-current">Archivo seleccionado: {imagenFile.name}</p>
+                    ) : null}
+                  </div>
+                ) : null}
                 <label className="is-full"><span>Tour 360 URL</span><input name="tour360Url" value={form.tour360Url} onChange={actualizarCampo} /></label>
               </div>
               <div className="admin-proyecto-modelos-modal-actions">
-                <button type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar modelo'}</button>
+                <button type="submit" disabled={guardando || !puedeEditarModelo}>{guardando ? 'Guardando...' : 'Guardar modelo'}</button>
                 <button type="button" onClick={cerrarModal} disabled={guardando}>Cancelar</button>
               </div>
             </form>

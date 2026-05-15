@@ -1,4 +1,4 @@
-import { getJson, requestJson } from './apiClient';
+import { getJson, requestFormData, requestJson } from './apiClient';
 import {
   cleanQuery,
   formatCurrency,
@@ -9,6 +9,14 @@ import {
 } from './proyectosInmobiliariosUtils';
 
 const BASE_URL = '/api/admin/proyectos-inmobiliarios';
+
+const adaptModeloResponse = (response) =>
+  adaptProyectoModelo(
+    response?.modelo ||
+    response?.data?.modelo ||
+    response?.data ||
+    response
+  );
 
 export const adaptProyectoModelo = (item = {}) => ({
   id: toText(pickFirst(item.modeloId, item.proyectoModeloId, item.id, item.Id)),
@@ -49,3 +57,13 @@ export const actualizarModelo = (modeloId, data) =>
 
 export const setModeloActivo = (modeloId, activo) =>
   requestJson(`${BASE_URL}/modelos/${modeloId}/activo`, { method: 'PATCH', body: { activo } });
+
+export const subirImagenPrincipalModelo = (modeloId, file) => {
+  const body = new FormData();
+  body.append('file', file);
+
+  return requestFormData(`${BASE_URL}/modelos/${modeloId}/imagen-principal/upload`, {
+    method: 'POST',
+    body,
+  }).then(adaptModeloResponse);
+};

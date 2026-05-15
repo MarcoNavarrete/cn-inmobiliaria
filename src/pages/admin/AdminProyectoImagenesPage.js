@@ -8,6 +8,7 @@ import {
   subirImagen,
 } from '../../services/proyectoImagenesService';
 import { obtenerProyecto } from '../../services/proyectosInmobiliariosService';
+import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
 import './AdminProyectoImagenesPage.css';
 
 const TIPOS_IMAGEN = ['PRINCIPAL', 'GALERIA', 'AMENIDAD', 'PLANO_COMERCIAL', 'RENDER', 'LOGO', 'OTRO'];
@@ -62,6 +63,8 @@ const buildPayload = (form, proyectoId) => ({
 });
 
 export default function AdminProyectoImagenesPage() {
+  const permisosEmpresa = usePermisosEmpresa();
+  const puedeSubirImagenes = permisosEmpresa.puedeSubirImagenes;
   const { proyectoId } = useParams();
   const [proyecto, setProyecto] = useState(null);
   const [imagenes, setImagenes] = useState([]);
@@ -308,7 +311,7 @@ export default function AdminProyectoImagenesPage() {
           <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyectoId}`}>Prospectos</Link>
           <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyectoId}`}>Apartados</Link>
           <Link to="/admin/proyectos-inmobiliarios">Volver al listado</Link>
-          <button type="button" onClick={abrirNuevaImagen}>Nueva imagen</button>
+          {puedeSubirImagenes ? <button type="button" onClick={abrirNuevaImagen}>Nueva imagen</button> : null}
         </div>
       </section>
 
@@ -396,10 +399,14 @@ export default function AdminProyectoImagenesPage() {
                         <div className="admin-proyecto-imagenes-actions">
                           {imagen.url ? <a href={imageUrl} target="_blank" rel="noopener noreferrer">Ver imagen</a> : null}
                           {imagen.url ? <button type="button" onClick={() => copiarUrl(imagen.url)}>Copiar URL</button> : null}
-                          <button type="button" onClick={() => abrirEditarImagen(imagen)}>Editar</button>
-                          <button type="button" onClick={() => alternarActivo(imagen)} disabled={accionando === imagen.id}>
-                            {imagen.activo ? 'Desactivar' : 'Activar'}
-                          </button>
+                          {puedeSubirImagenes ? (
+                            <>
+                              <button type="button" onClick={() => abrirEditarImagen(imagen)}>Editar</button>
+                              <button type="button" onClick={() => alternarActivo(imagen)} disabled={accionando === imagen.id}>
+                                {imagen.activo ? 'Desactivar' : 'Activar'}
+                              </button>
+                            </>
+                          ) : null}
                         </div>
                       </td>
                     </tr>

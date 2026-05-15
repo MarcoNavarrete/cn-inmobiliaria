@@ -232,6 +232,65 @@
   gap: 0.5rem;
 }
 
+.admin-proyecto-modelos-image-upload {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 12px;
+  background: rgba(26, 61, 124, 0.03);
+}
+
+.admin-proyecto-modelos-image-upload-head span,
+.admin-proyecto-modelos-file span {
+  display: block;
+  color: rgba(26, 61, 124, 0.88);
+  font-weight: 800;
+}
+
+.admin-proyecto-modelos-image-upload-head p,
+.admin-proyecto-modelos-image-current,
+.admin-proyecto-modelos-file small {
+  margin: 0.25rem 0 0;
+  color: rgba(26, 61, 124, 0.72);
+  font-size: 0.93rem;
+  font-weight: 600;
+}
+
+.admin-proyecto-modelos-image-preview {
+  display: grid;
+  place-items: center;
+  min-height: 190px;
+  padding: 0.75rem;
+  border: 1px dashed rgba(26, 61, 124, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+  overflow: hidden;
+}
+
+.admin-proyecto-modelos-image-preview img {
+  
+  height: 100%;
+  max-height: 240px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.admin-proyecto-modelos-image-preview span {
+  color: rgba(26, 61, 124, 0.64);
+  font-weight: 700;
+}
+
+.admin-proyecto-modelos-file {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.admin-proyecto-modelos-file input {
+  padding: 0.5rem 0;
+  border: 0;
+}
+
 .admin-proyecto-modelos-modal-actions {
   padding: 0 1rem 1rem;
 }

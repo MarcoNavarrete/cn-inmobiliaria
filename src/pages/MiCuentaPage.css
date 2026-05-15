@@ -104,6 +104,95 @@
   color: var(--gris-elegante);
 }
 
+.mi-cuenta-password-card {
+  margin-top: 1.25rem;
+  padding: 1.15rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(16, 35, 58, 0.08);
+}
+
+.mi-cuenta-password-head {
+  margin-bottom: 1rem;
+}
+
+.mi-cuenta-password-head p {
+  margin: 0 0 0.25rem;
+  color: var(--dorado-suave);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.mi-cuenta-password-head h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-size: 1.25rem;
+}
+
+.mi-cuenta-feedback {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.mi-cuenta-feedback.is-error {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.08);
+}
+
+.mi-cuenta-feedback.is-ok {
+  color: #21633a;
+  background: rgba(33, 99, 58, 0.08);
+}
+
+.mi-cuenta-password-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.mi-cuenta-password-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.mi-cuenta-password-form span {
+  color: rgba(26, 61, 124, 0.88);
+  font-weight: 700;
+}
+
+.mi-cuenta-password-form input {
+  width: 100%;
+  padding: 0.68rem 0.75rem;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  color: var(--azul-oscuro);
+  font: inherit;
+}
+
+.mi-cuenta-password-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.mi-cuenta-password-actions button {
+  min-height: 38px;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mi-cuenta-password-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 @media (max-width: 640px) {
   .mi-cuenta-card {
     align-items: flex-start;

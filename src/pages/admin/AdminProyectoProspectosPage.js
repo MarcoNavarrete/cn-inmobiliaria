@@ -5,6 +5,7 @@ import {
   listarProspectos,
 } from '../../services/proyectoProspectosService';
 import { listarProyectos } from '../../services/proyectosInmobiliariosService';
+import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
 import './AdminProyectoProspectosPage.css';
 
 const ESTATUS_PROSPECTO = ['NUEVO', 'CONTACTADO', 'INTERESADO', 'APARTADO', 'DESCARTADO', 'CONVERTIDO'];
@@ -31,6 +32,8 @@ const buildWhatsappUrl = (telefono) => {
 };
 
 export default function AdminProyectoProspectosPage() {
+  const permisosEmpresa = usePermisosEmpresa();
+  const puedeOperarProspectos = permisosEmpresa.puedeOperarProspectos;
   const [searchParams, setSearchParams] = useSearchParams();
   const [proyectos, setProyectos] = useState([]);
   const [prospectos, setProspectos] = useState([]);
@@ -232,7 +235,7 @@ export default function AdminProyectoProspectosPage() {
                       <td>{prospecto.observaciones || prospecto.mensaje || '-'}</td>
                       <td>
                         <div className="admin-proyecto-prospectos-actions">
-                          <button type="button" onClick={() => abrirCambioEstatus(prospecto)}>Cambiar estatus</button>
+                          {puedeOperarProspectos ? <button type="button" onClick={() => abrirCambioEstatus(prospecto)}>Cambiar estatus</button> : null}
                           {prospecto.mensaje || prospecto.observaciones ? (
                             <button type="button" onClick={() => window.alert(prospecto.mensaje || prospecto.observaciones)}>Ver mensaje</button>
                           ) : null}
