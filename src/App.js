@@ -28,6 +28,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminPropiedadesPage from './pages/AdminPropiedadesPage';
 import AdminProspectosPage from './pages/AdminProspectosPage';
 import AdminUsuariosPage from './pages/AdminUsuariosPage';
+import AdminEmpresasInmobiliariasPage from './pages/admin/AdminEmpresasInmobiliariasPage';
 import AdminDesarrollosPage from './pages/admin/AdminDesarrollosPage';
 import AdminProyectosInmobiliariosPage from './pages/admin/AdminProyectosInmobiliariosPage';
 import AdminProyectoInmobiliarioFormPage from './pages/admin/AdminProyectoInmobiliarioFormPage';
@@ -139,6 +140,7 @@ function App() {
           <Route path="desarrollos/:desarrolloId/modelos/:modeloId/tour-360" element={<AdminModeloTour360Page />} />
           <Route path="tours-360/escenas/:escenaId/hotspots" element={<AdminTour360HotspotsPage />} />
           <Route path="prospectos" element={<AdminProspectosPage />} />
+          <Route path="empresas-inmobiliarias" element={<AdminEmpresasInmobiliariasPage />} />
           <Route path="usuarios" element={<AdminUsuariosPage />} />
           <Route path="inmuebles/nuevo" element={<AdminInmuebleFormPage />} />
           <Route path="inmuebles/editar/:id" element={<AdminInmuebleFormPage />} />

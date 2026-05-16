@@ -448,6 +448,12 @@ export default function AdminLayout() {
                 <MenuItem key={item.menuId || item.ruta || item.nombre} item={item} />
               ))}
               {esAdminCn ? (
+                <NavLink to="/admin/empresas-inmobiliarias">
+                  <MenuIcon icono="building" />
+                  <span>Empresas inmobiliarias</span>
+                </NavLink>
+              ) : null}
+              {esAdminCn ? (
                 <NavLink to="/admin/usuarios">
                   <MenuIcon icono="usuarios" />
                   <span>Usuarios</span>
