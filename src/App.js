@@ -1,7 +1,8 @@
 import './App.css';
 import './styles/variables.css';
 
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Hero from './components/Hero';
@@ -53,16 +54,43 @@ import RegisterPage from './pages/RegisterPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
 import WhatsAppFlotante from './components/WhatsAppFlotante';
+import { initGA, trackPageView } from './lib/analytics';
 
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
 AOS.init({ once: true });
 
+function AnalyticsTracker() {
+  const location = useLocation();
+  const lastTrackedPagePath = useRef('');
+
+  useEffect(() => {
+    initGA();
+  }, []);
+
+  useEffect(() => {
+    const pagePath = `${window.location.pathname || ''}${window.location.search || ''}${window.location.hash || ''}` || '/';
+
+    if (lastTrackedPagePath.current === pagePath) {
+      return undefined;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      trackPageView(pagePath, document.title);
+      lastTrackedPagePath.current = pagePath;
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [location.hash, location.pathname, location.search]);
+
+  return null;
+}
 
 function App() {
   return (
     <Router>
+      <AnalyticsTracker />
       <Header />
       <Routes>
         <Route

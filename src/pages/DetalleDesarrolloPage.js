@@ -5,6 +5,7 @@ import MarkdownContent from '../components/common/MarkdownContent';
 import PlanoInteractivoDemo from '../components/desarrollos/PlanoInteractivoDemo';
 import ProspectoDesarrolloModal from '../components/desarrollos/ProspectoDesarrolloModal';
 import Tour360Viewer from '../components/tour360/Tour360Viewer';
+import { trackEvent } from '../lib/analytics';
 import { obtenerDesarrolloPorSlug } from '../services/desarrollosService';
 import { obtenerPlanoPublico } from '../services/adminDesarrolloPlanoService';
 import {
@@ -229,6 +230,13 @@ export default function DetalleDesarrolloPage() {
   };
 
   const abrirWhatsapp = ({ desarrollo: desarrolloActual, mensaje, modelo }) => {
+    trackEvent('click_whatsapp', {
+      source: 'detalle_desarrollo',
+      desarrollo_slug: slug,
+      desarrollo_name: desarrolloActual?.nombre || '',
+      modelo_name: modelo?.nombre || '',
+    });
+
     if (mensaje) {
       const telefono =
         normalizeWhatsAppNumber(desarrolloActual.telefonoContacto) ||
@@ -244,6 +252,13 @@ export default function DetalleDesarrolloPage() {
     if (!unidad) {
       return;
     }
+
+    trackEvent('click_apartar_unidad', {
+      source: 'plano_interactivo_demo',
+      desarrollo_slug: slug,
+      desarrollo_name: desarrollo?.nombre || '',
+      unit_code: unidad?.codigoUnidad || unidad?.codigo || '',
+    });
 
     const modeloNombre = cleanText(unidad.modeloNombre || unidad.modelo || unidad.nombreModelo);
     const modelo = unidad.modeloId || modeloNombre
@@ -355,7 +370,19 @@ export default function DetalleDesarrolloPage() {
           ) : null}
           <strong>Desde {formatCurrency(desarrollo.precioDesde)}</strong>
           <div className="detalle-desarrollo-hero-actions">
-            <button type="button" onClick={() => abrirModalProspecto()}>WhatsApp</button>
+            <button
+              type="button"
+              onClick={() => {
+                trackEvent('click_me_interesa', {
+                  source: 'detalle_desarrollo_hero',
+                  desarrollo_slug: slug,
+                  desarrollo_name: desarrollo.nombre || '',
+                });
+                abrirModalProspecto();
+              }}
+            >
+              WhatsApp
+            </button>
             <a href="#modelos-disponibles" onClick={irAModelos}>Ver modelos</a>
           </div>
         </div>
@@ -377,7 +404,19 @@ export default function DetalleDesarrolloPage() {
             {desarrollo.nombreContacto ? (
               <small className="detalle-desarrollo-contacto-card">Asesor asignado: {desarrollo.nombreContacto}</small>
             ) : null}
-            <button type="button" onClick={() => abrirModalProspecto()}>Solicitar informacion</button>
+            <button
+              type="button"
+              onClick={() => {
+                trackEvent('click_me_interesa', {
+                  source: 'detalle_desarrollo_contacto',
+                  desarrollo_slug: slug,
+                  desarrollo_name: desarrollo.nombre || '',
+                });
+                abrirModalProspecto();
+              }}
+            >
+              Solicitar informacion
+            </button>
           </aside>
         </div>
 
@@ -560,10 +599,33 @@ export default function DetalleDesarrolloPage() {
                         <div><dt>Construccion</dt><dd>{modelo.construccionM2} m2</dd></div>
                         <div><dt>Terreno</dt><dd>{modelo.terrenoM2} m2</dd></div>
                       </dl>
-                      <button type="button" onClick={() => abrirModalProspecto(modelo)}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          trackEvent('click_me_interesa', {
+                            source: 'detalle_desarrollo_modelo',
+                            desarrollo_slug: slug,
+                            desarrollo_name: desarrollo.nombre || '',
+                            modelo_name: modelo.nombre || '',
+                          });
+                          abrirModalProspecto(modelo);
+                        }}
+                      >
                         Me interesa este modelo
                       </button>
-                      <button type="button" className="modelo-card-secondary" onClick={() => abrirTourModelo(modelo)}>
+                      <button
+                        type="button"
+                        className="modelo-card-secondary"
+                        onClick={() => {
+                          trackEvent('click_tour_360', {
+                            source: 'detalle_desarrollo_modelo',
+                            desarrollo_slug: slug,
+                            desarrollo_name: desarrollo.nombre || '',
+                            modelo_name: modelo.nombre || '',
+                          });
+                          abrirTourModelo(modelo);
+                        }}
+                      >
                         Ver tour 360 del modelo
                       </button>
                     </div>

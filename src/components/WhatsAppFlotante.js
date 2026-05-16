@@ -1,4 +1,5 @@
 import React from 'react';
+import { trackEvent } from '../lib/analytics';
 import './WhatsAppFlotante.css';
 
 export default function WhatsAppFlotante() {
@@ -12,6 +13,7 @@ export default function WhatsAppFlotante() {
         rel="noopener noreferrer"
         className="whatsapp-icono"
         aria-label="Enviar mensaje por WhatsApp"
+        onClick={() => trackEvent('click_whatsapp', { source: 'whatsapp_flotante' })}
       >
         <span className="tooltip">Tu nuevo hogar esta a un mensaje</span>
         <img src="./assets/whatsapp.png" alt="" />

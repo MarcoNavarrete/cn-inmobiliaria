@@ -1,4 +1,5 @@
 import React from 'react';
+import { trackEvent } from '../lib/analytics';
 import './Contacto.css';
 
 const whatsappNumber = '5217716707794';
@@ -46,9 +47,23 @@ export default function Contacto() {
             </div>
 
             <div className="contacto-acciones">
-              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">Enviar WhatsApp</a>
+              <a
+                href={`https://wa.me/${whatsappNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackEvent('click_whatsapp', { source: 'contacto' })}
+              >
+                Enviar WhatsApp
+              </a>
               <a href={`tel:${phoneNumber}`}>Llamar</a>
-              <a href={mapsLink} target="_blank" rel="noopener noreferrer">Ver ubicacion</a>
+              <a
+                href={mapsLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackEvent('click_mapa_interactivo', { source: 'contacto' })}
+              >
+                Ver ubicacion
+              </a>
             </div>
           </div>
 

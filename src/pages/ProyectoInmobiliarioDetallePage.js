@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom';
 import MarkdownContent from '../components/common/MarkdownContent';
 import ProyectoPlanoInteractivo from '../components/proyectos/ProyectoPlanoInteractivo';
+import { trackEvent } from '../lib/analytics';
 import { resolveApiAssetUrl } from '../services/apiClient';
 import {
   crearProspectoPublico,
@@ -227,6 +228,12 @@ export default function ProyectoInmobiliarioDetallePage() {
 
   const seleccionarUnidadYContactar = (unidad) => {
     seleccionarUnidad(unidad);
+    trackEvent('click_me_interesa', {
+      source: 'proyecto_inmobiliario_tabla',
+      project_slug: slug,
+      project_name: proyecto?.nombre || '',
+      unit_code: unidad?.codigo || '',
+    });
     window.setTimeout(() => scrollTo(contactoRef), 80);
   };
 
@@ -248,6 +255,11 @@ export default function ProyectoInmobiliarioDetallePage() {
     if (!proyecto) return;
     const telefono = normalizePhone(proyecto.whatsappContacto || proyecto.telefonoContacto) || normalizePhone(DEFAULT_WHATSAPP_NUMBER);
     const text = `Hola, me interesa el proyecto ${proyecto.nombre}. Me gustaria recibir mas informacion.`;
+    trackEvent('click_whatsapp', {
+      source: 'proyecto_inmobiliario_detalle',
+      project_slug: slug,
+      project_name: proyecto.nombre || '',
+    });
     window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -287,6 +299,16 @@ export default function ProyectoInmobiliarioDetallePage() {
     }
   };
 
+  const seleccionarUnidadEnMapa = useCallback((unidad) => {
+    trackEvent('click_mapa_interactivo', {
+      source: 'proyecto_inmobiliario_plano',
+      project_slug: slug,
+      project_name: proyecto?.nombre || '',
+      unit_code: unidad?.codigo || '',
+    });
+    seleccionarUnidad(unidad);
+  }, [proyecto?.nombre, seleccionarUnidad, slug]);
+
   if (loading) {
     return (
       <main className="proyecto-publico-page">
@@ -311,6 +333,15 @@ export default function ProyectoInmobiliarioDetallePage() {
     ? { backgroundImage: `linear-gradient(90deg, rgba(9, 22, 35, 0.9), rgba(15, 27, 45, 0.48)), url(${imagenPrincipal})` }
     : undefined;
 
+  const irAPlano = () => {
+    trackEvent('click_mapa_interactivo', {
+      source: plano?.svgUrl ? 'proyecto_inmobiliario_hero' : 'proyecto_inmobiliario_hero_unidades',
+      project_slug: slug,
+      project_name: proyecto.nombre || '',
+    });
+    scrollTo(plano?.svgUrl ? planoRef : unidadesRef);
+  };
+
   return (
     <main className="proyecto-publico-page">
       <section className={`proyecto-publico-hero ${imagenPrincipal ? '' : 'is-placeholder'}`} style={heroStyle}>
@@ -326,8 +357,20 @@ export default function ProyectoInmobiliarioDetallePage() {
             <div><dt>Unidades</dt><dd>{proyecto.totalUnidades || unidades.length}</dd></div>
           </dl>
           <div className="proyecto-publico-hero-actions">
-            <button type="button" onClick={() => scrollTo(contactoRef)}>Me interesa</button>
-            <button type="button" onClick={() => scrollTo(plano?.svgUrl ? planoRef : unidadesRef)}>
+            <button
+              type="button"
+              onClick={() => {
+                trackEvent('click_me_interesa', {
+                  source: 'proyecto_inmobiliario_hero',
+                  project_slug: slug,
+                  project_name: proyecto.nombre || '',
+                });
+                scrollTo(contactoRef);
+              }}
+            >
+              Me interesa
+            </button>
+            <button type="button" onClick={irAPlano}>
               {plano?.svgUrl ? 'Ver plano' : 'Ver unidades'}
             </button>
             <button type="button" onClick={abrirWhatsapp}>WhatsApp</button>
@@ -349,7 +392,19 @@ export default function ProyectoInmobiliarioDetallePage() {
             <p>{proyecto.telefonoContacto || proyecto.whatsappContacto || 'Telefono por confirmar'}</p>
             {proyecto.correoContacto ? <p>{proyecto.correoContacto}</p> : null}
             {proyecto.direccion ? <p>{proyecto.direccion}</p> : null}
-            <button type="button" onClick={() => scrollTo(contactoRef)}>Solicitar informacion</button>
+            <button
+              type="button"
+              onClick={() => {
+                trackEvent('click_me_interesa', {
+                  source: 'proyecto_inmobiliario_contacto',
+                  project_slug: slug,
+                  project_name: proyecto.nombre || '',
+                });
+                scrollTo(contactoRef);
+              }}
+            >
+              Solicitar informacion
+            </button>
           </aside>
         </section>
 
@@ -380,11 +435,11 @@ export default function ProyectoInmobiliarioDetallePage() {
               {modelos.map((modelo) => (
                 <article key={modelo.id} className="proyecto-modelo-card">
                   <div className={`proyecto-modelo-media ${modelo.imagenPrincipalUrl ? '' : 'is-placeholder'}`}>
-                    {modelo.imagenPrincipalUrl ? (
-                      <button
-                        type="button"
-                        className="proyecto-modelo-image-button"
-                        onClick={() => setModeloImagenModal({
+                      {modelo.imagenPrincipalUrl ? (
+                        <button
+                          type="button"
+                          className="proyecto-modelo-image-button"
+                          onClick={() => setModeloImagenModal({
                           src: resolveApiAssetUrl(modelo.imagenPrincipalUrl),
                           title: modelo.nombre,
                         })}
@@ -411,15 +466,31 @@ export default function ProyectoInmobiliarioDetallePage() {
                       {modelo.imagenPrincipalUrl ? (
                         <button
                           type="button"
-                          onClick={() => setModeloImagenModal({
-                            src: resolveApiAssetUrl(modelo.imagenPrincipalUrl),
-                            title: modelo.nombre,
-                          })}
+                          onClick={() => {
+                            setModeloImagenModal({
+                              src: resolveApiAssetUrl(modelo.imagenPrincipalUrl),
+                              title: modelo.nombre,
+                            });
+                          }}
                         >
                           Ver imagen
                         </button>
                       ) : null}
-                      {modelo.tour360Url ? <a href={resolveApiAssetUrl(modelo.tour360Url)} target="_blank" rel="noopener noreferrer">Ver tour 360</a> : null}
+                      {modelo.tour360Url ? (
+                        <a
+                          href={resolveApiAssetUrl(modelo.tour360Url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => trackEvent('click_tour_360', {
+                            source: 'proyecto_inmobiliario_modelo',
+                            project_slug: slug,
+                            project_name: proyecto.nombre || '',
+                            model_name: modelo.nombre || '',
+                          })}
+                        >
+                          Ver tour 360
+                        </a>
+                      ) : null}
                     </div>
                   </div>
                 </article>
@@ -540,7 +611,7 @@ export default function ProyectoInmobiliarioDetallePage() {
               svgUrl={plano.svgUrl}
               unidades={unidades}
               selectedUnidadId={unidadSeleccionada?.id || unidadSeleccionada?.unidadId}
-              onUnidadSelect={seleccionarUnidad}
+              onUnidadSelect={seleccionarUnidadEnMapa}
             />
             {unidadSeleccionada ? (
               <aside className="proyecto-publico-selected-unit">
@@ -549,7 +620,20 @@ export default function ProyectoInmobiliarioDetallePage() {
                   <strong>{unidadSeleccionada.codigo}</strong>
                   <p>{unidadSeleccionada.tipoUnidad} {unidadSeleccionada.manzana ? `Manzana ${unidadSeleccionada.manzana}` : ''} {unidadSeleccionada.lote ? `Lote ${unidadSeleccionada.lote}` : ''}</p>
                 </div>
-                <button type="button" onClick={() => scrollTo(contactoRef)}>Me interesa esta unidad</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    trackEvent('click_me_interesa', {
+                      source: 'proyecto_inmobiliario_plano_unidad',
+                      project_slug: slug,
+                      project_name: proyecto.nombre || '',
+                      unit_code: unidadSeleccionada?.codigo || '',
+                    });
+                    scrollTo(contactoRef);
+                  }}
+                >
+                  Me interesa esta unidad
+                </button>
               </aside>
             ) : null}
           </section>
