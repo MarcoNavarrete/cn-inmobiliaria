@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import MarkdownContent from '../components/common/MarkdownContent';
 import ProyectoPlanoInteractivo from '../components/proyectos/ProyectoPlanoInteractivo';
 import { trackEvent } from '../lib/analytics';
+import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
 import { resolveApiAssetUrl } from '../services/apiClient';
 import {
   crearProspectoPublico,
@@ -234,6 +235,13 @@ export default function ProyectoInmobiliarioDetallePage() {
       project_name: proyecto?.nombre || '',
       unit_code: unidad?.codigo || '',
     });
+    trackMetaEvent('Lead', {
+      content_name: proyecto?.nombre || '',
+      content_category: 'Proyecto inmobiliario',
+      content_type: 'proyecto_inmobiliario',
+      desarrollo: proyecto?.nombre || '',
+      unidad: unidad?.codigo || '',
+    });
     window.setTimeout(() => scrollTo(contactoRef), 80);
   };
 
@@ -259,6 +267,12 @@ export default function ProyectoInmobiliarioDetallePage() {
       source: 'proyecto_inmobiliario_detalle',
       project_slug: slug,
       project_name: proyecto.nombre || '',
+    });
+    trackMetaEvent('Contact', {
+      content_name: proyecto.nombre || '',
+      content_category: 'Proyecto inmobiliario',
+      content_type: 'proyecto_inmobiliario',
+      desarrollo: proyecto.nombre || '',
     });
     window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
@@ -305,6 +319,13 @@ export default function ProyectoInmobiliarioDetallePage() {
       project_slug: slug,
       project_name: proyecto?.nombre || '',
       unit_code: unidad?.codigo || '',
+    });
+    trackMetaCustomEvent('ClickMapaInteractivo', {
+      content_name: proyecto?.nombre || '',
+      content_category: 'Proyecto inmobiliario',
+      content_type: 'proyecto_inmobiliario',
+      desarrollo: proyecto?.nombre || '',
+      unidad: unidad?.codigo || '',
     });
     seleccionarUnidad(unidad);
   }, [proyecto?.nombre, seleccionarUnidad, slug]);
@@ -357,17 +378,23 @@ export default function ProyectoInmobiliarioDetallePage() {
             <div><dt>Unidades</dt><dd>{proyecto.totalUnidades || unidades.length}</dd></div>
           </dl>
           <div className="proyecto-publico-hero-actions">
-            <button
-              type="button"
-              onClick={() => {
-                trackEvent('click_me_interesa', {
-                  source: 'proyecto_inmobiliario_hero',
-                  project_slug: slug,
-                  project_name: proyecto.nombre || '',
-                });
-                scrollTo(contactoRef);
-              }}
-            >
+              <button
+                type="button"
+                onClick={() => {
+                  trackEvent('click_me_interesa', {
+                    source: 'proyecto_inmobiliario_hero',
+                    project_slug: slug,
+                    project_name: proyecto.nombre || '',
+                  });
+                  trackMetaEvent('Lead', {
+                    content_name: proyecto.nombre || '',
+                    content_category: 'Proyecto inmobiliario',
+                    content_type: 'proyecto_inmobiliario',
+                    desarrollo: proyecto.nombre || '',
+                  });
+                  scrollTo(contactoRef);
+                }}
+              >
               Me interesa
             </button>
             <button type="button" onClick={irAPlano}>
@@ -399,6 +426,12 @@ export default function ProyectoInmobiliarioDetallePage() {
                   source: 'proyecto_inmobiliario_contacto',
                   project_slug: slug,
                   project_name: proyecto.nombre || '',
+                });
+                trackMetaEvent('Lead', {
+                  content_name: proyecto.nombre || '',
+                  content_category: 'Proyecto inmobiliario',
+                  content_type: 'proyecto_inmobiliario',
+                  desarrollo: proyecto.nombre || '',
                 });
                 scrollTo(contactoRef);
               }}
@@ -481,12 +514,21 @@ export default function ProyectoInmobiliarioDetallePage() {
                           href={resolveApiAssetUrl(modelo.tour360Url)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={() => trackEvent('click_tour_360', {
-                            source: 'proyecto_inmobiliario_modelo',
-                            project_slug: slug,
-                            project_name: proyecto.nombre || '',
-                            model_name: modelo.nombre || '',
-                          })}
+                          onClick={() => {
+                            trackEvent('click_tour_360', {
+                              source: 'proyecto_inmobiliario_modelo',
+                              project_slug: slug,
+                              project_name: proyecto.nombre || '',
+                              model_name: modelo.nombre || '',
+                            });
+                            trackMetaCustomEvent('ClickTour360', {
+                              content_name: proyecto.nombre || '',
+                              content_category: 'Proyecto inmobiliario',
+                              content_type: 'proyecto_inmobiliario',
+                              desarrollo: proyecto.nombre || '',
+                              modelo: modelo.nombre || '',
+                            });
+                          }}
                         >
                           Ver tour 360
                         </a>
@@ -622,16 +664,23 @@ export default function ProyectoInmobiliarioDetallePage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    trackEvent('click_me_interesa', {
-                      source: 'proyecto_inmobiliario_plano_unidad',
-                      project_slug: slug,
-                      project_name: proyecto.nombre || '',
-                      unit_code: unidadSeleccionada?.codigo || '',
-                    });
-                    scrollTo(contactoRef);
-                  }}
-                >
+                          onClick={() => {
+                            trackEvent('click_me_interesa', {
+                              source: 'proyecto_inmobiliario_plano_unidad',
+                              project_slug: slug,
+                              project_name: proyecto.nombre || '',
+                              unit_code: unidadSeleccionada?.codigo || '',
+                            });
+                            trackMetaEvent('Lead', {
+                              content_name: proyecto.nombre || '',
+                              content_category: 'Proyecto inmobiliario',
+                              content_type: 'proyecto_inmobiliario',
+                              desarrollo: proyecto.nombre || '',
+                              unidad: unidadSeleccionada?.codigo || '',
+                            });
+                            scrollTo(contactoRef);
+                          }}
+                        >
                   Me interesa esta unidad
                 </button>
               </aside>

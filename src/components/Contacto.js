@@ -1,5 +1,6 @@
 import React from 'react';
 import { trackEvent } from '../lib/analytics';
+import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
 import './Contacto.css';
 
 const whatsappNumber = '5217716707794';
@@ -51,7 +52,14 @@ export default function Contacto() {
                 href={`https://wa.me/${whatsappNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => trackEvent('click_whatsapp', { source: 'contacto' })}
+                onClick={() => {
+                  trackEvent('click_whatsapp', { source: 'contacto' });
+                  trackMetaEvent('Contact', {
+                    content_name: 'Contacto principal',
+                    content_category: 'WhatsApp',
+                    content_type: 'contacto',
+                  });
+                }}
               >
                 Enviar WhatsApp
               </a>
@@ -60,7 +68,14 @@ export default function Contacto() {
                 href={mapsLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => trackEvent('click_mapa_interactivo', { source: 'contacto' })}
+                onClick={() => {
+                  trackEvent('click_mapa_interactivo', { source: 'contacto' });
+                  trackMetaCustomEvent('ClickMapaInteractivo', {
+                    content_name: 'Contacto principal',
+                    content_category: 'Mapa',
+                    content_type: 'contacto',
+                  });
+                }}
               >
                 Ver ubicacion
               </a>

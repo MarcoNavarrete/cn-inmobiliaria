@@ -1,0 +1,127 @@
+.admin-estadisticas {
+  width: min(1240px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+  color: var(--azul-oscuro);
+}
+
+.admin-estadisticas-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-estadisticas-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--dorado-suave);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-estadisticas h1,
+.admin-estadisticas h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+}
+
+.admin-estadisticas h1 {
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+.admin-estadisticas h2 {
+  font-size: 1.2rem;
+}
+
+.admin-estadisticas-hero p,
+.admin-estadisticas-section-head p,
+.admin-estadisticas-card small {
+  margin: 0;
+  color: var(--gris-elegante);
+}
+
+.admin-estadisticas-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-estadisticas-actions a,
+.admin-estadisticas-hero > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: 8px;
+  padding: 0.62rem 0.9rem;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.admin-estadisticas-feedback,
+.admin-estadisticas-empty {
+  margin: 0 0 1rem;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  background: rgba(26, 61, 124, 0.06);
+  font-weight: 800;
+}
+
+.admin-estadisticas-feedback.is-error {
+  color: #8f2d24;
+  background: rgba(143, 45, 36, 0.08);
+}
+
+.admin-estadisticas-section {
+  margin-bottom: 1.25rem;
+}
+
+.admin-estadisticas-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-estadisticas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+}
+
+.admin-estadisticas-card {
+  display: grid;
+  gap: 0.4rem;
+  min-height: 124px;
+  padding: 1rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(16, 35, 58, 0.08);
+}
+
+.admin-estadisticas-card span {
+  color: var(--gris-elegante);
+  font-weight: 800;
+}
+
+.admin-estadisticas-card strong {
+  color: var(--azul-oscuro);
+  font-size: clamp(1.7rem, 4vw, 2.35rem);
+  line-height: 1;
+}
+
+.admin-estadisticas-card.is-accent {
+  border-color: rgba(203, 161, 53, 0.2);
+  background: rgba(203, 161, 53, 0.06);
+}
+
+@media (max-width: 840px) {
+  .admin-estadisticas-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

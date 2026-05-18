@@ -155,6 +155,18 @@ export default function AdminDashboardPage() {
           <span>Desarrollos inmobiliarios</span>
           <p>Gestiona desarrollos, modelos, imagenes y tours 360.</p>
         </Link>
+        <Link className="admin-dashboard-card" to="/admin/estadisticas">
+          <span>Estadisticas</span>
+          <p>Revisa los KPIs comerciales y la medici&oacute;n de interacciones.</p>
+        </Link>
+        <Link className="admin-dashboard-card" to="/admin/catalogos">
+          <span>Catalogos</span>
+          <p>Prepara las referencias maestras para inmuebles, unidades y desarrollo.</p>
+        </Link>
+        <Link className="admin-dashboard-card" to="/admin/configuracion">
+          <span>Configuracion</span>
+          <p>Marca, contacto, reglas y analitica del panel.</p>
+        </Link>
       </section>
     </main>
   );

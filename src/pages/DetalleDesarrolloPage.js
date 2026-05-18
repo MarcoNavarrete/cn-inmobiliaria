@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ImageLightbox from '../components/common/ImageLightbox';
 import MarkdownContent from '../components/common/MarkdownContent';
@@ -6,6 +6,7 @@ import PlanoInteractivoDemo from '../components/desarrollos/PlanoInteractivoDemo
 import ProspectoDesarrolloModal from '../components/desarrollos/ProspectoDesarrolloModal';
 import Tour360Viewer from '../components/tour360/Tour360Viewer';
 import { trackEvent } from '../lib/analytics';
+import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
 import { obtenerDesarrolloPorSlug } from '../services/desarrollosService';
 import { obtenerPlanoPublico } from '../services/adminDesarrolloPlanoService';
 import {
@@ -85,6 +86,7 @@ export default function DetalleDesarrolloPage() {
     loading: false,
     error: '',
   });
+  const viewContentTrackedRef = useRef('');
   const [prospectoModal, setProspectoModal] = useState({
     isOpen: false,
     initialMessage: '',
@@ -174,6 +176,29 @@ export default function DetalleDesarrolloPage() {
     setImagenesModeloActivas({});
   }, [slug]);
 
+  useEffect(() => {
+    if (!desarrollo?.id) {
+      viewContentTrackedRef.current = '';
+      return undefined;
+    }
+
+    const trackingKey = String(desarrollo.id);
+    if (viewContentTrackedRef.current === trackingKey) {
+      return undefined;
+    }
+
+    viewContentTrackedRef.current = trackingKey;
+    trackMetaEvent('ViewContent', {
+      content_name: desarrollo.nombre || '',
+      content_category: 'Desarrollo inmobiliario',
+      content_type: 'desarrollo',
+      desarrollo: desarrollo.nombre || '',
+      precio_desde: desarrollo.precioDesde || undefined,
+    });
+
+    return undefined;
+  }, [desarrollo?.id, desarrollo?.nombre, desarrollo?.precioDesde]);
+
   // TODO: habilitar tour 360 general del desarrollo cuando existan escenas del desarrollo/amenidades.
 
   const ocultarPlanoInteractivo = useCallback(() => {
@@ -236,6 +261,13 @@ export default function DetalleDesarrolloPage() {
       desarrollo_name: desarrolloActual?.nombre || '',
       modelo_name: modelo?.nombre || '',
     });
+    trackMetaEvent('Contact', {
+      content_name: desarrolloActual?.nombre || '',
+      content_category: 'Desarrollo inmobiliario',
+      content_type: 'desarrollo',
+      desarrollo: desarrolloActual?.nombre || '',
+      modelo: modelo?.nombre || '',
+    });
 
     if (mensaje) {
       const telefono =
@@ -258,6 +290,13 @@ export default function DetalleDesarrolloPage() {
       desarrollo_slug: slug,
       desarrollo_name: desarrollo?.nombre || '',
       unit_code: unidad?.codigoUnidad || unidad?.codigo || '',
+    });
+    trackMetaEvent('Lead', {
+      content_name: desarrollo?.nombre || '',
+      content_category: 'Desarrollo inmobiliario',
+      content_type: 'desarrollo',
+      desarrollo: desarrollo?.nombre || '',
+      unidad: unidad?.codigoUnidad || unidad?.codigo || '',
     });
 
     const modeloNombre = cleanText(unidad.modeloNombre || unidad.modelo || unidad.nombreModelo);
@@ -378,6 +417,12 @@ export default function DetalleDesarrolloPage() {
                   desarrollo_slug: slug,
                   desarrollo_name: desarrollo.nombre || '',
                 });
+                trackMetaEvent('Lead', {
+                  content_name: desarrollo.nombre || '',
+                  content_category: 'Desarrollo inmobiliario',
+                  content_type: 'desarrollo',
+                  desarrollo: desarrollo.nombre || '',
+                });
                 abrirModalProspecto();
               }}
             >
@@ -411,6 +456,12 @@ export default function DetalleDesarrolloPage() {
                   source: 'detalle_desarrollo_contacto',
                   desarrollo_slug: slug,
                   desarrollo_name: desarrollo.nombre || '',
+                });
+                trackMetaEvent('Lead', {
+                  content_name: desarrollo.nombre || '',
+                  content_category: 'Desarrollo inmobiliario',
+                  content_type: 'desarrollo',
+                  desarrollo: desarrollo.nombre || '',
                 });
                 abrirModalProspecto();
               }}
@@ -608,6 +659,13 @@ export default function DetalleDesarrolloPage() {
                             desarrollo_name: desarrollo.nombre || '',
                             modelo_name: modelo.nombre || '',
                           });
+                          trackMetaEvent('Lead', {
+                            content_name: desarrollo.nombre || '',
+                            content_category: 'Desarrollo inmobiliario',
+                            content_type: 'desarrollo',
+                            desarrollo: desarrollo.nombre || '',
+                            modelo: modelo.nombre || '',
+                          });
                           abrirModalProspecto(modelo);
                         }}
                       >
@@ -622,6 +680,13 @@ export default function DetalleDesarrolloPage() {
                             desarrollo_slug: slug,
                             desarrollo_name: desarrollo.nombre || '',
                             modelo_name: modelo.nombre || '',
+                          });
+                          trackMetaCustomEvent('ClickTour360', {
+                            content_name: desarrollo.nombre || '',
+                            content_category: 'Desarrollo inmobiliario',
+                            content_type: 'desarrollo',
+                            desarrollo: desarrollo.nombre || '',
+                            modelo: modelo.nombre || '',
                           });
                           abrirTourModelo(modelo);
                         }}

@@ -25,8 +25,20 @@ const adaptDashboard = (data = {}) => {
   const inventario = pickFirst(data.inventario, data.Inventario, {});
   const contenidoPendiente = pickFirst(data.contenidoPendiente, data.ContenidoPendiente, data.pendientes, {});
   const actividad = pickFirst(data.actividad, data.Actividad, {});
+  const resumen = pickFirst(data.resumen, data.Resumen, data.kpis, data.Kpis, {});
+  const analitica = pickFirst(data.analitica, data.Analitica, data.tracking, data.Tracking, {});
 
   return {
+    resumen: {
+      totalInmuebles: toNumber(pickFirst(read(resumen, 'totalInmuebles', 'TotalInmuebles'), read(data, 'totalInmuebles'))),
+      inmueblesActivos: toNumber(pickFirst(read(resumen, 'inmueblesActivos', 'InmueblesActivos'), read(data, 'inmueblesActivos'))),
+      inmueblesPendientes: toNumber(pickFirst(read(resumen, 'inmueblesPendientes', 'InmueblesPendientes'), read(data, 'inmueblesPendientes'))),
+      totalDesarrollos: toNumber(pickFirst(read(resumen, 'totalDesarrollos', 'TotalDesarrollos'), read(data, 'totalDesarrollos'))),
+      totalProspectos: toNumber(pickFirst(read(resumen, 'totalProspectos', 'TotalProspectos'), read(data, 'totalProspectos'))),
+      prospectosNuevos: toNumber(pickFirst(read(resumen, 'prospectosNuevos', 'ProspectosNuevos'), read(data, 'prospectosNuevos'))),
+      unidadesDisponibles: toNumber(pickFirst(read(resumen, 'unidadesDisponibles', 'UnidadesDisponibles'), read(data, 'unidadesDisponibles'))),
+      unidadesApartadas: toNumber(pickFirst(read(resumen, 'unidadesApartadas', 'UnidadesApartadas'), read(data, 'unidadesApartadas'))),
+    },
     prospectos: {
       nuevosHoy: toNumber(pickFirst(read(prospectos, 'nuevosHoy', 'NuevosHoy'), read(data, 'prospectosNuevosHoy', 'nuevosHoy'))),
       sinAtender: toNumber(pickFirst(read(prospectos, 'sinAtender', 'SinAtender'), read(data, 'prospectosSinAtender', 'sinAtender'))),
@@ -52,6 +64,14 @@ const adaptDashboard = (data = {}) => {
       prospectosUltimos7Dias: toNumber(pickFirst(read(actividad, 'prospectosUltimos7Dias', 'ProspectosUltimos7Dias'), read(data, 'prospectosUltimos7Dias'))),
       usuariosConBusquedasGuardadas: toNumber(pickFirst(read(actividad, 'usuariosConBusquedasGuardadas', 'UsuariosConBusquedasGuardadas'), read(data, 'usuariosConBusquedasGuardadas'))),
       alertasNoLeidas: toNumber(pickFirst(read(actividad, 'alertasNoLeidas', 'AlertasNoLeidas'), read(data, 'alertasNoLeidas'))),
+    },
+    analitica: {
+      vistasLanding: toNumber(pickFirst(read(analitica, 'vistasLanding', 'VistasLanding'), read(data, 'vistasLanding'))),
+      clicsWhatsapp: toNumber(pickFirst(read(analitica, 'clicsWhatsapp', 'ClicsWhatsapp'), read(data, 'clicsWhatsapp'))),
+      clicsTour360: toNumber(pickFirst(read(analitica, 'clicsTour360', 'ClicsTour360'), read(data, 'clicsTour360'))),
+      clicsMapaInteractivo: toNumber(pickFirst(read(analitica, 'clicsMapaInteractivo', 'ClicsMapaInteractivo'), read(data, 'clicsMapaInteractivo'))),
+      clicsMeInteresa: toNumber(pickFirst(read(analitica, 'clicsMeInteresa', 'ClicsMeInteresa'), read(data, 'clicsMeInteresa'))),
+      clicsApartar: toNumber(pickFirst(read(analitica, 'clicsApartar', 'ClicsApartar'), read(data, 'clicsApartar'))),
     },
   };
 };

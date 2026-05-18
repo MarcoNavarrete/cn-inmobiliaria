@@ -454,6 +454,24 @@ export default function AdminLayout() {
                 </NavLink>
               ) : null}
               {esAdminCn ? (
+                <NavLink to="/admin/estadisticas">
+                  <MenuIcon icono="chart" />
+                  <span>Estadisticas</span>
+                </NavLink>
+              ) : null}
+              {esAdminCn ? (
+                <NavLink to="/admin/catalogos">
+                  <MenuIcon icono="folderopen" />
+                  <span>Catalogos</span>
+                </NavLink>
+              ) : null}
+              {esAdminCn ? (
+                <NavLink to="/admin/configuracion">
+                  <MenuIcon icono="configuracion" />
+                  <span>Configuracion</span>
+                </NavLink>
+              ) : null}
+              {esAdminCn ? (
                 <NavLink to="/admin/usuarios">
                   <MenuIcon icono="usuarios" />
                   <span>Usuarios</span>

@@ -26,6 +26,9 @@ import AdminTour360Page from './pages/AdminTour360Page';
 import AdminInmuebleFormPage from './pages/AdminInmuebleFormPage';
 import AdminInmuebleImagenesPage from './pages/AdminInmuebleImagenesPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminEstadisticasPage from './pages/admin/AdminEstadisticasPage';
+import AdminCatalogosPage from './pages/admin/AdminCatalogosPage';
+import AdminConfiguracionPage from './pages/admin/AdminConfiguracionPage';
 import AdminPropiedadesPage from './pages/AdminPropiedadesPage';
 import AdminProspectosPage from './pages/AdminProspectosPage';
 import AdminUsuariosPage from './pages/AdminUsuariosPage';
@@ -55,6 +58,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
 import WhatsAppFlotante from './components/WhatsAppFlotante';
 import { initGA, trackPageView } from './lib/analytics';
+import { initMetaPixel, trackMetaPageView } from './lib/metaPixel';
 
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -67,6 +71,7 @@ function AnalyticsTracker() {
 
   useEffect(() => {
     initGA();
+    initMetaPixel();
   }, []);
 
   useEffect(() => {
@@ -78,6 +83,7 @@ function AnalyticsTracker() {
 
     const frameId = window.requestAnimationFrame(() => {
       trackPageView(pagePath, document.title);
+      trackMetaPageView(pagePath, document.title);
       lastTrackedPagePath.current = pagePath;
     });
 
@@ -146,6 +152,9 @@ function App() {
           <Route index element={<AdminDashboardPage />} />
           <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="propiedades" element={<AdminPropiedadesPage />} />
+          <Route path="estadisticas" element={<AdminEstadisticasPage />} />
+          <Route path="catalogos" element={<AdminCatalogosPage />} />
+          <Route path="configuracion" element={<AdminConfiguracionPage />} />
           <Route path="proyectos-inmobiliarios" element={<AdminProyectosInmobiliariosPage />} />
           <Route path="proyectos-inmobiliarios/nuevo" element={<AdminProyectoInmobiliarioFormPage />} />
           <Route path="proyectos-inmobiliarios/:proyectoId/editar" element={<AdminProyectoInmobiliarioFormPage />} />
