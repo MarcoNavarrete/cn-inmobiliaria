@@ -86,7 +86,7 @@
   gap: 0.35rem;
 }
 
-.admin-inmueble-field:has(textarea) {
+.admin-inmueble-field.is-full {
   grid-column: 1 / -1;
 }
 
@@ -110,6 +110,34 @@
 
 .admin-inmueble-field textarea {
   resize: vertical;
+}
+
+.admin-inmueble-status-card {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 10px;
+  background: rgba(26, 61, 124, 0.04);
+}
+
+.admin-inmueble-status-label {
+  color: rgba(26, 61, 124, 0.72);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-inmueble-status-badge {
+  color: var(--azul-oscuro);
+  font-size: 1rem;
+}
+
+.admin-inmueble-status-card p {
+  margin: 0;
+  color: var(--gris-elegante);
+  line-height: 1.5;
 }
 
 .admin-inmueble-check {

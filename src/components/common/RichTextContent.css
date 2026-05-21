@@ -1,0 +1,44 @@
+.rich-text-content {
+  color: var(--gris-elegante);
+  line-height: 1.65;
+}
+
+.rich-text-content.is-plain {
+  white-space: pre-line;
+}
+
+.rich-text-content.is-html h2,
+.rich-text-content.is-html h3,
+.rich-text-content.is-html blockquote {
+  margin: 0.9rem 0 0.45rem;
+  color: var(--azul-oscuro);
+}
+
+.rich-text-content.is-html h2 {
+  font-size: 1.35rem;
+}
+
+.rich-text-content.is-html h3 {
+  font-size: 1.15rem;
+}
+
+.rich-text-content.is-html p {
+  margin: 0 0 0.8rem;
+}
+
+.rich-text-content.is-html ul,
+.rich-text-content.is-html ol {
+  margin: 0 0 0.85rem 1.2rem;
+  padding-left: 1rem;
+}
+
+.rich-text-content.is-html li {
+  margin-bottom: 0.35rem;
+}
+
+.rich-text-content.is-html blockquote {
+  margin: 0 0 0.85rem;
+  padding-left: 1rem;
+  border-left: 3px solid rgba(203, 161, 53, 0.55);
+  color: rgba(26, 61, 124, 0.9);
+}

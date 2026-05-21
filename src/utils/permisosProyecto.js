@@ -30,29 +30,85 @@ export const obtenerRolEmpresaPrincipal = (session = {}) => {
 export const tieneAccesoEmpresarial = (session = {}) =>
   Boolean(session.tieneAccesoEmpresarial || getEmpresasActivas(session).length > 0);
 
-export const puedeCrearProyecto = (session = {}) => esAdminCn(session) || tieneRolEmpresa(session, 'ADMIN_EMPRESA');
+export const puedePublicarPropiedades = (session = {}) =>
+  Boolean(
+    session.puedePublicarPropiedades ||
+    session.puedePublicar ||
+    esAdminCn(session) ||
+    getRolGlobal(session) === 'ASESOR'
+  );
 
-export const puedeEditarProyecto = (session = {}) => esAdminCn(session) || tieneRolEmpresa(session, 'ADMIN_EMPRESA');
+export const puedeCrearProyecto = (session = {}) =>
+  Boolean(
+    session.puedeCrearProyectos ||
+    esAdminCn(session) ||
+    tieneRolEmpresa(session, 'ADMIN_EMPRESA')
+  );
 
-export const puedeEditarUnidades = (session = {}) => esAdminCn(session) || tieneRolEmpresa(session, 'ADMIN_EMPRESA');
+export const puedeEditarProyecto = (session = {}) =>
+  Boolean(
+    session.puedeCrearProyectos ||
+    session.puedeAdministrarEmpresa ||
+    esAdminCn(session) ||
+    tieneRolEmpresa(session, 'ADMIN_EMPRESA')
+  );
 
-export const puedeEditarModelos = (session = {}) => esAdminCn(session) || tieneRolEmpresa(session, 'ADMIN_EMPRESA');
+export const puedeEditarUnidades = (session = {}) =>
+  Boolean(
+    session.puedeCrearProyectos ||
+    session.puedeAdministrarEmpresa ||
+    esAdminCn(session) ||
+    tieneRolEmpresa(session, 'ADMIN_EMPRESA')
+  );
 
-export const puedeSubirPlano = (session = {}) => esAdminCn(session) || tieneRolEmpresa(session, 'ADMIN_EMPRESA');
+export const puedeEditarModelos = (session = {}) =>
+  Boolean(
+    session.puedeCrearProyectos ||
+    session.puedeAdministrarEmpresa ||
+    esAdminCn(session) ||
+    tieneRolEmpresa(session, 'ADMIN_EMPRESA')
+  );
 
-export const puedeSubirImagenes = (session = {}) => esAdminCn(session) || tieneRolEmpresa(session, 'ADMIN_EMPRESA');
+export const puedeSubirPlano = (session = {}) =>
+  Boolean(
+    session.puedeCrearProyectos ||
+    session.puedeAdministrarEmpresa ||
+    esAdminCn(session) ||
+    tieneRolEmpresa(session, 'ADMIN_EMPRESA')
+  );
 
-export const puedeImportarCsv = (session = {}) => esAdminCn(session) || tieneRolEmpresa(session, 'ADMIN_EMPRESA');
+export const puedeSubirImagenes = (session = {}) =>
+  Boolean(
+    session.puedeCrearProyectos ||
+    session.puedeAdministrarEmpresa ||
+    esAdminCn(session) ||
+    tieneRolEmpresa(session, 'ADMIN_EMPRESA')
+  );
+
+export const puedeImportarCsv = (session = {}) =>
+  Boolean(
+    session.puedeCrearProyectos ||
+    session.puedeAdministrarEmpresa ||
+    esAdminCn(session) ||
+    tieneRolEmpresa(session, 'ADMIN_EMPRESA')
+  );
 
 export const puedeOperarProspectos = (session = {}) =>
-  esAdminCn(session) || ROLES_VENTA_EMPRESA.some((rol) => tieneRolEmpresa(session, rol));
+  Boolean(
+    session.puedeAdministrarEmpresa ||
+    esAdminCn(session) ||
+    ROLES_VENTA_EMPRESA.some((rol) => tieneRolEmpresa(session, rol))
+  );
 
 export const puedeOperarApartados = (session = {}) =>
-  esAdminCn(session) || ROLES_VENTA_EMPRESA.some((rol) => tieneRolEmpresa(session, rol));
+  Boolean(
+    session.puedeAdministrarEmpresa ||
+    esAdminCn(session) ||
+    ROLES_VENTA_EMPRESA.some((rol) => tieneRolEmpresa(session, rol))
+  );
 
 export const soloLectura = (session = {}) =>
   !esAdminCn(session) && tieneRolEmpresa(session, 'LECTURA');
 
 export const puedeEditarContenidoProyecto = (session = {}) =>
   puedeEditarProyecto(session);
-

@@ -173,6 +173,17 @@ const adaptInmueble = (inmueble) => {
   const imagenes = extractImagenes(inmueble);
   const imagenPrincipal = extractImagenPrincipal(inmueble, imagenes);
   const visitaVirtual = extractVisitaVirtual(inmueble);
+  const tipoInmueble = toStringOrEmpty(pickFirst(inmueble.tipoInmueble, inmueble.tipo_inmueble, inmueble.TipoInmueble, inmueble.tipoInmuebleId));
+  const tipoInmuebleNombre = toStringOrEmpty(
+    pickFirst(
+      inmueble.tipoInmuebleNombre,
+      inmueble.tipo_inmueble_nombre,
+      inmueble.nombreTipoInmueble,
+      inmueble.tipoNombre,
+      inmueble.tipoDescripcion,
+      inmueble.tipoInmuebleTexto
+    )
+  );
   const caracteristicasAdaptadas = Array.isArray(inmueble.caracteristicas)
     ? inmueble.caracteristicas.map(adaptCaracteristica).filter(Boolean)
     : [];
@@ -188,6 +199,8 @@ const adaptInmueble = (inmueble) => {
     precio: formatCurrency(inmueble.precio, inmueble.moneda),
     ubicacion,
     descripcion: inmueble.descripcion || 'Sin descripcion disponible.',
+    tipoInmueble,
+    tipoInmuebleNombre,
     latitud: inmueble.latitud,
     longitud: inmueble.longitud,
     video: extractVideo(inmueble),
@@ -207,12 +220,6 @@ const adaptInmueble = (inmueble) => {
             ? {
                 tipo: 'simple',
                 texto: `${inmueble.construccionM2} m2 de construccion`,
-              }
-            : null,
-          inmueble.tipoInmueble
-            ? {
-                tipo: 'simple',
-                texto: `Tipo de inmueble: ${inmueble.tipoInmueble}`,
               }
             : null,
         ].filter(Boolean),

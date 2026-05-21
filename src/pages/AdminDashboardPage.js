@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import usePermisosEmpresa from '../hooks/usePermisosEmpresa';
 import { obtenerDashboardAdmin } from '../services/adminDashboardService';
 import './AdminDashboardPage.css';
 
@@ -60,6 +61,7 @@ function MetricSection({ children, title }) {
 }
 
 export default function AdminDashboardPage() {
+  const permisos = usePermisosEmpresa();
   const [dashboard, setDashboard] = useState(DASHBOARD_INICIAL);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
@@ -143,30 +145,48 @@ export default function AdminDashboardPage() {
       ) : null}
 
       <section className="admin-dashboard-grid">
-        <Link className="admin-dashboard-card" to="/admin/inmuebles/nuevo">
-          <span>Crear inmueble</span>
-          <p>Alta de una nueva propiedad para el sitio.</p>
-        </Link>
-        <Link className="admin-dashboard-card" to="/admin/propiedades">
-          <span>Administrar propiedades</span>
-          <p>Revisar, editar y abrir tours de inmuebles.</p>
-        </Link>
-        <Link className="admin-dashboard-card" to="/admin/desarrollos">
-          <span>Desarrollos inmobiliarios</span>
-          <p>Gestiona desarrollos, modelos, imagenes y tours 360.</p>
-        </Link>
-        <Link className="admin-dashboard-card" to="/admin/estadisticas">
-          <span>Estadisticas</span>
-          <p>Revisa los KPIs comerciales y la medici&oacute;n de interacciones.</p>
-        </Link>
-        <Link className="admin-dashboard-card" to="/admin/catalogos">
-          <span>Catalogos</span>
-          <p>Prepara las referencias maestras para inmuebles, unidades y desarrollo.</p>
-        </Link>
-        <Link className="admin-dashboard-card" to="/admin/configuracion">
-          <span>Configuracion</span>
-          <p>Marca, contacto, reglas y analitica del panel.</p>
-        </Link>
+        {permisos.puedePublicarPropiedades ? (
+          <Link className="admin-dashboard-card" to="/admin/inmuebles/nuevo">
+            <span>Crear inmueble</span>
+            <p>Alta de una nueva propiedad para el sitio.</p>
+          </Link>
+        ) : null}
+        {permisos.puedePublicarPropiedades ? (
+          <Link className="admin-dashboard-card" to="/admin/propiedades">
+            <span>Administrar propiedades</span>
+            <p>Revisar, editar y abrir tours de inmuebles.</p>
+          </Link>
+        ) : null}
+        {permisos.esAdminCn ? (
+          <Link className="admin-dashboard-card" to="/admin/desarrollos">
+            <span>Desarrollos inmobiliarios</span>
+            <p>Gestiona desarrollos, modelos, imagenes y tours 360.</p>
+          </Link>
+        ) : null}
+        {permisos.esAdminCn || permisos.puedeCrearProyectos ? (
+          <Link className="admin-dashboard-card" to="/admin/proyectos-inmobiliarios">
+            <span>Proyectos inmobiliarios</span>
+            <p>Administra proyectos, unidades, planos y modelos.</p>
+          </Link>
+        ) : null}
+        {permisos.esAdminCn ? (
+          <Link className="admin-dashboard-card" to="/admin/estadisticas">
+            <span>Estadisticas</span>
+            <p>Revisa los KPIs comerciales y la medici&oacute;n de interacciones.</p>
+          </Link>
+        ) : null}
+        {permisos.esAdminCn ? (
+          <Link className="admin-dashboard-card" to="/admin/catalogos">
+            <span>Catalogos</span>
+            <p>Prepara las referencias maestras para inmuebles, unidades y desarrollo.</p>
+          </Link>
+        ) : null}
+        {permisos.esAdminCn ? (
+          <Link className="admin-dashboard-card" to="/admin/configuracion">
+            <span>Configuracion</span>
+            <p>Marca, contacto, reglas y analitica del panel.</p>
+          </Link>
+        ) : null}
       </section>
     </main>
   );

@@ -101,6 +101,12 @@
   color: var(--gris-elegante);
 }
 
+.propiedad-tipo-inmueble {
+  margin: 0.75rem 0 0;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+}
+
 .recorrido-virtual {
   margin: 1.5rem 0;
   padding: 1.25rem;

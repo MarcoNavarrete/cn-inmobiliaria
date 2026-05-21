@@ -24,6 +24,14 @@
   "aos": "^2.3.4",
   
     
+    "dompurify": "^3.4.5",
+    "@tiptap/extension-placeholder": "^2.11.7",
+    "@tiptap/extension-text-align": "^2.11.7",
+    "@tiptap/extension-underline": "^2.11.7",
+    "@tiptap/react": "^2.11.7",
+    "@tiptap/starter-kit": "^2.11.7",
+  
+    
   "pannellum": "^2.5.7",
   
     
@@ -40,6 +48,8 @@
   
     
   "react-markdown": "^10.1.0",
+  
+    
   
     
   "react-router-dom": "^7.7.0",

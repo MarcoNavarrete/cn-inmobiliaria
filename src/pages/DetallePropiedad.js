@@ -1,14 +1,16 @@
 // src/pages/DetallePropiedad.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ImageGallery from 'react-image-gallery';
 import 'react-image-gallery/styles/css/image-gallery.css';
 import './DetallePropiedad.css';
 import { obtenerDetalleInmueble } from '../services/inmueblesService';
+import { obtenerTiposInmueble } from '../services/catalogosService';
 import { crearProspecto } from '../services/prospectosService';
 import { obtenerTour360PorInmueble } from '../services/tours360Service';
 import { getCurrentUser, obtenerToken } from '../services/authService';
 import { agregarFavorito, eliminarFavorito, existeFavorito } from '../services/favoritosService';
+import RichTextContent from '../components/common/RichTextContent';
 import Tour360Viewer from '../components/Tour360Viewer';
 
 const FORMULARIO_INICIAL = {
@@ -26,6 +28,7 @@ export default function DetallePropiedad() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tour360, setTour360] = useState(null);
+  const [tiposInmueble, setTiposInmueble] = useState([]);
   const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
   const [esFavorito, setEsFavorito] = useState(false);
   const [cargandoFavorito, setCargandoFavorito] = useState(false);
@@ -68,6 +71,36 @@ export default function DetallePropiedad() {
 
     return () => controller.abort();
   }, [id]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const cargarTipos = async () => {
+      try {
+        const data = await obtenerTiposInmueble({ signal: controller.signal });
+        if (!controller.signal.aborted) {
+          setTiposInmueble(data);
+        }
+      } catch (_) {
+        if (!controller.signal.aborted) {
+          setTiposInmueble([]);
+        }
+      }
+    };
+
+    cargarTipos();
+
+    return () => controller.abort();
+  }, []);
+
+  const tiposInmuebleMap = useMemo(
+    () => new Map(tiposInmueble.map((tipo) => [String(tipo.id), tipo.nombre]).filter(([id, nombre]) => id && nombre)),
+    [tiposInmueble]
+  );
+  const tipoInmuebleNombre =
+    propiedad?.tipoInmuebleNombre ||
+    tiposInmuebleMap.get(String(propiedad?.tipoInmueble)) ||
+    'No especificado';
 
   useEffect(() => {
     const usuarioActual = getCurrentUser();
@@ -356,7 +389,8 @@ export default function DetallePropiedad() {
         {mensajeFavorito ? <p className="mensaje-favorito">{mensajeFavorito}</p> : null}
         <p className="precio">{propiedad.precio}</p>
         <p className="ubicacion">{'\u{1F4CD}'} {propiedad.ubicacion}</p>
-        <p className="descripcion">{propiedad.descripcion}</p>
+        <p className="propiedad-tipo-inmueble"><strong>Tipo de inmueble:</strong> {tipoInmuebleNombre}</p>
+        <RichTextContent className="descripcion" value={propiedad.descripcion} />
 
         {tieneTour360 ? <Tour360Viewer tour={tour360} /> : null}
 

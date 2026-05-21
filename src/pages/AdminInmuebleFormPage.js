@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import useAuthSession from '../hooks/useAuthSession';
 import {
   actualizarInmueble,
   crearInmueble,
@@ -11,7 +12,7 @@ import {
   obtenerPoblaciones,
   obtenerTiposInmueble,
 } from '../services/catalogosService';
-import { obtenerUsuarioDesdeToken } from '../services/authService';
+import RichTextEditor from '../components/common/RichTextEditor';
 import './AdminInmuebleFormPage.css';
 
 const FORM_INICIAL = {
@@ -85,9 +86,9 @@ const getApiErrorMessage = (err) => {
   return err.data?.mensaje || err.data?.message || err.message || 'No fue posible guardar el inmueble.';
 };
 
-function Field({ children, label }) {
+function Field({ children, className = '', full = false, label }) {
   return (
-    <label className="admin-inmueble-field">
+    <label className={`admin-inmueble-field ${full ? 'is-full' : ''} ${className}`.trim()}>
       <span>{label}</span>
       {children}
     </label>
@@ -98,8 +99,10 @@ export default function AdminInmuebleFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const esEdicion = Boolean(id);
-  const usuario = obtenerUsuarioDesdeToken();
-  const esAdmin = ROLES_ADMIN.includes(String(usuario?.rol || '').toUpperCase());
+  const { rolGlobal, esAdminCn, puedePublicarPropiedades } = useAuthSession();
+  const esAdmin = esAdminCn || ROLES_ADMIN.includes(String(rolGlobal || '').toUpperCase());
+  const puedePublicar = Boolean(puedePublicarPropiedades || esAdmin);
+  const puedeEditarEstatus = esAdmin;
   const [form, setForm] = useState(FORM_INICIAL);
   const [estados, setEstados] = useState([]);
   const [municipios, setMunicipios] = useState([]);
@@ -243,6 +246,23 @@ export default function AdminInmuebleFormPage() {
     return () => controller.abort();
   }, [estadoSeleccionado, municipioSeleccionado, cargarLocalidades, cargando]);
 
+  if (!puedePublicar && !esAdmin) {
+    return (
+      <main className="admin-inmueble">
+        <section className="admin-inmueble-hero">
+          <div>
+            <p className="admin-inmueble-eyebrow">Administracion</p>
+            <h1>{tituloPagina}</h1>
+          </div>
+          <Link className="admin-inmueble-secondary" to="/admin/propiedades">
+            Volver a Mis propiedades
+          </Link>
+        </section>
+        <p className="admin-inmueble-feedback">No tienes permiso para publicar propiedades.</p>
+      </main>
+    );
+  }
+
   const actualizarCampo = (event) => {
     const { checked, name, type, value } = event.target;
 
@@ -272,9 +292,13 @@ export default function AdminInmuebleFormPage() {
     setError('');
 
     try {
+      const payload = {
+        ...form,
+        estatus: !esEdicion && !esAdmin ? 'BORRADOR' : form.estatus,
+      };
       const response = esEdicion
-        ? await actualizarInmueble(id, form)
-        : await crearInmueble(form);
+        ? await actualizarInmueble(id, payload)
+        : await crearInmueble(payload);
 
       setMensaje(esEdicion ? 'Inmueble actualizado correctamente.' : 'Inmueble creado correctamente.');
 
@@ -362,15 +386,19 @@ export default function AdminInmuebleFormPage() {
             <Field label="Construccion m2">
               <input name="construccionM2" type="number" min="0" step="0.01" value={form.construccionM2} onChange={actualizarCampo} />
             </Field>
-            <Field label="Descripcion">
-              <textarea name="descripcion" value={form.descripcion} onChange={actualizarCampo} rows="5" required />
+            <Field label="Descripción" full>
+              <RichTextEditor
+                value={form.descripcion}
+                onChange={(value) => setForm((actual) => ({ ...actual, descripcion: value }))}
+                placeholder="Describe la propiedad con texto, listas y encabezados."
+              />
             </Field>
           </div>
         </section>
 
         <section className="admin-inmueble-card">
           <div className="admin-inmueble-card-head">
-            <h2>Ubicacion</h2>
+            <h2>Ubicación</h2>
             {cargandoCatalogos ? <span className="admin-inmueble-pill">Cargando catalogos</span> : null}
           </div>
           <div className="admin-inmueble-grid three">
@@ -404,7 +432,7 @@ export default function AdminInmuebleFormPage() {
                 ))}
               </select>
             </Field>
-            <Field label="Direccion">
+            <Field label="Dirección">
               <input name="direccion" value={form.direccion} onChange={actualizarCampo} />
             </Field>
             <Field label="Referencia">
@@ -426,15 +454,31 @@ export default function AdminInmuebleFormPage() {
         </section>
 
         <section className="admin-inmueble-card">
-          <h2>Publicacion</h2>
+          <h2>Publicación</h2>
           <div className="admin-inmueble-checks">
-            <Field label="Estatus">
-              <select name="estatus" value={form.estatus} onChange={actualizarCampo} required disabled={!esAdmin}>
-                {ESTATUS_INMUEBLE.map((estatus) => (
-                  <option key={estatus} value={estatus}>{estatus}</option>
-                ))}
-              </select>
-            </Field>
+            {esAdmin ? (
+              <Field label="Estatus">
+                <select name="estatus" value={form.estatus} onChange={actualizarCampo} required disabled={!puedeEditarEstatus}>
+                  {ESTATUS_INMUEBLE.map((estatus) => (
+                    <option key={estatus} value={estatus}>{estatus}</option>
+                  ))}
+                </select>
+              </Field>
+            ) : (
+              <div className="admin-inmueble-status-card">
+                <span className="admin-inmueble-status-label">
+                  {esEdicion ? 'Estatus actual' : 'Estatus inicial'}
+                </span>
+                <strong className="admin-inmueble-status-badge">{form.estatus || 'BORRADOR'}</strong>
+                {!esEdicion ? (
+                  <p>Guarda tu inmueble como borrador. Cuando esté listo, envíalo a revisión desde Mis propiedades.</p>
+                ) : form.estatus === 'PENDIENTE_REVISION' ? (
+                  <p>Esta propiedad está en revisión. No puedes cambiar el estatus manualmente.</p>
+                ) : (
+                  <p>No puedes cambiar el estatus manualmente desde este flujo.</p>
+                )}
+              </div>
+            )}
             <label className="admin-inmueble-check">
               <input name="destacado" type="checkbox" checked={form.destacado} onChange={actualizarCampo} />
               <span>Destacado</span>
@@ -442,7 +486,7 @@ export default function AdminInmuebleFormPage() {
           </div>
           {form.estatus === 'BORRADOR' ? (
             <div className="admin-inmueble-help">
-              <span>Guarda el inmueble y despues envialo a revision desde Mis propiedades.</span>
+              <span>Guarda el inmueble como borrador. Cuando esté listo, envíalo a revisión desde Mis propiedades.</span>
               <Link to="/admin/propiedades">Ir a Mis propiedades</Link>
             </div>
           ) : null}

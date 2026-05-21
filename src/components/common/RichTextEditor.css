@@ -1,0 +1,114 @@
+.rich-text-editor {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.rich-text-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.rich-text-editor__button {
+  min-height: 36px;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  background: rgba(26, 61, 124, 0.06);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.rich-text-editor__button:hover {
+  border-color: rgba(203, 161, 53, 0.45);
+  background: rgba(203, 161, 53, 0.12);
+}
+
+.rich-text-editor__button.is-active {
+  border-color: rgba(26, 61, 124, 0.32);
+  background: rgba(26, 61, 124, 0.12);
+  color: var(--cn-primary);
+}
+
+.rich-text-editor__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.rich-text-editor__content {
+  min-height: 220px;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 10px;
+  background: var(--blanco);
+  color: var(--azul-oscuro);
+}
+
+.rich-text-editor__content .ProseMirror {
+  min-height: 220px;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  line-height: 1.65;
+}
+
+.rich-text-editor__content .ProseMirror p {
+  margin: 0 0 0.75rem;
+}
+
+.rich-text-editor__content .ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-editor__content .ProseMirror h2,
+.rich-text-editor__content .ProseMirror h3 {
+  margin: 0.9rem 0 0.45rem;
+  color: var(--azul-oscuro);
+}
+
+.rich-text-editor__content .ProseMirror h2 {
+  font-size: 1.35rem;
+}
+
+.rich-text-editor__content .ProseMirror h3 {
+  font-size: 1.15rem;
+}
+
+.rich-text-editor__content .ProseMirror ul,
+.rich-text-editor__content .ProseMirror ol {
+  margin: 0 0 0.85rem 1.25rem;
+  padding-left: 1rem;
+}
+
+.rich-text-editor__content .ProseMirror li {
+  margin-bottom: 0.35rem;
+}
+
+.rich-text-editor__content .ProseMirror blockquote {
+  margin: 0 0 0.85rem;
+  padding-left: 1rem;
+  border-left: 3px solid rgba(203, 161, 53, 0.55);
+  color: rgba(26, 61, 124, 0.9);
+}
+
+.rich-text-editor__content .ProseMirror p.is-editor-empty:first-child::before {
+  color: rgba(26, 61, 124, 0.45);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.rich-text-editor.is-disabled .rich-text-editor__toolbar {
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+.rich-text-editor.is-disabled .rich-text-editor__content {
+  background: rgba(26, 61, 124, 0.025);
+}

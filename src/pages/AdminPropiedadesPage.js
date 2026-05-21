@@ -7,7 +7,7 @@ import {
   publicarInmueble,
   rechazarInmueble,
 } from '../services/adminInmueblesService';
-import { obtenerUsuarioDesdeToken } from '../services/authService';
+import useAuthSession from '../hooks/useAuthSession';
 import './AdminPropiedadesPage.css';
 
 const FILTROS_INICIALES = {
@@ -43,6 +43,7 @@ const getApiErrorMessage = (err) =>
 
 export default function AdminPropiedadesPage() {
   const location = useLocation();
+  const sesion = useAuthSession();
   const vistaInicial = new URLSearchParams(location.search).get('vista') || 'TODOS';
   const [inmuebles, setInmuebles] = useState([]);
   const [filtros, setFiltros] = useState({
@@ -54,10 +55,10 @@ export default function AdminPropiedadesPage() {
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
 
-  const usuario = obtenerUsuarioDesdeToken();
-  const rolUsuario = String(usuario?.rol || '').toUpperCase();
+  const rolUsuario = String(sesion.rolGlobal || '').toUpperCase();
   const puedeAprobar = ROLES_PUEDE_APROBAR.includes(rolUsuario);
   const puedeEnviarRevision = ESTATUS_PUEDE_ENVIAR_REVISION.includes(rolUsuario);
+  const puedePublicarPropiedades = Boolean(sesion.puedePublicarPropiedades);
 
   const cargarInmuebles = useCallback(async (options = {}) => {
     setCargando(true);
@@ -229,9 +230,11 @@ export default function AdminPropiedadesPage() {
           <p className="admin-propiedades-eyebrow">Administracion</p>
           <h1>Propiedades</h1>
         </div>
-        <Link className="admin-propiedades-primary" to="/admin/inmuebles/nuevo">
-          Nuevo inmueble
-        </Link>
+        {puedePublicarPropiedades ? (
+          <Link className="admin-propiedades-primary" to="/admin/inmuebles/nuevo">
+            Nuevo inmueble
+          </Link>
+        ) : null}
       </section>
 
       {puedeAprobar ? (

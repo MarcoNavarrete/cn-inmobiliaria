@@ -50,16 +50,37 @@ const normalizeSesion = (data = {}, fallback = {}) => {
   const rolGlobal = String(data.rolGlobal || data.rol || fallback.rolGlobal || fallback.rol || '').trim() || 'USUARIO';
   const esAdminCn = data.esAdminCn === true || ['ADMIN', 'SUPERADMIN'].includes(rolGlobal.toUpperCase());
   const tieneAccesoEmpresarial = data.tieneAccesoEmpresarial === true || empresas.length > 0;
+  const puedePublicarPropiedades =
+    data.puedePublicarPropiedades === true ||
+    data.puedePublicar === true ||
+    rolGlobal.toUpperCase() === 'ASESOR' ||
+    esAdminCn;
+  const puedeCrearProyectos =
+    data.puedeCrearProyectos === true ||
+    esAdminCn ||
+    empresas.some((empresa) => empresa.activo !== false && empresa.rolEmpresa === 'ADMIN_EMPRESA');
+  const puedeAdministrarEmpresa =
+    data.puedeAdministrarEmpresa === true ||
+    esAdminCn ||
+    empresas.some((empresa) => empresa.activo !== false && empresa.rolEmpresa === 'ADMIN_EMPRESA');
 
   return {
     usuarioId: String(data.usuarioId || fallback.usuarioId || fallback.id || ''),
     email: String(data.email || fallback.email || ''),
     nombre: String(data.nombre || fallback.nombre || fallback.name || fallback.unique_name || ''),
+    maxPublicaciones: Number.isFinite(Number(data.maxPublicaciones))
+      ? Number(data.maxPublicaciones)
+      : Number.isFinite(Number(fallback.maxPublicaciones))
+        ? Number(fallback.maxPublicaciones)
+        : null,
     rolGlobal,
     rol: rolGlobal,
     esAdminCn,
     empresas,
     tieneAccesoEmpresarial,
+    puedePublicarPropiedades,
+    puedeCrearProyectos,
+    puedeAdministrarEmpresa,
   };
 };
 
@@ -143,7 +164,7 @@ export const obtenerUsuarioDesdeToken = () => {
   try {
     const data = parseTokenPayload(token);
 
-    return {
+      return {
       usuarioId: data.usuarioId || data.nameid || data.sub || '',
       email: data.email || '',
       nombre: data.nombre || data.name || data.unique_name || '',
@@ -152,6 +173,9 @@ export const obtenerUsuarioDesdeToken = () => {
       esAdminCn: ['ADMIN', 'SUPERADMIN'].includes(String(data.rol || data.role || '').toUpperCase()),
       empresas: [],
       tieneAccesoEmpresarial: false,
+      puedePublicarPropiedades: String(data.rol || data.role || '').toUpperCase() === 'ASESOR',
+      puedeCrearProyectos: false,
+      puedeAdministrarEmpresa: false,
     };
   } catch (_) {
     return null;
@@ -185,7 +209,7 @@ export const obtenerSesionActual = async (options = {}) => {
       .then((data) => {
         const fallback = obtenerUsuarioDesdeToken() || {};
         const sesion = normalizeSesion(data, fallback);
-        guardarSesionActual(sesion);
+  guardarSesionActual(sesion);
         return sesion;
       })
       .catch((err) => {

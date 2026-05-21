@@ -12,9 +12,21 @@ export default function Header() {
   const cuentaRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [cuentaOpen, setCuentaOpen] = useState(false);
-  const { usuario, cargando, esAdminCn, tieneAccesoEmpresarial, rolGlobal } = useAuthSession();
-  const puedeVerPanel = esAdminCn || tieneAccesoEmpresarial;
-  const esPanelEmpresa = String(rolGlobal || '').toUpperCase() === 'USUARIO' && tieneAccesoEmpresarial;
+  const {
+    usuario,
+    cargando,
+    esAdminCn,
+    tieneAccesoEmpresarial,
+    puedePublicarPropiedades,
+    puedeCrearProyectos,
+  } = useAuthSession();
+  const puedeVerPanel = esAdminCn || tieneAccesoEmpresarial || puedePublicarPropiedades;
+  const esPanelEmpresa = tieneAccesoEmpresarial && !esAdminCn;
+  const destinoPanel = esAdminCn
+    ? '/admin'
+    : (tieneAccesoEmpresarial || puedeCrearProyectos)
+      ? '/admin/proyectos-inmobiliarios'
+      : '/admin/propiedades';
   const usuarioLabel = usuario?.nombre || usuario?.email || 'Usuario';
 
   useEffect(() => {
@@ -54,8 +66,10 @@ export default function Header() {
       <Link to="/mis-solicitudes" onClick={cerrarMenus}>Mis solicitudes</Link>
       <Link to="/cliente/mis-busquedas" onClick={cerrarMenus}>Mis busquedas</Link>
       <Link to="/cliente/mis-alertas" onClick={cerrarMenus}>Mis alertas</Link>
+      {puedePublicarPropiedades ? <Link to="/admin/propiedades" onClick={cerrarMenus}>Mis propiedades</Link> : null}
+      {puedePublicarPropiedades ? <Link to="/admin/inmuebles/nuevo" onClick={cerrarMenus}>Nueva propiedad</Link> : null}
       {puedeVerPanel ? (
-        <Link to={esPanelEmpresa ? '/admin/proyectos-inmobiliarios' : '/admin'} onClick={cerrarMenus}>
+        <Link to={destinoPanel} onClick={cerrarMenus}>
           {esPanelEmpresa ? 'Panel de empresa' : 'Panel'}
         </Link>
       ) : null}

@@ -52,6 +52,7 @@ export default function AdminProyectosInmobiliariosPage() {
   const permisosEmpresa = usePermisosEmpresa();
   const puedeCrearProyecto = permisosEmpresa.puedeCrearProyecto;
   const puedeEditarProyecto = permisosEmpresa.puedeEditarProyecto;
+  const puedeAccederProyectos = permisosEmpresa.puedeAccederProyectos;
   const [proyectos, setProyectos] = useState([]);
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
   const [cargando, setCargando] = useState(true);
@@ -102,6 +103,23 @@ export default function AdminProyectosInmobiliariosPage() {
   };
 
   const limpiarFiltros = () => setFiltros(FILTROS_INICIALES);
+
+  if (!puedeAccederProyectos) {
+    return (
+      <main className="admin-proyectos">
+        <section className="admin-proyectos-hero">
+          <div>
+            <p className="admin-proyectos-eyebrow">Proyectos inmobiliarios</p>
+            <h1>Administracion de proyectos</h1>
+          </div>
+          <Link className="admin-proyectos-primary" to="/admin/propiedades">
+            Ir a Mis propiedades
+          </Link>
+        </section>
+        <p className="admin-proyectos-feedback is-error">No tienes permiso para acceder a esta seccion.</p>
+      </main>
+    );
+  }
 
   const alternarActivo = async (proyecto) => {
     const siguienteActivo = !proyecto.activo;

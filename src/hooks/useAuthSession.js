@@ -57,6 +57,9 @@ export default function useAuthSession() {
     rolGlobal: String(sesion?.rolGlobal || sesion?.rol || '').toUpperCase(),
     esAdminCn: Boolean(sesion?.esAdminCn),
     tieneAccesoEmpresarial: Boolean(sesion?.tieneAccesoEmpresarial),
+    puedePublicarPropiedades: Boolean(sesion?.puedePublicarPropiedades),
+    puedeCrearProyectos: Boolean(sesion?.puedeCrearProyectos),
+    puedeAdministrarEmpresa: Boolean(sesion?.puedeAdministrarEmpresa),
     empresas: Array.isArray(sesion?.empresas) ? sesion.empresas : [],
   };
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaArrowLeft,
@@ -10,6 +10,7 @@ import {
   FaFolderOpen,
   FaHome,
   FaImages,
+  FaPlus,
   FaProjectDiagram,
   FaSignOutAlt,
   FaTachometerAlt,
@@ -23,7 +24,7 @@ import {
   marcarTodasNotificacionesLeidas,
   obtenerNotificaciones,
 } from '../services/notificacionesService';
-import useAuthSession from '../hooks/useAuthSession';
+import usePermisosEmpresa from '../hooks/usePermisosEmpresa';
 import './AdminLayout.css';
 
 const ROLES_INTERNOS_CN = ['ASESOR', 'SUPERVISOR', 'ADMIN', 'SUPERADMIN'];
@@ -49,6 +50,7 @@ const ICONOS_MENU = {
   projects: FaProjectDiagram,
   proyecto: FaProjectDiagram,
   proyectos: FaProjectDiagram,
+  plus: FaPlus,
   prospectos: FaUserCheck,
   signout: FaSignOutAlt,
   usuarios: FaUsers,
@@ -157,6 +159,53 @@ const limpiarMenu = (items) => {
   return Array.from(porRuta.values());
 };
 
+const filtrarMenuPorPermisos = (items, permisos) => {
+  const {
+    esAdminCn,
+    tieneAccesoEmpresarial,
+    puedePublicarPropiedades,
+    puedeCrearProyectos,
+    puedeOperarProspectos,
+    puedeOperarApartados,
+  } = permisos;
+
+  const puedeVerProyectos = esAdminCn || tieneAccesoEmpresarial || puedeCrearProyectos;
+  const puedeVerComercial = esAdminCn || tieneAccesoEmpresarial || puedeOperarProspectos || puedeOperarApartados;
+
+  return limpiarMenu(items)
+    .map((item) => {
+      const ruta = canonizarRuta(item.ruta);
+
+      let permitido = true;
+
+      if (!ruta || ruta === '/admin' || ruta === '/admin/dashboard') {
+        permitido = true;
+      } else if (ruta.startsWith('/admin/usuarios') || ruta.startsWith('/admin/empresas-inmobiliarias') || ruta.startsWith('/admin/configuracion') || ruta.startsWith('/admin/catalogos') || ruta.startsWith('/admin/estadisticas')) {
+        permitido = esAdminCn;
+      } else if (ruta.startsWith('/admin/desarrollos')) {
+        permitido = esAdminCn;
+      } else if (ruta.startsWith('/admin/proyectos-inmobiliarios')) {
+        permitido = puedeVerProyectos || puedeVerComercial;
+      } else if (ruta.startsWith('/admin/propiedades') || ruta.startsWith('/admin/inmuebles') || ruta.startsWith('/admin/tours360')) {
+        permitido = puedePublicarPropiedades || esAdminCn;
+      } else if (ruta.startsWith('/admin/prospectos') || ruta.startsWith('/admin/apartados')) {
+        permitido = puedeVerComercial || esAdminCn;
+      }
+
+      const children = item.children?.length ? filtrarMenuPorPermisos(item.children, permisos) : [];
+
+      if (!permitido && children.length === 0) {
+        return null;
+      }
+
+      return {
+        ...item,
+        children,
+      };
+    })
+    .filter(Boolean);
+};
+
 const resumirTexto = (value, maxLength = 110) => {
   const text = String(value || '').trim();
 
@@ -236,8 +285,33 @@ function MenuItem({ item }) {
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cargando: cargandoSesion, rolGlobal, esAdminCn, tieneAccesoEmpresarial } = useAuthSession();
+  const permisos = usePermisosEmpresa();
+  const {
+    cargando: cargandoSesion,
+    rolGlobal,
+    esAdminCn,
+    tieneAccesoEmpresarial,
+    puedePublicarPropiedades,
+    puedeCrearProyectos,
+    puedeOperarProspectos,
+    puedeOperarApartados,
+  } = permisos;
   const esUsuarioInternoCn = ROLES_INTERNOS_CN.includes(String(rolGlobal || '').toUpperCase());
+  const permisosMenu = useMemo(() => ({
+    esAdminCn,
+    tieneAccesoEmpresarial,
+    puedePublicarPropiedades,
+    puedeCrearProyectos,
+    puedeOperarProspectos,
+    puedeOperarApartados,
+  }), [
+    esAdminCn,
+    tieneAccesoEmpresarial,
+    puedePublicarPropiedades,
+    puedeCrearProyectos,
+    puedeOperarProspectos,
+    puedeOperarApartados,
+  ]);
   const [menu, setMenu] = useState([]);
   const [notificaciones, setNotificaciones] = useState([]);
   const [cargandoMenu, setCargandoMenu] = useState(true);
@@ -248,12 +322,27 @@ export default function AdminLayout() {
 
   const noLeidas = notificaciones.filter((notificacion) => !notificacion.leida).length;
   const mostrarMenuEmpresarial = !esUsuarioInternoCn && tieneAccesoEmpresarial;
-  const puedeVerAdmin = esAdminCn || tieneAccesoEmpresarial || esUsuarioInternoCn;
+  const puedeVerAdmin =
+    esAdminCn ||
+    tieneAccesoEmpresarial ||
+    esUsuarioInternoCn ||
+    puedePublicarPropiedades ||
+    puedeCrearProyectos ||
+    puedeOperarProspectos ||
+    puedeOperarApartados;
   const menuInterno = limpiarMenu([
     { nombre: 'Dashboard', ruta: '/admin', icono: 'dashboard' },
+    ...(puedePublicarPropiedades ? [
+      { nombre: 'Mis propiedades', ruta: '/admin/propiedades', icono: 'home' },
+      { nombre: 'Nueva propiedad', ruta: '/admin/inmuebles/nuevo', icono: 'plus' },
+    ] : []),
     ...menu,
-    { nombre: 'Desarrollos inmobiliarios', ruta: '/admin/desarrollos', icono: 'building' },
-    { nombre: 'Proyectos inmobiliarios', ruta: '/admin/proyectos-inmobiliarios', icono: 'project' },
+    ...(esAdminCn ? [
+      { nombre: 'Desarrollos inmobiliarios', ruta: '/admin/desarrollos', icono: 'building' },
+    ] : []),
+    ...(esAdminCn || tieneAccesoEmpresarial || puedeCrearProyectos ? [
+      { nombre: 'Proyectos inmobiliarios', ruta: '/admin/proyectos-inmobiliarios', icono: 'project' },
+    ] : []),
   ]);
   const menuEmpresarial = limpiarMenu([
     { nombre: 'Proyectos inmobiliarios', ruta: '/admin/proyectos-inmobiliarios', icono: 'project' },
@@ -301,7 +390,7 @@ export default function AdminLayout() {
 
       try {
         const data = await obtenerMenu({ signal: controller.signal });
-        setMenu(limpiarMenu(data));
+        setMenu(filtrarMenuPorPermisos(data, permisosMenu));
       } catch (err) {
         if (err.name !== 'AbortError') {
           setErrorMenu(err.data?.mensaje || err.data?.message || err.message || 'No fue posible cargar el menu.');
@@ -318,7 +407,7 @@ export default function AdminLayout() {
     return () => {
       controller?.abort();
     };
-  }, [esUsuarioInternoCn]);
+  }, [esUsuarioInternoCn, permisosMenu]);
 
   useEffect(() => {
     if (!cargandoSesion && !puedeVerAdmin) {
