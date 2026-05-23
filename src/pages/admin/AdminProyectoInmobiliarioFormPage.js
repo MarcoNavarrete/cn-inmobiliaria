@@ -1,7 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import RichTextEditor from '../../components/common/RichTextEditor';
 import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
 import { resolveApiAssetUrl } from '../../services/apiClient';
+import {
+  listarEstados,
+  listarLocalidadesPorPoblacion,
+  listarPoblacionesPorEstado,
+} from '../../services/catalogosService';
 import { listarEmpresas } from '../../services/empresasInmobiliariasService';
 import {
   actualizarProyecto,
@@ -191,16 +197,25 @@ export default function AdminProyectoInmobiliarioFormPage() {
   const { cargando: cargandoSesion, esAdminCn, puedeEditarProyecto, empresas: empresasSesion } = permisosEmpresa;
   const [empresasCatalogo, setEmpresasCatalogo] = useState([]);
   const [form, setForm] = useState(FORM_INICIAL);
+  const [estados, setEstados] = useState([]);
+  const [poblaciones, setPoblaciones] = useState([]);
+  const [localidades, setLocalidades] = useState([]);
   const [imagenPrincipalFile, setImagenPrincipalFile] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
   const [imagenPrincipalPreview, setImagenPrincipalPreview] = useState('');
   const [logoPreview, setLogoPreview] = useState('');
   const [cargandoProyecto, setCargandoProyecto] = useState(true);
+  const [cargandoEstados, setCargandoEstados] = useState(false);
+  const [cargandoPoblaciones, setCargandoPoblaciones] = useState(false);
+  const [cargandoLocalidades, setCargandoLocalidades] = useState(false);
   const [cargandoEmpresas, setCargandoEmpresas] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
+  const [errorUbicacion, setErrorUbicacion] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [permisoDenegado, setPermisoDenegado] = useState('');
+  const poblacionesRequestRef = useRef(0);
+  const localidadesRequestRef = useRef(0);
 
   const empresasSesionNormalizadas = useMemo(
     () => (Array.isArray(empresasSesion) ? empresasSesion : []).map(normalizarEmpresaSesion).filter((empresa) => empresa.id),
@@ -255,6 +270,90 @@ export default function AdminProyectoInmobiliarioFormPage() {
     limpiarPreview(setLogoPreview);
   }, [limpiarPreview]);
 
+  const cargarPoblaciones = React.useCallback(async (estadoId, options = {}) => {
+    if (!estadoId) {
+      setPoblaciones([]);
+      setLocalidades([]);
+      return [];
+    }
+
+    const requestId = ++poblacionesRequestRef.current;
+    setCargandoPoblaciones(true);
+    setErrorUbicacion('');
+
+    try {
+      const data = await listarPoblacionesPorEstado(estadoId, options);
+      if (requestId === poblacionesRequestRef.current) {
+        setPoblaciones(data);
+      }
+      return data;
+    } catch (err) {
+      if (err.name !== 'AbortError' && requestId === poblacionesRequestRef.current) {
+        setPoblaciones([]);
+        setLocalidades([]);
+        setErrorUbicacion('No fue posible cargar municipios.');
+      }
+      return [];
+    } finally {
+      if (requestId === poblacionesRequestRef.current) {
+        setCargandoPoblaciones(false);
+      }
+    }
+  }, []);
+
+  const cargarLocalidades = React.useCallback(async (estadoId, poblacionId, options = {}) => {
+    if (!estadoId || !poblacionId) {
+      setLocalidades([]);
+      return [];
+    }
+
+    const requestId = ++localidadesRequestRef.current;
+    setCargandoLocalidades(true);
+    setErrorUbicacion('');
+
+    try {
+      const data = await listarLocalidadesPorPoblacion(estadoId, poblacionId, options);
+      if (requestId === localidadesRequestRef.current) {
+        setLocalidades(data);
+      }
+      return data;
+    } catch (err) {
+      if (err.name !== 'AbortError' && requestId === localidadesRequestRef.current) {
+        setLocalidades([]);
+        setErrorUbicacion('No fue posible cargar localidades.');
+      }
+      return [];
+    } finally {
+      if (requestId === localidadesRequestRef.current) {
+        setCargandoLocalidades(false);
+      }
+    }
+  }, []);
+
+  const cargarEstadosCatalogo = React.useCallback(async (options = {}) => {
+    const signal = options.signal;
+    setCargandoEstados(true);
+    setErrorUbicacion('');
+
+    try {
+      const data = await listarEstados(options);
+      if (!signal || !signal.aborted) {
+        setEstados(data);
+      }
+      return data;
+    } catch (err) {
+      if (err.name !== 'AbortError' && (!signal || !signal.aborted)) {
+        setEstados([]);
+        setErrorUbicacion('No fue posible cargar estados.');
+      }
+      return [];
+    } finally {
+      if (!signal || !signal.aborted) {
+        setCargandoEstados(false);
+      }
+    }
+  }, []);
+
   const prepararArchivo = (file, etiqueta, setFile, setPreview) => {
     limpiarPreview(setPreview);
 
@@ -294,10 +393,12 @@ export default function AdminProyectoInmobiliarioFormPage() {
     const cargarDatos = async () => {
       setCargandoProyecto(true);
       setCargandoEmpresas(false);
+      setCargandoEstados(true);
       setError('');
       setMensaje('');
       setPermisoDenegado('');
       limpiarArchivosSeleccionados();
+      setErrorUbicacion('');
 
       try {
         let catalogo = [];
@@ -311,6 +412,8 @@ export default function AdminProyectoInmobiliarioFormPage() {
         } else {
           setEmpresasCatalogo([]);
         }
+
+        await cargarEstadosCatalogo({ signal: controller.signal });
 
         const empresasBase = esAdminCn ? catalogo : empresasSesionAdministrables;
 
@@ -353,6 +456,21 @@ export default function AdminProyectoInmobiliarioFormPage() {
           empresaId: proyectoEmpresaId,
           empresaNombre: proyecto.empresaNombre || proyecto.empresa?.nombre || proyecto.empresa?.razonSocial || '',
         });
+
+        if (proyecto.estadoId) {
+          const estadoIdProyecto = toInputValue(proyecto.estadoId);
+          const poblacionIdProyecto = toInputValue(proyecto.poblacionId);
+          await cargarPoblaciones(estadoIdProyecto, { signal: controller.signal });
+
+          if (poblacionIdProyecto) {
+            await cargarLocalidades(estadoIdProyecto, poblacionIdProyecto, { signal: controller.signal });
+          } else {
+            setLocalidades([]);
+          }
+        } else {
+          setPoblaciones([]);
+          setLocalidades([]);
+        }
       } catch (err) {
         if (err.name !== 'AbortError') {
           if (err.status === 403) {
@@ -365,6 +483,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
         if (!controller.signal.aborted) {
           setCargandoProyecto(false);
           setCargandoEmpresas(false);
+          setCargandoEstados(false);
         }
       }
     };
@@ -381,6 +500,9 @@ export default function AdminProyectoInmobiliarioFormPage() {
     puedeCrearProyecto,
     puedeEditarProyecto,
     proyectoId,
+    cargarEstadosCatalogo,
+    cargarLocalidades,
+    cargarPoblaciones,
   ]);
 
   useEffect(() => {
@@ -411,6 +533,68 @@ export default function AdminProyectoInmobiliarioFormPage() {
       if (name === 'empresaId') {
         const empresa = empresasDisponibles.find((item) => String(item.id) === String(value));
         siguiente.empresaNombre = empresa?.nombre || empresa?.razonSocial || '';
+      }
+
+      return siguiente;
+    });
+  };
+
+  const manejarCambioEstado = async (event) => {
+    const estadoId = event.target.value;
+
+    setForm((actual) => ({
+      ...actual,
+      estadoId,
+      poblacionId: '',
+      localidadId: '',
+    }));
+    setPoblaciones([]);
+    setLocalidades([]);
+    setErrorUbicacion('');
+
+    if (!estadoId) {
+      return;
+    }
+
+    await cargarPoblaciones(estadoId);
+  };
+
+  const manejarCambioPoblacion = async (event) => {
+    const poblacionId = event.target.value;
+
+    setForm((actual) => ({
+      ...actual,
+      poblacionId,
+      localidadId: '',
+    }));
+    setLocalidades([]);
+    setErrorUbicacion('');
+
+    if (!form.estadoId || !poblacionId) {
+      return;
+    }
+
+    await cargarLocalidades(form.estadoId, poblacionId);
+  };
+
+  const manejarCambioLocalidad = (event) => {
+    const localidadId = event.target.value;
+    const localidad = localidades.find((item) => String(item.id) === String(localidadId));
+
+    setForm((actual) => {
+      const siguiente = {
+        ...actual,
+        localidadId,
+      };
+
+      if (localidad) {
+        if (!String(actual.latitud || '').trim() && localidad.latitud !== '' && localidad.latitud !== null && localidad.latitud !== undefined) {
+          siguiente.latitud = toInputValue(localidad.latitud);
+        }
+
+        if (!String(actual.longitud || '').trim() && localidad.longitud !== '' && localidad.longitud !== null && localidad.longitud !== undefined) {
+          siguiente.longitud = toInputValue(localidad.longitud);
+        }
       }
 
       return siguiente;
@@ -609,31 +793,93 @@ export default function AdminProyectoInmobiliarioFormPage() {
             <label className="is-full">
               <span>Resumen</span>
               <input name="resumen" value={form.resumen} onChange={actualizarCampo} />
+              <small className="admin-proyecto-form-help-text">
+                El resumen se usa en tarjetas y listados. La descripcion se muestra en la landing del proyecto.
+              </small>
             </label>
-            <label className="is-full">
-              <span>Descripcion</span>
-              <textarea name="descripcion" value={form.descripcion} onChange={actualizarCampo} rows="5" />
-            </label>
+            <div className="is-full admin-proyecto-form-richtext">
+              <span>Descripción</span>
+              <RichTextEditor
+                value={form.descripcion || ''}
+                onChange={(html) => setForm((prev) => ({ ...prev, descripcion: html }))}
+                placeholder="Describe el proyecto, sus ventajas, amenidades, ubicación y propuesta de valor..."
+                disabled={guardando}
+              />
+              <p className="admin-proyecto-form-help-text">
+                Puedes usar subtítulos, negritas, viñetas y alineación para mejorar la presentación pública del proyecto.
+              </p>
+            </div>
           </div>
         </section>
 
         <section className="admin-proyecto-form-card">
-          <h2>Ubicacion</h2>
+          <h2>Ubicación</h2>
           <div className="admin-proyecto-form-grid">
             <label className="is-full">
-              <span>Ubicacion texto</span>
-              <input name="ubicacionTexto" value={form.ubicacionTexto} onChange={actualizarCampo} />
+              <span>Ubicación comercial</span>
+              <input
+                name="ubicacionTexto"
+                value={form.ubicacionTexto}
+                onChange={actualizarCampo}
+                placeholder="Ej. Zona Plateada, Pachuca, Hidalgo"
+              />
             </label>
             <label className="is-full">
-              <span>Direccion</span>
+              <span>Dirección</span>
               <input name="direccion" value={form.direccion} onChange={actualizarCampo} />
             </label>
-            <label><span>EstadoId</span><input name="estadoId" value={form.estadoId} onChange={actualizarCampo} /></label>
-            <label><span>PoblacionId</span><input name="poblacionId" value={form.poblacionId} onChange={actualizarCampo} /></label>
-            <label><span>LocalidadId</span><input name="localidadId" value={form.localidadId} onChange={actualizarCampo} /></label>
-            <label><span>Latitud</span><input name="latitud" value={form.latitud} onChange={actualizarCampo} /></label>
-            <label><span>Longitud</span><input name="longitud" value={form.longitud} onChange={actualizarCampo} /></label>
+            <label>
+              <span>Estado</span>
+              <select
+                name="estadoId"
+                value={form.estadoId}
+                onChange={manejarCambioEstado}
+                disabled={cargandoEstados}
+              >
+                <option value="">{cargandoEstados ? 'Cargando estados...' : 'Selecciona un estado'}</option>
+                {estados.map((estado) => (
+                  <option key={estado.id} value={estado.id}>{estado.nombre}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Municipio / Población</span>
+              <select
+                name="poblacionId"
+                value={form.poblacionId}
+                onChange={manejarCambioPoblacion}
+                disabled={!form.estadoId || cargandoPoblaciones}
+              >
+                <option value="">{!form.estadoId ? 'Selecciona primero un estado' : (cargandoPoblaciones ? 'Cargando municipios...' : 'Selecciona un municipio')}</option>
+                {poblaciones.map((poblacion) => (
+                  <option key={poblacion.id} value={poblacion.id}>{poblacion.nombre}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Localidad / Colonia</span>
+              <select
+                name="localidadId"
+                value={form.localidadId}
+                onChange={manejarCambioLocalidad}
+                disabled={!form.estadoId || !form.poblacionId || cargandoLocalidades}
+              >
+                <option value="">{!form.poblacionId ? 'Selecciona primero un municipio' : (cargandoLocalidades ? 'Cargando localidades...' : 'Selecciona una localidad/colonia')}</option>
+                {localidades.map((localidad) => (
+                  <option key={localidad.id} value={localidad.id}>{localidad.nombre}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Latitud (opcional)</span>
+              <input name="latitud" value={form.latitud} onChange={actualizarCampo} />
+            </label>
+            <label>
+              <span>Longitud (opcional)</span>
+              <input name="longitud" value={form.longitud} onChange={actualizarCampo} />
+            </label>
           </div>
+          {errorUbicacion ? <p className="admin-proyecto-form-feedback is-error">{errorUbicacion}</p> : null}
         </section>
 
         <section className="admin-proyecto-form-card">

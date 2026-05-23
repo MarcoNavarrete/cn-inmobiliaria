@@ -1,4 +1,4 @@
-import { getJson, requestJson } from './apiClient';
+import { getJson, requestFormData, requestJson } from './apiClient';
 import {
   cleanQuery,
   normalizeList,
@@ -50,6 +50,17 @@ export const setEmpresaActivo = (empresaId, activo) =>
     method: 'PATCH',
     body: { activo },
   });
+
+export const uploadLogoEmpresa = (empresaId, file, options = {}) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return requestFormData(`${BASE_URL}/${empresaId}/logo`, {
+    method: 'POST',
+    body: formData,
+    ...options,
+  });
+};
 
 export const buildEmpresaPayload = (form = {}) => ({
   nombre: toText(form.nombreComercial || form.nombre),

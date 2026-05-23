@@ -84,6 +84,81 @@
   gap: 6px;
 }
 
+.admin-empresas-logo-field {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-empresas-logo-field > span {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #12324b;
+}
+
+.admin-empresas-logo-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #d6dde8;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.admin-empresas-logo-preview,
+.admin-empresas-logo-placeholder {
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid #d6dde8;
+  box-shadow: 0 10px 24px rgba(15, 27, 40, 0.08);
+}
+
+.admin-empresas-logo-placeholder {
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  color: #5b6678;
+  font-weight: 600;
+  text-align: center;
+}
+
+.admin-empresas-logo-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-empresas-logo-actions input[type="file"] {
+  padding: 0.58rem 0.7rem;
+  border: 1px solid #ced8e3;
+  border-radius: 10px;
+  background: #fff;
+  color: #12324b;
+}
+
+.admin-empresas-logo-actions small,
+.admin-empresas-logo-warning,
+.admin-empresas-logo-note {
+  color: #5b6678;
+  line-height: 1.45;
+}
+
+.admin-empresas-logo-warning {
+  color: #a56a00;
+  font-weight: 600;
+}
+
+.admin-empresas-logo-note {
+  color: #12324b;
+  font-weight: 600;
+}
+
+.admin-empresas-logo-actions .admin-empresas-secondary {
+  width: fit-content;
+}
+
 .admin-empresas-filtros span,
 .admin-empresas-form span {
   font-size: 0.92rem;

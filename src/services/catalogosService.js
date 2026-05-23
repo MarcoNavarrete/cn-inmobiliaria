@@ -34,6 +34,8 @@ const adaptLocalidad = (localidad) => ({
   nombre: localidad?.nomLocalidad ?? localidad?.nombre ?? localidad?.coloniaNombre ?? '',
   estadoId: toStringId(localidad?.estadoId ?? localidad?.estado_id),
   poblacionId: toStringId(localidad?.poblacionId ?? localidad?.poblacion_id),
+  latitud: localidad?.latitud ?? localidad?.latitude ?? localidad?.lat ?? '',
+  longitud: localidad?.longitud ?? localidad?.longitude ?? localidad?.lng ?? '',
 });
 
 const adaptTipoInmueble = (tipo) => ({
@@ -46,11 +48,11 @@ const adaptRol = (rol) => ({
   nombre: rol?.nombre ?? rol?.nomRol ?? rol?.rol ?? '',
 });
 
-export const obtenerEstados = (options = {}) =>
+export const listarEstados = (options = {}) =>
   getJson('/api/catalogos/estados', options)
     .then((data) => normalizeList(data).map(adaptEstado).filter((item) => item.id));
 
-export const obtenerPoblaciones = (estadoId, options = {}) =>
+export const listarPoblacionesPorEstado = (estadoId, options = {}) =>
   getJson('/api/catalogos/poblaciones', {
     ...options,
     query: {
@@ -59,7 +61,7 @@ export const obtenerPoblaciones = (estadoId, options = {}) =>
   })
     .then((data) => normalizeList(data).map(adaptPoblacion).filter((item) => item.id));
 
-export const obtenerLocalidades = (estadoId, poblacionId, options = {}) =>
+export const listarLocalidadesPorPoblacion = (estadoId, poblacionId, options = {}) =>
   getJson('/api/catalogos/localidades', {
     ...options,
     query: {
@@ -76,3 +78,7 @@ export const obtenerTiposInmueble = (options = {}) =>
 export const obtenerRoles = (options = {}) =>
   getJson('/api/catalogos/roles', options)
     .then((data) => normalizeList(data).map(adaptRol).filter((item) => item.id));
+
+export const obtenerEstados = listarEstados;
+export const obtenerPoblaciones = listarPoblacionesPorEstado;
+export const obtenerLocalidades = listarLocalidadesPorPoblacion;

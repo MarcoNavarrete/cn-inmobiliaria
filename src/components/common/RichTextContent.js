@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 import { isRichTextHtmlEmpty, looksLikeHtml, sanitizeRichTextHtml } from '../../utils/richText';
 import './RichTextContent.css';
 
-export default function RichTextContent({ className = '', value = '' }) {
-  const rawValue = String(value || '').trim();
+export default function RichTextContent({ className = '', content = '', value = '' }) {
+  const rawValue = String((content || value) ?? '').trim();
   const isHtml = looksLikeHtml(rawValue);
   const htmlValue = useMemo(() => {
     if (!isHtml) {

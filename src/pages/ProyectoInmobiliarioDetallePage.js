@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import MarkdownContent from '../components/common/MarkdownContent';
+import RichTextContent from '../components/common/RichTextContent';
 import ProyectoPlanoInteractivo from '../components/proyectos/ProyectoPlanoInteractivo';
 import { trackEvent } from '../lib/analytics';
 import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
@@ -411,7 +411,10 @@ export default function ProyectoInmobiliarioDetallePage() {
           <div>
             <p className="proyecto-publico-eyebrow">Descripcion</p>
             <h2>Conoce el proyecto</h2>
-            <MarkdownContent content={proyecto.descripcion} fallback={proyecto.resumen || 'Informacion del proyecto proximamente disponible.'} />
+            <RichTextContent
+              className="proyecto-publico-descripcion"
+              content={proyecto.descripcion || proyecto.resumen || 'Informacion del proyecto proximamente disponible.'}
+            />
           </div>
           <aside>
             <span>Contacto comercial</span>

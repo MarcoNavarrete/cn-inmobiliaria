@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
+import { resolveApiAssetUrl } from '../../services/apiClient';
 import {
   buildEmpresaPayload,
   crearEmpresa,
   listarEmpresas,
   setEmpresaActivo,
+  uploadLogoEmpresa,
   actualizarEmpresa,
 } from '../../services/empresasInmobiliariasService';
 import { formatDate, formatCurrency } from '../../services/proyectosInmobiliariosUtils';
@@ -40,6 +42,9 @@ const FORM_INICIAL = {
   activo: true,
 };
 
+const MAX_LOGO_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_LOGO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No fue posible procesar la solicitud.';
 
@@ -59,6 +64,22 @@ const buildFormFromEmpresa = (empresa) => ({
   activo: empresa.activo !== false,
 });
 
+const validateLogoFile = (file) => {
+  if (!file) {
+    return 'Selecciona un archivo de logo.';
+  }
+
+  if (!ALLOWED_LOGO_TYPES.includes(file.type)) {
+    return 'El logo debe ser JPG, PNG o WEBP.';
+  }
+
+  if (file.size > MAX_LOGO_SIZE_BYTES) {
+    return 'El logo no puede superar 5 MB.';
+  }
+
+  return '';
+};
+
 const formatearFecha = (value) => formatDate(value);
 
 export default function AdminEmpresasInmobiliariasPage() {
@@ -71,8 +92,29 @@ export default function AdminEmpresasInmobiliariasPage() {
   const [accionandoId, setAccionandoId] = useState('');
   const [panelAbierto, setPanelAbierto] = useState(false);
   const [form, setForm] = useState(FORM_INICIAL);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreviewLocal, setLogoPreviewLocal] = useState('');
+  const logoPreviewRef = useRef('');
+  const [subiendoLogo, setSubiendoLogo] = useState(false);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+
+  useEffect(() => {
+    return () => {
+      if (logoPreviewRef.current) {
+        URL.revokeObjectURL(logoPreviewRef.current);
+      }
+    };
+  }, []);
+
+  const limpiarPreviewLocal = useCallback(() => {
+    if (logoPreviewRef.current) {
+      URL.revokeObjectURL(logoPreviewRef.current);
+      logoPreviewRef.current = '';
+    }
+
+    setLogoPreviewLocal('');
+  }, []);
 
   const cargarEmpresas = useCallback(async (options = {}) => {
     setCargando(true);
@@ -136,6 +178,9 @@ export default function AdminEmpresasInmobiliariasPage() {
 
   const abrirNuevo = () => {
     setForm(FORM_INICIAL);
+    setLogoFile(null);
+    limpiarPreviewLocal();
+    setSubiendoLogo(false);
     setPanelAbierto(true);
     setError('');
     setMensaje('');
@@ -143,6 +188,9 @@ export default function AdminEmpresasInmobiliariasPage() {
 
   const abrirEdicion = async (empresa) => {
     setForm(buildFormFromEmpresa(empresa));
+    setLogoFile(null);
+    limpiarPreviewLocal();
+    setSubiendoLogo(false);
     setPanelAbierto(true);
     setError('');
     setMensaje('');
@@ -151,6 +199,9 @@ export default function AdminEmpresasInmobiliariasPage() {
   const cerrarPanel = () => {
     setPanelAbierto(false);
     setForm(FORM_INICIAL);
+    setLogoFile(null);
+    limpiarPreviewLocal();
+    setSubiendoLogo(false);
   };
 
   const actualizarCampo = (event) => {
@@ -159,6 +210,57 @@ export default function AdminEmpresasInmobiliariasPage() {
       ...actual,
       [name]: type === 'checkbox' ? checked : value,
     }));
+  };
+
+  const actualizarLogo = (event) => {
+    const file = event.target.files?.[0];
+    setError('');
+    setMensaje('');
+
+    if (!file) {
+      setLogoFile(null);
+      limpiarPreviewLocal();
+      return;
+    }
+
+    const validacion = validateLogoFile(file);
+    if (validacion) {
+      setLogoFile(null);
+      limpiarPreviewLocal();
+      setError(validacion);
+      event.target.value = '';
+      return;
+    }
+
+    setLogoFile(file);
+    limpiarPreviewLocal();
+    const previewUrl = URL.createObjectURL(file);
+    logoPreviewRef.current = previewUrl;
+    setLogoPreviewLocal(previewUrl);
+  };
+
+  const subirLogoSeleccionado = async (empresaId, opciones = {}) => {
+    if (!empresaId || !logoFile) {
+      return { uploaded: false };
+    }
+
+    setSubiendoLogo(true);
+
+    try {
+      const response = await uploadLogoEmpresa(empresaId, logoFile, opciones);
+      const logoUrlDevuelta = response?.logoUrl || response?.data?.logoUrl || '';
+
+      if (logoUrlDevuelta) {
+        setForm((actual) => ({ ...actual, id: String(empresaId), logoUrl: logoUrlDevuelta }));
+      }
+
+      setLogoFile(null);
+      limpiarPreviewLocal();
+
+      return { uploaded: true, response, logoUrl: logoUrlDevuelta };
+    } finally {
+      setSubiendoLogo(false);
+    }
   };
 
   const validarFormulario = () => {
@@ -185,9 +287,19 @@ export default function AdminEmpresasInmobiliariasPage() {
       const payload = buildEmpresaPayload(form);
       if (form.id) {
         await actualizarEmpresa(form.id, payload);
+        if (logoFile) {
+          await subirLogoSeleccionado(form.id);
+        }
         setMensaje('Empresa actualizada correctamente.');
       } else {
-        await crearEmpresa(payload);
+        const created = await crearEmpresa(payload);
+        const nuevaEmpresaId = created?.empresaId || created?.id || created?.data?.empresaId || created?.data?.id;
+        if (nuevaEmpresaId) {
+          setForm((actual) => ({ ...actual, id: String(nuevaEmpresaId) }));
+        }
+        if (nuevaEmpresaId && logoFile) {
+          await subirLogoSeleccionado(nuevaEmpresaId);
+        }
         setMensaje('Empresa creada correctamente.');
       }
 
@@ -382,10 +494,68 @@ export default function AdminEmpresasInmobiliariasPage() {
                 <span>Sitio web</span>
                 <input name="sitioWeb" value={form.sitioWeb} onChange={actualizarCampo} />
               </label>
-              <label>
-                <span>Logo URL</span>
-                <input name="logoUrl" value={form.logoUrl} onChange={actualizarCampo} />
-              </label>
+              <div className="admin-empresas-logo-field">
+                <span>Logo de la empresa</span>
+                <div className="admin-empresas-logo-card">
+                  {logoPreviewLocal || resolveApiAssetUrl(form.logoUrl) ? (
+                    <img
+                      className="admin-empresas-logo-preview"
+                      src={logoPreviewLocal || resolveApiAssetUrl(form.logoUrl)}
+                      alt={form.nombreComercial || 'Logo de la empresa'}
+                    />
+                  ) : (
+                    <div className="admin-empresas-logo-placeholder">Sin logo cargado</div>
+                  )}
+                  <div className="admin-empresas-logo-actions">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={actualizarLogo}
+                    />
+                    <small>Formatos permitidos: JPG, PNG o WEBP. Tamaño máximo: 5 MB.</small>
+                    {form.usaLogoPropio && !form.logoUrl ? (
+                      <span className="admin-empresas-logo-warning">
+                        Carga un logo para usar la identidad de la empresa.
+                      </span>
+                    ) : null}
+                    {!form.usaLogoPropio ? (
+                      <span className="admin-empresas-logo-note">
+                        Si no usas logo propio, se mostrará la marca CN.
+                      </span>
+                    ) : null}
+                    {form.id ? (
+                      <button
+                        type="button"
+                        className="admin-empresas-secondary"
+                        onClick={async () => {
+                          const validacion = validateLogoFile(logoFile);
+                          if (validacion) {
+                            setError(validacion);
+                            return;
+                          }
+
+                          setError('');
+                          setMensaje('');
+
+                          try {
+                            const resultado = await subirLogoSeleccionado(form.id);
+                            if (resultado.uploaded) {
+                              setMensaje('Logo actualizado correctamente.');
+                            }
+                          } catch (err) {
+                            setError(getApiErrorMessage(err));
+                          }
+                        }}
+                        disabled={subiendoLogo || !logoFile || !form.id}
+                      >
+                        {subiendoLogo ? 'Subiendo...' : 'Subir logo'}
+                      </button>
+                    ) : (
+                      <small>Guarda la empresa para poder subir su logo.</small>
+                    )}
+                  </div>
+                </div>
+              </div>
               <label className="admin-empresas-checkbox">
                 <input type="checkbox" name="usaLogoPropio" checked={form.usaLogoPropio} onChange={actualizarCampo} />
                 <span>Usa logo propio</span>
