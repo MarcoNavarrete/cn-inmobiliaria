@@ -1,4 +1,8 @@
 import { getJson, requestFormData, requestJson } from './apiClient';
+import {
+  determinarOrigenPrecio,
+  obtenerResumenPrecios,
+} from '../utils/preciosInmobiliarios';
 
 const normalizeList = (value) => {
   if (Array.isArray(value)) return value;
@@ -41,6 +45,17 @@ export const ESTATUS_UNIDAD = [
 export const adaptUnidadAdmin = (item = {}) => {
   const precio = pickFirst(item.precio, item.precioVenta, item.precioDesde);
   const estatus = toText(pickFirst(item.estatus, item.status, item.estado), 'BLOQUEADO').toUpperCase();
+  const preciosModelo = pickFirst(item.preciosModelo, item.modeloPrecios, item.modelo?.precios, item.preciosBase);
+  const preciosPersonalizados = pickFirst(item.preciosPersonalizados, item.precios, item.tarifas, item.tarifasPersonalizadas);
+  const resumenPrecios = obtenerResumenPrecios({
+    precios: preciosPersonalizados || preciosModelo,
+    fallbackPrecio: precio,
+  });
+  const origen = determinarOrigenPrecio({
+    preciosPersonalizados,
+    preciosModelo,
+    fallbackPrecio: precio,
+  });
 
   return {
     id: toText(pickFirst(item.unidadId, item.id, item.Id)),
@@ -52,6 +67,13 @@ export const adaptUnidadAdmin = (item = {}) => {
     modeloNombre: toText(pickFirst(item.modeloNombre, item.modelo, item.nombreModelo), 'Sin modelo'),
     precio,
     precioTexto: formatCurrency(precio),
+    ...resumenPrecios,
+    precioDesde: resumenPrecios.precioDesde ?? precio,
+    precioDesdeTexto: resumenPrecios.precioDesdeTexto || formatCurrency(precio),
+    precioOrigen: origen,
+    precioOrigenEtiqueta: origen === 'PERSONALIZADO' ? 'Personalizado' : origen === 'MODELO' ? 'Modelo' : origen === 'FALLBACK' ? 'Actual' : '',
+    preciosModelo: Array.isArray(preciosModelo) ? preciosModelo : [],
+    preciosPersonalizados: Array.isArray(preciosPersonalizados) ? preciosPersonalizados : [],
     terrenoM2: pickFirst(item.terrenoM2, item.m2Terreno, item.metrosTerreno),
     construccionM2: pickFirst(item.construccionM2, item.m2Construccion, item.metrosConstruccion),
     estatus: ESTATUS_UNIDAD.includes(estatus) ? estatus : 'BLOQUEADO',

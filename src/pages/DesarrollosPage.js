@@ -92,14 +92,14 @@ export default function DesarrollosPage() {
                 {desarrollo.imagenPrincipal ? (
                   <img src={desarrollo.imagenPrincipal} alt={desarrollo.nombre} />
                 ) : (
-                  <div>Imagen proximamente</div>
+                  <div>Imagen próximamente</div>
                 )}
                 <span>{desarrollo.destacado ? 'Desarrollo destacado' : 'Desarrollo premium'}</span>
               </div>
               <div className="desarrollo-card-body">
                 <div>
                   <h2>{desarrollo.nombre}</h2>
-                  <p>{desarrollo.ubicacion || 'Ubicacion por confirmar'}</p>
+                  <p>{desarrollo.ubicacion || 'Ubicación por confirmar'}</p>
                 </div>
                 <strong>Desde {formatCurrency(desarrollo.precioDesde)}</strong>
                 {desarrollo.amenidades.length > 0 ? (

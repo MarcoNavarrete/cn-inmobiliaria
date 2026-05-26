@@ -45,7 +45,7 @@ export default function Hero() {
 
       <form id="buscador-home" className="hero-search" onSubmit={buscarPropiedades}>
         <label>
-          <span>Ubicacion</span>
+          <span>Ubicación</span>
           <input name="ubicacion" type="text" placeholder="Pachuca, Hidalgo" disabled />
         </label>
         <label>

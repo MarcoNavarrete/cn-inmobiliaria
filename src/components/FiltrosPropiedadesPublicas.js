@@ -42,7 +42,7 @@ export default function FiltrosPropiedadesPublicas({
   const [poblaciones, setPoblaciones] = useState([]);
   const [localidades, setLocalidades] = useState([]);
   const [loadingCatalogos, setLoadingCatalogos] = useState(true);
-  const [catalogosError, setCatalogosError] = useState('');
+  const [catálogosError, setCatalogosError] = useState('');
 
   useEffect(() => {
     setFiltros(normalizarFiltros(initialFilters));
@@ -204,7 +204,7 @@ export default function FiltrosPropiedadesPublicas({
         </div>
 
         <div className="campo-filtro">
-          <label htmlFor="poblacionId">Poblacion / municipio</label>
+          <label htmlFor="poblacionId">Población / municipio</label>
           <select
             id="poblacionId"
             name="poblacionId"
@@ -297,7 +297,7 @@ export default function FiltrosPropiedadesPublicas({
         </div>
       </form>
 
-      {catalogosError ? <p className="filtros-mensaje-error">{catalogosError}</p> : null}
+      {catálogosError ? <p className="filtros-mensaje-error">{catálogosError}</p> : null}
     </div>
   );
 }

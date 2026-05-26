@@ -354,6 +354,65 @@
   font-weight: 800;
 }
 
+.plano-demo-price-summary {
+  display: grid;
+  gap: 0.2rem;
+  border-radius: 10px;
+  padding: 0.8rem;
+  background: rgba(26, 61, 124, 0.05);
+}
+
+.plano-demo-price-summary strong {
+  color: var(--dorado-suave);
+  font-size: 1.2rem;
+}
+
+.plano-demo-price-summary span {
+  color: var(--gris-elegante);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.plano-demo-prices {
+  display: grid;
+  gap: 0.75rem;
+  border-radius: 10px;
+  padding: 0.8rem;
+  background: rgba(26, 61, 124, 0.04);
+}
+
+.plano-demo-prices h4 {
+  margin: 0;
+  color: var(--azul-oscuro);
+  font-family: var(--fuente-titulos);
+}
+
+.plano-demo-prices-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.plano-demo-prices-grid article {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.plano-demo-prices-grid article span {
+  color: var(--gris-elegante);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.plano-demo-prices-grid article strong {
+  color: var(--azul-oscuro);
+  font-size: 1.05rem;
+}
+
 @media (max-width: 900px) {
   .plano-demo {
     grid-template-columns: 1fr;

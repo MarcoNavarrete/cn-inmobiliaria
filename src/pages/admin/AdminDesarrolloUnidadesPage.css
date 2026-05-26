@@ -486,6 +486,137 @@
   background: rgba(89, 99, 109, 0.12);
 }
 
+.admin-unidades-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(7, 21, 33, 0.56);
+}
+
+.admin-unidades-modal {
+  width: min(1120px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 14px;
+  padding: 1rem;
+  background: var(--blanco);
+  box-shadow: 0 22px 48px rgba(7, 21, 33, 0.28);
+}
+
+.admin-unidades-modal-head,
+.admin-unidades-modal-summary,
+.admin-unidades-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.admin-unidades-modal-head h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+}
+
+.admin-unidades-modal-head span {
+  color: var(--gris-elegante);
+  font-weight: 700;
+}
+
+.admin-unidades-modal-head button {
+  min-height: 40px;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+  background: rgba(26, 61, 124, 0.07);
+  color: var(--azul-oscuro);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.admin-unidades-modal-summary {
+  margin: 0.75rem 0 1rem;
+  justify-content: flex-start;
+}
+
+.admin-unidades-modal-summary article {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid rgba(26, 61, 124, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  background: rgba(26, 61, 124, 0.04);
+}
+
+.admin-unidades-modal-summary span {
+  color: var(--gris-elegante);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-unidades-modal-summary strong {
+  color: var(--azul-oscuro);
+  font-size: 1.2rem;
+}
+
+.admin-unidades-prices-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-unidades-prices-table {
+  width: 100%;
+  min-width: 880px;
+  border-collapse: collapse;
+}
+
+.admin-unidades-prices-table th,
+.admin-unidades-prices-table td {
+  border-bottom: 1px solid rgba(26, 61, 124, 0.08);
+  padding: 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-unidades-prices-table th {
+  color: var(--gris-elegante);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-unidades-prices-table td strong {
+  display: block;
+  color: var(--azul-oscuro);
+}
+
+.admin-unidades-prices-table td small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--gris-elegante);
+  font-weight: 700;
+}
+
+.admin-unidades-prices-table input {
+  width: 100%;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  color: var(--azul-oscuro);
+  font: inherit;
+}
+
+.admin-unidades-modal-actions {
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
 @media (max-width: 900px) {
   .admin-unidades-hero {
     align-items: flex-start;
@@ -507,6 +638,10 @@
   .admin-unidades-import-summary {
     grid-template-columns: 1fr 1fr;
   }
+
+  .admin-unidades-modal {
+    width: 100%;
+  }
 }
 
 @media (max-width: 560px) {
@@ -525,5 +660,9 @@
 
   .admin-unidades-import-summary {
     grid-template-columns: 1fr;
+  }
+
+  .admin-unidades-modal-overlay {
+    align-items: flex-start;
   }
 }

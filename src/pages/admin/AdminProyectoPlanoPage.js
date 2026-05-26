@@ -73,7 +73,7 @@ const CSV_COLUMNS = [
   'numeroInterior',
   'modeloId',
   'superficieTerrenoM2',
-  'superficieConstruccionM2',
+  'superficieConstrucciónM2',
   'precioM2',
   'precioTotal',
   'estatus',
@@ -503,7 +503,7 @@ export default function AdminProyectoPlanoPage() {
           numeroInterior: unidad.numeroInterior || '',
           modeloId: unidad.modeloId || '',
           superficieTerrenoM2: unidad.superficieTerrenoM2 || '',
-          superficieConstruccionM2: unidad.superficieConstruccionM2 || '',
+          superficieConstrucciónM2: unidad.superficieConstrucciónM2 || '',
           precioM2: unidad.precioM2 || '',
           precioTotal: unidad.precioTotal || '',
           estatus: unidad.estatus || 'DISPONIBLE',
@@ -528,7 +528,7 @@ export default function AdminProyectoPlanoPage() {
         numeroInterior: '',
         modeloId: '',
         superficieTerrenoM2: '',
-        superficieConstruccionM2: '',
+        superficieConstrucciónM2: '',
         precioM2: '',
         precioTotal: '',
         estatus: 'DISPONIBLE',
@@ -754,7 +754,7 @@ export default function AdminProyectoPlanoPage() {
           <div><dt>Nivel</dt><dd>{unidadSeleccionada.nivel || '-'}</dd></div>
           <div><dt>Numero interior</dt><dd>{unidadSeleccionada.numeroInterior || '-'}</dd></div>
           <div><dt>Superficie terreno</dt><dd>{formatArea(unidadSeleccionada.superficieTerrenoM2)}</dd></div>
-          <div><dt>Superficie construccion</dt><dd>{formatArea(unidadSeleccionada.superficieConstruccionM2)}</dd></div>
+          <div><dt>Superficie construccion</dt><dd>{formatArea(unidadSeleccionada.superficieConstrucciónM2)}</dd></div>
           <div><dt>Precio total</dt><dd>{formatCurrency(unidadSeleccionada.precioTotal)}</dd></div>
           <div><dt>Estatus</dt><dd>{getStatusLabel(unidadSeleccionada.estatus)}</dd></div>
           <div><dt>SvgElementId</dt><dd>{unidadSeleccionada.svgElementId || '-'}</dd></div>
@@ -844,7 +844,7 @@ export default function AdminProyectoPlanoPage() {
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/editar`}>Editar proyecto</Link>
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/unidades`}>Unidades</Link>
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/modelos`}>Modelos</Link>
-          <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imagenes</Link>
+          <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imágenes</Link>
           <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyectoId}`}>Prospectos</Link>
           <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyectoId}`}>Apartados</Link>
           <Link to="/admin/proyectos-inmobiliarios">Volver al listado</Link>
@@ -868,7 +868,7 @@ export default function AdminProyectoPlanoPage() {
             <input name="nombre" value={form.nombre} onChange={actualizarCampo} required />
           </label>
           <label>
-            <span>Descripcion</span>
+            <span>Descripción</span>
             <textarea name="descripcion" value={form.descripcion} onChange={actualizarCampo} rows="4" />
           </label>
           <div className="admin-proyecto-plano-upload">

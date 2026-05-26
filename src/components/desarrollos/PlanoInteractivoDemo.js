@@ -556,7 +556,7 @@ export default function PlanoInteractivoDemo({
                 <strong>Unidad {tooltip.unidad.codigoUnidad}</strong>
                 <span>{tooltip.unidad.modeloNombre}</span>
                 <span>{getStatusLabel(tooltip.unidad.estatus)}</span>
-                <span>{formatCurrency(tooltip.unidad.precio)}</span>
+                <span>{tooltip.unidad.precioDesdeTexto || tooltip.unidad.precioTexto || formatCurrency(tooltip.unidad.precio)}</span>
               </div>
             ) : null}
           </div>
@@ -568,14 +568,32 @@ export default function PlanoInteractivoDemo({
           <>
             <p className="plano-demo-eyebrow">Unidad seleccionada</p>
             <h3>Unidad {unidadSeleccionada.codigoUnidad}</h3>
+            <div className="plano-demo-price-summary">
+              <strong>{unidadSeleccionada.precioDesdeTexto || unidadSeleccionada.precioTexto || formatCurrency(unidadSeleccionada.precio)}</strong>
+              {unidadSeleccionada.precioContadoTexto ? <span>Precio de contado</span> : null}
+              {unidadSeleccionada.tieneMasDeUnPrecioActivo ? <span>Otros esquemas de financiamiento disponibles</span> : null}
+            </div>
             <dl>
               <div><dt>Manzana</dt><dd>{unidadSeleccionada.manzana || 'Sin dato'}</dd></div>
               <div><dt>Modelo</dt><dd>{unidadSeleccionada.modeloNombre}</dd></div>
-              <div><dt>Precio</dt><dd>{formatCurrency(unidadSeleccionada.precio)}</dd></div>
+              <div><dt>Precio</dt><dd>{unidadSeleccionada.precioDesdeTexto || unidadSeleccionada.precioTexto || formatCurrency(unidadSeleccionada.precio)}</dd></div>
               <div><dt>Terreno</dt><dd>{unidadSeleccionada.terrenoM2 ? `${unidadSeleccionada.terrenoM2} m2` : 'Sin dato'}</dd></div>
               <div><dt>Construccion</dt><dd>{unidadSeleccionada.construccionM2 ? `${unidadSeleccionada.construccionM2} m2` : 'Sin dato'}</dd></div>
               <div><dt>Estatus</dt><dd>{getStatusLabel(unidadSeleccionada.estatus)}</dd></div>
             </dl>
+            {unidadSeleccionada.preciosActivos?.length ? (
+              <div className="plano-demo-prices">
+                <h4>Precios disponibles</h4>
+                <div className="plano-demo-prices-grid">
+                  {unidadSeleccionada.preciosActivos.map((precio) => (
+                    <article key={precio.id || `${unidadSeleccionada.unidadId}-${precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre}`}>
+                      <span>{precio.tipoPrecioNombre}</span>
+                      <strong>{precio.precioTexto || formatCurrency(precio.precio)}</strong>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {['DISPONIBLE', 'CONSTRUCCION'].includes(normalizeStatus(unidadSeleccionada.estatus)) ? (
               <button type="button" onClick={() => onApartarUnidad?.(unidadSeleccionada)}>
                 Apartar unidad

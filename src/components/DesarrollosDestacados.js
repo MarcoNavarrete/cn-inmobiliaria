@@ -75,14 +75,14 @@ export default function DesarrollosDestacados() {
                 {desarrollo.imagenPrincipal ? (
                   <img src={desarrollo.imagenPrincipal} alt={desarrollo.nombre} />
                 ) : (
-                  <div>Imagen proximamente</div>
+                  <div>Imagen próximamente</div>
                 )}
                 <span>Desarrollo premium</span>
               </div>
               <div className="home-desarrollo-body">
                 <div>
                   <h3>{desarrollo.nombre}</h3>
-                  <p>{desarrollo.ubicacion || 'Ubicacion por confirmar'}</p>
+                  <p>{desarrollo.ubicacion || 'Ubicación por confirmar'}</p>
                 </div>
                 <strong>Desde {formatCurrency(desarrollo.precioDesde)}</strong>
                 <Link to={`/desarrollos/${desarrollo.slug}`}>Ver desarrollo</Link>

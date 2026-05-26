@@ -68,7 +68,7 @@ export default function AdminDesarrolloImagenesPage() {
     const url = response?.url || response?.Url || '';
 
     if (!url) {
-      setError('El API no devolvio la URL de la imagen.');
+      setError('El API no devolvió la URL de la imagen.');
       return;
     }
 
@@ -213,8 +213,8 @@ export default function AdminDesarrolloImagenesPage() {
     <main className="admin-desarrollos">
       <section className="admin-desarrollos-hero">
         <div>
-          <p className="admin-desarrollos-eyebrow">Administracion</p>
-          <h1>Imagenes del desarrollo</h1>
+          <p className="admin-desarrollos-eyebrow">Administración</p>
+          <h1>Imágenes del desarrollo</h1>
         </div>
         <Link className="admin-desarrollos-primary" to={`/admin/desarrollos/${desarrolloId}/editar`}>Editar desarrollo</Link>
       </section>

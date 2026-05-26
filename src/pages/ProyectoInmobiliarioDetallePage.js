@@ -409,11 +409,11 @@ export default function ProyectoInmobiliarioDetallePage() {
       <section className="proyecto-publico-shell">
         <section className="proyecto-publico-intro">
           <div>
-            <p className="proyecto-publico-eyebrow">Descripcion</p>
+            <p className="proyecto-publico-eyebrow">Descripción</p>
             <h2>Conoce el proyecto</h2>
             <RichTextContent
               className="proyecto-publico-descripcion"
-              content={proyecto.descripcion || proyecto.resumen || 'Informacion del proyecto proximamente disponible.'}
+              content={proyecto.descripcion || proyecto.resumen || 'Información del proyecto próximamente disponible.'}
             />
           </div>
           <aside>
@@ -439,7 +439,7 @@ export default function ProyectoInmobiliarioDetallePage() {
                 scrollTo(contactoRef);
               }}
             >
-              Solicitar informacion
+              Solicitar información
             </button>
           </aside>
         </section>
@@ -447,8 +447,8 @@ export default function ProyectoInmobiliarioDetallePage() {
         {galeria.length ? (
           <section className="proyecto-publico-section">
             <div className="proyecto-publico-section-head">
-              <p className="proyecto-publico-eyebrow">Galeria</p>
-              <h2>Imagenes del proyecto</h2>
+              <p className="proyecto-publico-eyebrow">Galería</p>
+              <h2>Imágenes del proyecto</h2>
             </div>
             <div className="proyecto-publico-gallery">
               {galeria.map((imagen, index) => (
@@ -491,12 +491,12 @@ export default function ProyectoInmobiliarioDetallePage() {
                     </div>
                     <p>{modelo.descripcion || 'Modelo disponible dentro del proyecto.'}</p>
                     <dl className="proyecto-modelo-features">
-                      <div><dt>Recamaras</dt><dd>{modelo.recamaras}</dd></div>
-                      <div><dt>Banos</dt><dd>{modelo.banos}{modelo.mediosBanos ? ` + ${modelo.mediosBanos}/2` : ''}</dd></div>
+                      <div><dt>Recámaras</dt><dd>{modelo.recamaras}</dd></div>
+                      <div><dt>Baños</dt><dd>{modelo.banos}{modelo.mediosBaños ? ` + ${modelo.mediosBaños}/2` : ''}</dd></div>
                       <div><dt>Estac.</dt><dd>{modelo.estacionamientos}</dd></div>
                       <div><dt>Niveles</dt><dd>{modelo.niveles}</dd></div>
                       <div><dt>Terreno</dt><dd>{formatArea(modelo.superficieTerrenoM2)}</dd></div>
-                      <div><dt>Construccion</dt><dd>{formatArea(modelo.superficieConstruccionM2)}</dd></div>
+                      <div><dt>Construcción</dt><dd>{formatArea(modelo.superficieConstrucciónM2)}</dd></div>
                     </dl>
                     <div className="proyecto-modelo-actions">
                       {modelo.imagenPrincipalUrl ? (
@@ -549,7 +549,7 @@ export default function ProyectoInmobiliarioDetallePage() {
             <p className="proyecto-publico-eyebrow">Disponibilidad</p>
             <h2>Unidades disponibles</h2>
             {plano?.svgUrl ? (
-              <span>Tambien puedes consultar disponibilidad directamente en el plano interactivo.</span>
+              <span>También puedes consultar disponibilidad directamente en el plano interactivo.</span>
             ) : null}
           </div>
           {unidades.length ? (
@@ -602,7 +602,7 @@ export default function ProyectoInmobiliarioDetallePage() {
                         <th>Torre</th>
                         <th>Nivel</th>
                         <th>Terreno</th>
-                        <th>Construccion</th>
+                        <th>Construcción</th>
                         <th>Precio</th>
                         <th>Estatus</th>
                         <th>Accion</th>
@@ -619,7 +619,7 @@ export default function ProyectoInmobiliarioDetallePage() {
                           <td>{unidad.torre || '-'}</td>
                           <td>{unidad.nivel || '-'}</td>
                           <td>{formatArea(unidad.superficieTerrenoM2)}</td>
-                          <td>{formatArea(unidad.superficieConstruccionM2)}</td>
+                          <td>{formatArea(unidad.superficieConstrucciónM2)}</td>
                           <td>{unidad.precioTotalTexto}</td>
                           <td><span className={`proyecto-publico-status ${getStatusClass(unidad.estatus)}`}>{unidad.estatus}</span></td>
                           <td><button type="button" onClick={() => seleccionarUnidadYContactar(unidad)}>Me interesa</button></td>
@@ -642,7 +642,7 @@ export default function ProyectoInmobiliarioDetallePage() {
               </div>
             </>
           ) : (
-            <p className="proyecto-publico-muted">Unidades proximamente disponibles.</p>
+            <p className="proyecto-publico-muted">Unidades próximamente disponibles.</p>
           )}
         </section>
 

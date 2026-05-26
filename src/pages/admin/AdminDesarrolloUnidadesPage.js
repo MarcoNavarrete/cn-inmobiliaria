@@ -9,12 +9,23 @@ import {
   listarUnidadesAdmin,
 } from '../../services/adminDesarrolloUnidadesService';
 import {
+  eliminarPreciosPersonalizadosUnidad,
+  guardarPreciosUnidad,
+  listarPreciosModelo,
+  listarPreciosUnidad,
+  listarTiposPrecioInmobiliario,
+} from '../../services/desarrolloPreciosService';
+import {
   guardarPlanoAdmin,
   obtenerPlanoAdmin,
   subirPlanoSvgAdmin,
 } from '../../services/adminDesarrolloPlanoService';
 import { resolveApiAssetUrl } from '../../services/apiClient';
 import { listarDesarrolloModelos } from '../../services/adminDesarrollosService';
+import {
+  formatearMonedaMXN,
+  obtenerResumenPrecios,
+} from '../../utils/preciosInmobiliarios';
 import './AdminDesarrolloUnidadesPage.css';
 
 const FORM_INICIAL = {
@@ -112,6 +123,15 @@ export default function AdminDesarrolloUnidadesPage() {
   const [resumenImportacion, setResumenImportacion] = useState(null);
   const [svgIds, setSvgIds] = useState([]);
   const [editandoId, setEditandoId] = useState('');
+  const [unidadPreciosAbierta, setUnidadPreciosAbierta] = useState(null);
+  const [tiposPrecio, setTiposPrecio] = useState([]);
+  const [, setPreciosUnidad] = useState([]);
+  const [preciosUnidadEditando, setPreciosUnidadEditando] = useState([]);
+  const [preciosUnidadPersonalizados, setPreciosUnidadPersonalizados] = useState(false);
+  const [cargandoPrecios, setCargandoPrecios] = useState(false);
+  const [guardandoPrecios, setGuardandoPrecios] = useState(false);
+  const [errorPrecios, setErrorPrecios] = useState('');
+  const [mensajePrecios, setMensajePrecios] = useState('');
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [accionandoId, setAccionandoId] = useState('');
@@ -267,6 +287,200 @@ export default function AdminDesarrolloUnidadesPage() {
 
     return () => controller.abort();
   }, [planoForm.svgUrl]);
+
+  const cargarCatalogoPrecios = useCallback(async () => {
+    if (tiposPrecio.length > 0) {
+      return tiposPrecio;
+    }
+
+    try {
+      const tipos = await listarTiposPrecioInmobiliario();
+      setTiposPrecio(tipos);
+      return tipos;
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setTiposPrecio([]);
+      }
+      return [];
+    }
+  }, [tiposPrecio]);
+
+  const abrirPreciosUnidad = async (unidad) => {
+    setUnidadPreciosAbierta(unidad);
+    setCargandoPrecios(true);
+    setErrorPrecios('');
+    setMensajePrecios('');
+    setPreciosUnidad([]);
+    setPreciosUnidadEditando([]);
+    setPreciosUnidadPersonalizados(false);
+
+    try {
+      const [tipos, preciosModelo, preciosUnidadData] = await Promise.all([
+        cargarCatalogoPrecios(),
+        listarPreciosModelo(unidad.modeloId).catch(() => []),
+        listarPreciosUnidad(unidad.id).catch(() => []),
+      ]);
+
+      const resumenModelo = obtenerResumenPrecios({
+        precios: preciosModelo,
+        fallbackPrecio: unidad.precioDesde ?? unidad.precio ?? null,
+      });
+
+      const resumenUnidad = obtenerResumenPrecios({
+        precios: preciosUnidadData,
+        fallbackPrecio: resumenModelo.precioDesde ?? unidad.precioDesde ?? unidad.precio ?? null,
+      });
+
+      const tiposBase = tipos.length > 0 ? tipos : resumenModelo.precios;
+      const mapaModelo = new Map(
+        resumenModelo.precios.map((precio) => [String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase(), precio])
+      );
+      const mapaUnidad = new Map(
+        resumenUnidad.precios.map((precio) => [String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase(), precio])
+      );
+      const unidadTienePersonalizados = preciosUnidadData.length > 0;
+
+      const catálogo = tiposBase.length > 0 ? tiposBase : resumenModelo.precios;
+      const filas = (catálogo.length > 0 ? catálogo : [{
+        id: 'precio-actual',
+        tipoPrecioId: '',
+        tipoPrecioCodigo: 'FALLBACK',
+        tipoPrecioNombre: 'Precio actual',
+        descripcion: '',
+        precio: resumenModelo.precioDesde ?? unidad.precio ?? '',
+        activo: true,
+        esPrincipal: true,
+        orden: 0,
+      }]).map((tipo, index) => {
+        const tipoKey = String(tipo.id || tipo.tipoPrecioId || tipo.codigo || tipo.nombre || index).toUpperCase();
+        const precioModelo = mapaModelo.get(tipoKey) || resumenModelo.precios.find((precio) => String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase() === tipoKey);
+        const precioUnidad = mapaUnidad.get(tipoKey) || resumenUnidad.precios.find((precio) => String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase() === tipoKey);
+        const precioFallback = unidad.precioDesde ?? unidad.precio ?? '';
+        const precioHeredado = precioModelo?.precio ?? (index === 0 ? precioFallback : '');
+        const precioPersonalizado = precioUnidad?.precio ?? '';
+
+        return {
+          id: precioUnidad?.id || precioModelo?.id || `${tipoKey}-${index}`,
+          tipoPrecioId: tipo.id || tipo.tipoPrecioId || '',
+          tipoPrecioCodigo: tipo.codigo || tipo.tipoPrecioCodigo || '',
+          tipoPrecioNombre: tipo.nombre || tipo.tipoPrecioNombre || tipo.descripcion || `Esquema ${index + 1}`,
+          precioHeredado,
+          precioHeredadoTexto: formatearMonedaMXN(precioHeredado),
+          precioPersonalizado: precioPersonalizado === null || precioPersonalizado === undefined ? '' : String(precioPersonalizado),
+          precioPersonalizadoTexto: precioPersonalizado === '' || precioPersonalizado === null || precioPersonalizado === undefined
+            ? ''
+            : formatearMonedaMXN(precioPersonalizado),
+          descripcion: precioUnidad?.descripcion || precioModelo?.descripcion || '',
+          activo: unidadTienePersonalizados ? (precioUnidad?.activo !== false) : Boolean(precioModelo || index === 0),
+          orden: precioUnidad?.orden ?? precioModelo?.orden ?? index,
+        };
+      });
+
+      setPreciosUnidad(preciosUnidadData);
+      setPreciosUnidadEditando(filas);
+      setPreciosUnidadPersonalizados(unidadTienePersonalizados);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setErrorPrecios(getApiErrorMessage(err));
+      }
+    } finally {
+      setCargandoPrecios(false);
+    }
+  };
+
+  const cerrarPreciosUnidad = () => {
+    setUnidadPreciosAbierta(null);
+    setPreciosUnidad([]);
+    setPreciosUnidadEditando([]);
+    setPreciosUnidadPersonalizados(false);
+    setErrorPrecios('');
+    setMensajePrecios('');
+  };
+
+  const actualizarPrecioUnidadFila = (index, cambios) => {
+    setPreciosUnidadEditando((actuales) =>
+      actuales.map((fila, filaIndex) => (filaIndex === index ? { ...fila, ...cambios } : fila))
+    );
+  };
+
+  const personalizarPreciosUnidad = () => {
+    setPreciosUnidadPersonalizados(true);
+    setPreciosUnidadEditando((actuales) =>
+      actuales.map((fila) => ({
+        ...fila,
+        precioPersonalizado: fila.precioHeredado === '' || fila.precioHeredado === null || fila.precioHeredado === undefined
+          ? ''
+          : String(fila.precioHeredado),
+      }))
+    );
+  };
+
+  const validarPreciosUnidad = () => {
+    if (!preciosUnidadPersonalizados) {
+      return '';
+    }
+
+    for (const fila of preciosUnidadEditando) {
+      if (fila.precioPersonalizado === '' || fila.precioPersonalizado === null || fila.precioPersonalizado === undefined) {
+        continue;
+      }
+
+      if (Number(fila.precioPersonalizado) < 0) {
+        return `El precio personalizado de ${fila.tipoPrecioNombre} no puede ser negativo.`;
+      }
+    }
+
+    return '';
+  };
+
+  const guardarPreciosUnidadEditados = async () => {
+    if (!unidadPreciosAbierta?.id) {
+      return;
+    }
+
+    const unidadActual = unidades.find((item) => String(item.id) === String(unidadPreciosAbierta.id)) || unidadPreciosAbierta;
+
+    const validacion = validarPreciosUnidad();
+    if (validacion) {
+      setErrorPrecios(validacion);
+      return;
+    }
+
+    setGuardandoPrecios(true);
+    setErrorPrecios('');
+    setMensajePrecios('');
+
+    try {
+      if (!preciosUnidadPersonalizados) {
+        await eliminarPreciosPersonalizadosUnidad(unidadPreciosAbierta.id);
+        await cargar();
+        await abrirPreciosUnidad(unidadActual);
+        setMensajePrecios('La unidad volvió a heredar los precios del modelo.');
+        return;
+      }
+
+      const payload = preciosUnidadEditando.map((fila, index) => ({
+        tipoPrecioId: fila.tipoPrecioId || null,
+        tipoPrecioCodigo: fila.tipoPrecioCodigo || null,
+        tipoPrecioNombre: fila.tipoPrecioNombre || null,
+        descripcion: fila.descripcion || null,
+        precio: fila.precioPersonalizado === '' || fila.precioPersonalizado === null || fila.precioPersonalizado === undefined
+          ? null
+          : Number(fila.precioPersonalizado),
+        activo: fila.precioPersonalizado !== '' && fila.precioPersonalizado !== null && fila.precioPersonalizado !== undefined,
+        orden: fila.orden ?? index,
+      }));
+
+      await guardarPreciosUnidad(unidadPreciosAbierta.id, payload);
+      await cargar();
+      await abrirPreciosUnidad(unidadActual);
+      setMensajePrecios('Precios personalizados guardados correctamente.');
+    } catch (err) {
+      setErrorPrecios(getApiErrorMessage(err));
+    } finally {
+      setGuardandoPrecios(false);
+    }
+  };
 
   const actualizarCampo = (event) => {
     const { checked, name, type, value } = event.target;
@@ -509,7 +723,7 @@ export default function AdminDesarrolloUnidadesPage() {
       const url = response?.url || response?.Url || response?.data?.url || '';
 
       if (!url) {
-        throw new Error('El API no devolvio la URL del SVG.');
+        throw new Error('El API no devolvió la URL del SVG.');
       }
 
       setPlanoForm((actual) => ({
@@ -593,7 +807,7 @@ export default function AdminDesarrolloUnidadesPage() {
     <main className="admin-unidades">
       <section className="admin-unidades-hero">
         <div>
-          <p className="admin-unidades-eyebrow">Administracion</p>
+          <p className="admin-unidades-eyebrow">Administración</p>
           <h1>Unidades del desarrollo</h1>
         </div>
         <div className="admin-unidades-hero-actions">
@@ -798,13 +1012,13 @@ export default function AdminDesarrolloUnidadesPage() {
               ))}
             </select>
           </Field>
-          <Field label="Precio">
+          <Field label="Precio base / fallback">
             <input name="precio" type="number" min="0" step="0.01" value={form.precio} onChange={actualizarCampo} />
           </Field>
           <Field label="Terreno m2">
             <input name="terrenoM2" type="number" min="0" step="0.01" value={form.terrenoM2} onChange={actualizarCampo} />
           </Field>
-          <Field label="Construccion m2">
+          <Field label="Construcción m2">
             <input name="construccionM2" type="number" min="0" step="0.01" value={form.construccionM2} onChange={actualizarCampo} />
           </Field>
           <Field label="Estatus">
@@ -882,8 +1096,9 @@ export default function AdminDesarrolloUnidadesPage() {
                   <th>Lote</th>
                   <th>Modelo</th>
                   <th>Precio</th>
+                  <th>Origen</th>
                   <th>Terreno</th>
-                  <th>Construccion</th>
+                  <th>Construcción</th>
                   <th>Estatus</th>
                   <th>SVG</th>
                   <th>Activo</th>
@@ -897,9 +1112,14 @@ export default function AdminDesarrolloUnidadesPage() {
                     <td data-label="Manzana">{unidad.manzana || '-'}</td>
                     <td data-label="Lote">{unidad.lote || '-'}</td>
                     <td data-label="Modelo">{unidad.modeloNombre}</td>
-                    <td data-label="Precio">{unidad.precioTexto}</td>
+                    <td data-label="Precio">
+                      <strong>{unidad.precioDesdeTexto || unidad.precioTexto}</strong>
+                    </td>
+                    <td data-label="Origen">
+                      {unidad.precioOrigenEtiqueta ? <span className={`admin-unidades-pill ${unidad.precioOrigen === 'PERSONALIZADO' ? 'is-ok' : unidad.precioOrigen === 'MODELO' ? '' : 'is-off'}`}>{unidad.precioOrigenEtiqueta}</span> : '-'}
+                    </td>
                     <td data-label="Terreno">{unidad.terrenoM2 ? `${unidad.terrenoM2} m2` : '-'}</td>
-                    <td data-label="Construccion">{unidad.construccionM2 ? `${unidad.construccionM2} m2` : '-'}</td>
+                    <td data-label="Construcción">{unidad.construccionM2 ? `${unidad.construccionM2} m2` : '-'}</td>
                     <td data-label="Estatus"><span className={`admin-unidades-status is-${unidad.estatus.toLowerCase()}`}>{unidad.estatus}</span></td>
                     <td data-label="SVG">
                       <span>{unidad.svgElementId || '-'}</span>
@@ -911,6 +1131,9 @@ export default function AdminDesarrolloUnidadesPage() {
                     <td data-label="Acciones">
                       <div className="admin-unidades-actions">
                         <button type="button" onClick={() => editar(unidad)} disabled={accionandoId === unidad.id}>Editar</button>
+                        <button type="button" onClick={() => abrirPreciosUnidad(unidad)} disabled={guardandoPrecios}>
+                          Precios
+                        </button>
                         <button type="button" className="is-danger" onClick={() => eliminar(unidad)} disabled={accionandoId === unidad.id}>
                           {accionandoId === unidad.id ? 'Eliminando...' : 'Eliminar'}
                         </button>
@@ -925,6 +1148,110 @@ export default function AdminDesarrolloUnidadesPage() {
 
         {!cargando && unidadesFiltradas.length > 0 ? renderPaginador() : null}
       </section>
+
+      {unidadPreciosAbierta ? (
+        <div className="admin-unidades-modal-overlay" role="presentation" onMouseDown={cerrarPreciosUnidad}>
+          <section className="admin-unidades-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="admin-unidades-modal-head">
+              <div>
+                <p className="admin-unidades-eyebrow">Precios de unidad</p>
+                <h2>{unidadPreciosAbierta.codigoUnidad}</h2>
+                <span>{unidadPreciosAbierta.modeloNombre}</span>
+              </div>
+              <button type="button" onClick={cerrarPreciosUnidad} aria-label="Cerrar" disabled={guardandoPrecios}>x</button>
+            </div>
+
+            <div className="admin-unidades-modal-summary">
+              <article>
+                <span>Origen actual</span>
+                <strong>{preciosUnidadPersonalizados ? 'Personalizado' : 'Modelo'}</strong>
+              </article>
+              <article>
+                <span>Precio efectivo</span>
+                <strong>{unidadPreciosAbierta.precioDesdeTexto || unidadPreciosAbierta.precioTexto || formatearMonedaMXN(unidadPreciosAbierta.precio)}</strong>
+              </article>
+            </div>
+
+            {cargandoPrecios ? <p className="admin-unidades-empty">Cargando precios...</p> : null}
+            {errorPrecios ? <p className="admin-unidades-feedback is-error">{errorPrecios}</p> : null}
+            {mensajePrecios ? <p className="admin-unidades-feedback is-ok">{mensajePrecios}</p> : null}
+
+            {!cargandoPrecios && preciosUnidadEditando.length === 0 ? (
+              <p className="admin-unidades-empty">No se pudieron cargar esquemas de precio para esta unidad.</p>
+            ) : null}
+
+            {!cargandoPrecios && preciosUnidadEditando.length > 0 ? (
+              <div className="admin-unidades-prices-table-wrap">
+                <table className="admin-unidades-prices-table">
+                  <thead>
+                    <tr>
+                      <th>Esquema</th>
+                      <th>Precio heredado</th>
+                      <th>Precio personalizado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preciosUnidadEditando.map((fila, index) => (
+                      <tr key={fila.id || `${unidadPreciosAbierta.id}-precio-${index}`}>
+                        <td data-label="Esquema">
+                          <strong>{fila.tipoPrecioNombre}</strong>
+                          {fila.tipoPrecioCodigo ? <small>{fila.tipoPrecioCodigo}</small> : null}
+                        </td>
+                        <td data-label="Precio heredado">
+                          <strong>{fila.precioHeredadoTexto || formatearMonedaMXN(fila.precioHeredado)}</strong>
+                        </td>
+                        <td data-label="Precio personalizado">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={fila.precioPersonalizado}
+                            onChange={(event) => actualizarPrecioUnidadFila(index, { precioPersonalizado: event.target.value })}
+                            disabled={!preciosUnidadPersonalizados}
+                            placeholder={preciosUnidadPersonalizados ? '0' : ''}
+                          />
+                          <small>
+                            {preciosUnidadPersonalizados
+                              ? (fila.precioPersonalizado !== '' ? fila.precioPersonalizadoTexto || formatearMonedaMXN(fila.precioPersonalizado) : 'Captura un precio para activar el esquema.')
+                              : 'Heredado del modelo'}
+                          </small>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+
+            <div className="admin-unidades-modal-actions">
+              {!preciosUnidadPersonalizados ? (
+                <button type="button" onClick={personalizarPreciosUnidad} disabled={cargandoPrecios || guardandoPrecios}>
+                  Personalizar precios de esta unidad
+                </button>
+              ) : null}
+              {preciosUnidadPersonalizados ? (
+                <button type="button" onClick={guardarPreciosUnidadEditados} disabled={cargandoPrecios || guardandoPrecios}>
+                  {guardandoPrecios ? 'Guardando...' : 'Guardar precios personalizados'}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="is-secondary"
+                onClick={async () => {
+                  if (!window.confirm('¿Volver a heredar los precios del modelo?')) return;
+                  await guardarPreciosUnidadEditados();
+                }}
+                disabled={cargandoPrecios || guardandoPrecios}
+              >
+                Volver a heredar precios del modelo
+              </button>
+              <button type="button" onClick={cerrarPreciosUnidad} disabled={cargandoPrecios || guardandoPrecios}>
+                Cerrar
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

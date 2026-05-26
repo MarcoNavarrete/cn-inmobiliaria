@@ -1,1 +1,91 @@
 @import './AdminDesarrollosPage.css';
+
+.admin-desarrollos-prices {
+  display: grid;
+  gap: 0.85rem;
+  grid-column: 1 / -1;
+  margin-top: 0.35rem;
+  border-top: 1px solid rgba(26, 61, 124, 0.08);
+  padding-top: 0.85rem;
+}
+
+.admin-desarrollos-prices-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-desarrollos-prices-head h3 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  color: var(--azul-oscuro);
+}
+
+.admin-desarrollos-prices-head p {
+  margin: 0.25rem 0 0;
+  color: var(--gris-elegante);
+  font-weight: 700;
+}
+
+.admin-desarrollos-prices-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-desarrollos-prices-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+}
+
+.admin-desarrollos-prices-table th,
+.admin-desarrollos-prices-table td {
+  border-bottom: 1px solid rgba(26, 61, 124, 0.08);
+  padding: 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-desarrollos-prices-table th {
+  color: var(--gris-elegante);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-desarrollos-prices-table td strong {
+  display: block;
+  color: var(--azul-oscuro);
+}
+
+.admin-desarrollos-prices-table td small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--gris-elegante);
+  font-weight: 700;
+}
+
+.admin-desarrollos-prices-table input {
+  width: 100%;
+  border: 1px solid rgba(26, 61, 124, 0.16);
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  color: var(--azul-oscuro);
+  font: inherit;
+}
+
+.admin-desarrollos-prices-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.admin-desarrollos-price-note {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--gris-elegante);
+  font-size: 0.82rem;
+  font-weight: 700;
+}

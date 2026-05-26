@@ -21,6 +21,9 @@ const FORM_INICIAL = {
   localidadId: '',
   zona: '',
   direccion: '',
+  latitud: '',
+  longitud: '',
+  urlGoogleMaps: '',
   precioDesde: '',
   imagenPrincipalUrl: '',
   telefonoContacto: '',
@@ -85,6 +88,9 @@ export default function AdminDesarrolloFormPage() {
             localidadId: data.localidadId,
             zona: data.zona,
             direccion: data.direccion,
+            latitud: data.latitud ?? '',
+            longitud: data.longitud ?? '',
+            urlGoogleMaps: data.urlGoogleMaps || '',
             precioDesde: data.precioDesde ?? '',
             imagenPrincipalUrl: data.imagenPrincipalUrl,
             telefonoContacto: data.telefonoContacto || '',
@@ -181,6 +187,21 @@ export default function AdminDesarrolloFormPage() {
 
   const guardar = async (event) => {
     event.preventDefault();
+    const latitud = String(form.latitud || '').trim();
+    const longitud = String(form.longitud || '').trim();
+    const latitudNumero = latitud === '' ? null : Number(latitud);
+    const longitudNumero = longitud === '' ? null : Number(longitud);
+
+    if (latitud !== '' && (Number.isNaN(latitudNumero) || latitudNumero < -90 || latitudNumero > 90)) {
+      setError('Latitud debe estar entre -90 y 90.');
+      return;
+    }
+
+    if (longitud !== '' && (Number.isNaN(longitudNumero) || longitudNumero < -180 || longitudNumero > 180)) {
+      setError('Longitud debe estar entre -180 y 180.');
+      return;
+    }
+
     setGuardando(true);
     setError('');
     setMensaje('');
@@ -215,7 +236,7 @@ export default function AdminDesarrolloFormPage() {
     <main className="admin-desarrollos">
       <section className="admin-desarrollos-hero">
         <div>
-          <p className="admin-desarrollos-eyebrow">Administracion</p>
+          <p className="admin-desarrollos-eyebrow">Administración</p>
           <h1>{esEdicion ? 'Editar desarrollo' : 'Nuevo desarrollo'}</h1>
         </div>
         <Link className="admin-desarrollos-primary" to="/admin/desarrollos">Volver al listado</Link>
@@ -232,18 +253,22 @@ export default function AdminDesarrolloFormPage() {
           <Field label="Slug">
             <input name="slug" value={form.slug} onChange={actualizarCampo} required />
           </Field>
-          <Field className="is-full" label="Descripcion">
+          <Field className="is-full" label="Descripción">
             <textarea name="descripcion" value={form.descripcion} onChange={actualizarCampo} rows="5" />
           </Field>
+          <div className="admin-desarrollos-form-section is-full">
+            <h2>Ubicación del desarrollo</h2>
+            <p>Puedes copiar las coordenadas desde Google Maps haciendo clic derecho sobre el punto exacto del desarrollo.</p>
+          </div>
           <Field label="Estado">
             <select name="estadoId" value={form.estadoId} onChange={actualizarCampo}>
               <option value="">Selecciona estado</option>
               {estados.map((estado) => <option key={estado.id} value={estado.id}>{estado.nombre}</option>)}
             </select>
           </Field>
-          <Field label="Poblacion / municipio">
+          <Field label="Población / municipio">
             <select name="poblacionId" value={form.poblacionId} onChange={actualizarCampo} disabled={!form.estadoId}>
-              <option value="">Selecciona poblacion</option>
+              <option value="">Selecciona población</option>
               {poblaciones.map((poblacion) => <option key={poblacion.id} value={poblacion.id}>{poblacion.nombre}</option>)}
             </select>
           </Field>
@@ -256,8 +281,26 @@ export default function AdminDesarrolloFormPage() {
           <Field label="Zona">
             <input name="zona" value={form.zona} onChange={actualizarCampo} />
           </Field>
-          <Field className="is-full" label="Direccion">
+          <Field className="is-full" label="Dirección">
             <input name="direccion" value={form.direccion} onChange={actualizarCampo} />
+          </Field>
+          <Field label="Latitud">
+            <input name="latitud" type="number" min="-90" max="90" step="0.000001" value={form.latitud} onChange={actualizarCampo} placeholder="Ej. 20.123456" />
+          </Field>
+          <Field label="Longitud">
+            <input name="longitud" type="number" min="-180" max="180" step="0.000001" value={form.longitud} onChange={actualizarCampo} placeholder="Ej. -98.123456" />
+          </Field>
+          <Field className="is-full" label="URL de Google Maps">
+            <input
+              name="urlGoogleMaps"
+              type="url"
+              value={form.urlGoogleMaps}
+              onChange={actualizarCampo}
+              placeholder="https://www.google.com/maps/..."
+            />
+            <small className="admin-desarrollos-field-help">
+              Puedes copiar las coordenadas desde Google Maps haciendo clic derecho sobre el punto exacto del desarrollo.
+            </small>
           </Field>
           <Field label="Precio desde">
             <input name="precioDesde" type="number" min="0" step="0.01" value={form.precioDesde} onChange={actualizarCampo} />
@@ -265,7 +308,7 @@ export default function AdminDesarrolloFormPage() {
           <Field label="Imagen principal URL">
             <input name="imagenPrincipalUrl" value={form.imagenPrincipalUrl} onChange={actualizarCampo} />
           </Field>
-          <Field label="Telefono de contacto">
+          <Field label="Teléfono de contacto">
             <input
               name="telefonoContacto"
               value={form.telefonoContacto}
@@ -297,7 +340,7 @@ export default function AdminDesarrolloFormPage() {
             <button type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar desarrollo'}</button>
             {esEdicion ? (
               <>
-                <Link to={`/admin/desarrollos/${desarrolloId}/imagenes`}>Imagenes</Link>
+                <Link to={`/admin/desarrollos/${desarrolloId}/imagenes`}>Imágenes</Link>
                 <Link to={`/admin/desarrollos/${desarrolloId}/amenidades`}>Amenidades</Link>
                 <Link to={`/admin/desarrollos/${desarrolloId}/modelos`}>Modelos</Link>
                 <Link to={`/admin/desarrollos/${desarrolloId}/unidades`}>Administrar unidades</Link>

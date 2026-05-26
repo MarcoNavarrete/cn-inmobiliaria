@@ -73,7 +73,7 @@ export default function AdminDesarrolloModeloImagenesPage() {
     const url = response?.url || response?.Url || response?.data?.url || response?.data?.Url || '';
 
     if (!url) {
-      setError('El API no devolvio la URL de la imagen.');
+      setError('El API no devolvió la URL de la imagen.');
       return;
     }
 
@@ -220,8 +220,8 @@ export default function AdminDesarrolloModeloImagenesPage() {
     <main className="admin-desarrollos">
       <section className="admin-desarrollos-hero">
         <div>
-          <p className="admin-desarrollos-eyebrow">Administracion</p>
-          <h1>Imagenes del modelo</h1>
+          <p className="admin-desarrollos-eyebrow">Administración</p>
+          <h1>Imágenes del modelo</h1>
         </div>
         <Link className="admin-desarrollos-primary" to={`/admin/desarrollos/${desarrolloId}/modelos`}>Volver a modelos</Link>
       </section>

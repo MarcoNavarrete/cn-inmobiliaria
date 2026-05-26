@@ -77,14 +77,14 @@ export default function Contacto() {
                   });
                 }}
               >
-                Ver ubicacion
+                Ver ubicación
               </a>
             </div>
           </div>
 
           <div className="mapa">
             <iframe
-              title="Mapa de ubicacion de CN Inmobiliaria"
+              title="Mapa de ubicación de CN Inmobiliaria"
               src={mapsUrl}
               width="100%"
               height="420"

@@ -17,7 +17,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const TIPO_LABELS = {
   PRINCIPAL: 'Principal',
-  GALERIA: 'Galeria',
+  GALERIA: 'Galería',
   AMENIDAD: 'Amenidad',
   PLANO_COMERCIAL: 'Plano comercial',
   RENDER: 'Render',
@@ -299,7 +299,7 @@ export default function AdminProyectoImagenesPage() {
     <main className="admin-proyecto-imagenes">
       <section className="admin-proyecto-imagenes-hero">
         <div>
-          <p className="admin-proyecto-imagenes-eyebrow">Imagenes comerciales</p>
+          <p className="admin-proyecto-imagenes-eyebrow">Imágenes comerciales</p>
           <h1>{proyecto?.nombre || 'Proyecto inmobiliario'}</h1>
           <span>{proyecto?.tipoProyecto} - {proyecto?.empresaNombre}</span>
         </div>
@@ -356,7 +356,7 @@ export default function AdminProyectoImagenesPage() {
                   <th>Orden</th>
                   <th>Tipo imagen</th>
                   <th>Titulo</th>
-                  <th>Descripcion</th>
+                  <th>Descripción</th>
                   <th>URL</th>
                   <th>Activo</th>
                   <th>Fecha creacion</th>
@@ -385,7 +385,7 @@ export default function AdminProyectoImagenesPage() {
                         </span>
                       </td>
                       <td data-label="Titulo"><strong>{imagen.titulo || '-'}</strong></td>
-                      <td data-label="Descripcion">{imagen.descripcion || '-'}</td>
+                      <td data-label="Descripción">{imagen.descripcion || '-'}</td>
                       <td data-label="URL">
                         <span className="admin-proyecto-imagenes-url">{imagen.url}</span>
                       </td>
@@ -469,7 +469,7 @@ export default function AdminProyectoImagenesPage() {
                   <input name="titulo" value={form.titulo} onChange={actualizarCampo} />
                 </label>
                 <label className="is-full">
-                  <span>Descripcion</span>
+                  <span>Descripción</span>
                   <textarea name="descripcion" value={form.descripcion} onChange={actualizarCampo} rows="4" />
                 </label>
               </div>

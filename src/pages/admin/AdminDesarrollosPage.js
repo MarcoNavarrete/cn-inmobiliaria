@@ -73,7 +73,7 @@ export default function AdminDesarrollosPage() {
     <main className="admin-desarrollos">
       <section className="admin-desarrollos-hero">
         <div>
-          <p className="admin-desarrollos-eyebrow">Administracion</p>
+          <p className="admin-desarrollos-eyebrow">Administración</p>
           <h1>Desarrollos inmobiliarios</h1>
         </div>
         <Link className="admin-desarrollos-primary" to="/admin/desarrollos/nuevo">
@@ -104,7 +104,7 @@ export default function AdminDesarrollosPage() {
                   <tr>
                     <th>Nombre</th>
                     <th>Slug</th>
-                    <th>Ubicacion</th>
+                    <th>Ubicación</th>
                     <th>Precio desde</th>
                     <th>Destacado</th>
                     <th>Activo</th>
@@ -116,14 +116,14 @@ export default function AdminDesarrollosPage() {
                     <tr key={desarrollo.id}>
                       <td data-label="Nombre"><strong>{desarrollo.nombre}</strong></td>
                       <td data-label="Slug">{desarrollo.slug}</td>
-                      <td data-label="Ubicacion">{desarrollo.ubicacion}</td>
+                      <td data-label="Ubicación">{desarrollo.ubicacion}</td>
                       <td data-label="Precio desde">{desarrollo.precioDesdeTexto}</td>
                       <td data-label="Destacado"><span className="admin-desarrollos-pill">{desarrollo.destacado ? 'Si' : 'No'}</span></td>
                       <td data-label="Activo"><span className={`admin-desarrollos-pill ${desarrollo.activo ? 'is-ok' : 'is-off'}`}>{desarrollo.activo ? 'Activo' : 'Inactivo'}</span></td>
                       <td data-label="Acciones">
                         <div className="admin-desarrollos-actions">
                           <Link to={`/admin/desarrollos/${desarrollo.id}/editar`}>Editar</Link>
-                          <Link to={`/admin/desarrollos/${desarrollo.id}/imagenes`}>Imagenes</Link>
+                          <Link to={`/admin/desarrollos/${desarrollo.id}/imagenes`}>Imágenes</Link>
                           <Link to={`/admin/desarrollos/${desarrollo.id}/amenidades`}>Amenidades</Link>
                           <Link to={`/admin/desarrollos/${desarrollo.id}/modelos`}>Modelos</Link>
                           <Link to={`/admin/desarrollos/${desarrollo.id}/unidades`}>Unidades</Link>

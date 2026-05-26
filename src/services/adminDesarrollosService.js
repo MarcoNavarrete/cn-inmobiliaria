@@ -1,4 +1,5 @@
 import { getJson, requestFormData, requestJson, resolveApiAssetUrl } from './apiClient';
+import { obtenerResumenPrecios } from '../utils/preciosInmobiliarios';
 
 const normalizeList = (value) => {
   if (Array.isArray(value)) return value;
@@ -66,6 +67,9 @@ export const normalizeDesarrolloPayload = (payload = {}) => ({
   localidadId: toText(payload.localidadId) || null,
   zona: toText(payload.zona),
   direccion: toText(payload.direccion),
+  latitud: toNumberOrNull(payload.latitud),
+  longitud: toNumberOrNull(payload.longitud),
+  urlGoogleMaps: toText(payload.urlGoogleMaps) || null,
   precioDesde: toNumberOrNull(payload.precioDesde),
   imagenPrincipalUrl: toText(payload.imagenPrincipalUrl) || null,
   telefonoContacto: toText(payload.telefonoContacto).slice(0, 30) || null,
@@ -108,6 +112,9 @@ export const adaptDesarrolloAdmin = (item = {}) => ({
   coloniaNombre: toText(pickFirst(item.coloniaNombre, item.localidadNombre)),
   zona: toText(item.zona),
   direccion: toText(item.direccion),
+  latitud: pickFirst(item.latitud, item.latitude),
+  longitud: pickFirst(item.longitud, item.longitude),
+  urlGoogleMaps: toText(pickFirst(item.urlGoogleMaps, item.url_google_maps, item.googleMapsUrl)),
   ubicacion: buildUbicacion(item),
   precioDesde: pickFirst(item.precioDesde, item.PrecioDesde),
   precioDesdeTexto: formatCurrency(pickFirst(item.precioDesde, item.PrecioDesde)),
@@ -140,6 +147,10 @@ export const adaptModelo = (item = {}) => ({
   id: toText(pickFirst(item.modeloId, item.desarrolloModeloId, item.id)),
   nombre: toText(item.nombre, 'Sin nombre'),
   descripcion: toText(item.descripcion),
+  ...obtenerResumenPrecios({
+    precios: pickFirst(item.precios, item.tiposPrecio, item.tarifas),
+    fallbackPrecio: pickFirst(item.precio, item.precioDesde),
+  }),
   precio: pickFirst(item.precio, item.precioDesde),
   precioTexto: formatCurrency(pickFirst(item.precio, item.precioDesde)),
   recamaras: pickFirst(item.recamaras, 0),

@@ -110,7 +110,7 @@ export default function AdminProyectosInmobiliariosPage() {
         <section className="admin-proyectos-hero">
           <div>
             <p className="admin-proyectos-eyebrow">Proyectos inmobiliarios</p>
-            <h1>Administracion de proyectos</h1>
+            <h1>Administración de proyectos</h1>
           </div>
           <Link className="admin-proyectos-primary" to="/admin/propiedades">
             Ir a Mis propiedades
@@ -175,7 +175,7 @@ export default function AdminProyectosInmobiliariosPage() {
       <section className="admin-proyectos-hero">
         <div>
           <p className="admin-proyectos-eyebrow">Proyectos inmobiliarios</p>
-          <h1>Administracion de proyectos</h1>
+          <h1>Administración de proyectos</h1>
         </div>
         {puedeCrearProyecto ? (
           <Link className="admin-proyectos-primary" to="/admin/proyectos-inmobiliarios/nuevo">
@@ -238,7 +238,7 @@ export default function AdminProyectosInmobiliariosPage() {
                     <th>Nombre</th>
                     <th>Empresa</th>
                     <th>Tipo</th>
-                    <th>Ubicacion</th>
+                    <th>Ubicación</th>
                     <th>Precio desde</th>
                     <th>Unidades</th>
                     <th>Publicacion</th>
@@ -261,7 +261,7 @@ export default function AdminProyectosInmobiliariosPage() {
                             {TIPO_LABELS[proyecto.tipoProyecto] || proyecto.tipoProyecto}
                           </span>
                         </td>
-                        <td data-label="Ubicacion">{proyecto.ubicacion}</td>
+                        <td data-label="Ubicación">{proyecto.ubicacion}</td>
                         <td data-label="Precio desde">{proyecto.precioDesdeTexto}</td>
                         <td data-label="Unidades">{proyecto.totalUnidades}</td>
                         <td data-label="Publicacion">
@@ -286,7 +286,7 @@ export default function AdminProyectosInmobiliariosPage() {
                             <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/unidades`}>Unidades</Link>
                             <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/modelos`}>Modelos</Link>
                             <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/plano`}>Plano</Link>
-                            <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/imagenes`}>Imagenes</Link>
+                            <Link to={`/admin/proyectos-inmobiliarios/${proyecto.id}/imagenes`}>Imágenes</Link>
                             <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyecto.id}`}>Prospectos</Link>
                             <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyecto.id}`}>Apartados</Link>
                             {proyecto.slug ? (

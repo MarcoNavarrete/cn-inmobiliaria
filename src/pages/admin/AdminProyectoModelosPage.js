@@ -18,11 +18,11 @@ const FORM_INICIAL = {
   descripcion: '',
   recamaras: '',
   banos: '',
-  mediosBanos: '',
+  mediosBaños: '',
   estacionamientos: '',
   niveles: '',
   superficieTerrenoM2: '',
-  superficieConstruccionM2: '',
+  superficieConstrucciónM2: '',
   precioDesde: '',
   tour360Url: '',
   orden: '0',
@@ -75,11 +75,11 @@ const mapModeloToForm = (modelo = {}) => ({
   descripcion: modelo.descripcion || '',
   recamaras: toInputValue(modelo.recamaras),
   banos: toInputValue(modelo.banos),
-  mediosBanos: toInputValue(modelo.mediosBanos),
+  mediosBaños: toInputValue(modelo.mediosBaños),
   estacionamientos: toInputValue(modelo.estacionamientos),
   niveles: toInputValue(modelo.niveles),
   superficieTerrenoM2: toInputValue(modelo.superficieTerrenoM2),
-  superficieConstruccionM2: toInputValue(modelo.superficieConstruccionM2),
+  superficieConstrucciónM2: toInputValue(modelo.superficieConstrucciónM2),
   precioDesde: toInputValue(modelo.precioDesde),
   tour360Url: modelo.tour360Url || '',
   orden: toInputValue(modelo.orden || 0),
@@ -92,11 +92,11 @@ const buildPayload = (form, proyectoId) => ({
   descripcion: form.descripcion.trim() || null,
   recamaras: toNumberOrNull(form.recamaras),
   banos: toNumberOrNull(form.banos),
-  mediosBanos: toNumberOrNull(form.mediosBanos),
+  mediosBaños: toNumberOrNull(form.mediosBaños),
   estacionamientos: toNumberOrNull(form.estacionamientos),
   niveles: toNumberOrNull(form.niveles),
   superficieTerrenoM2: toNumberOrNull(form.superficieTerrenoM2),
-  superficieConstruccionM2: toNumberOrNull(form.superficieConstruccionM2),
+  superficieConstrucciónM2: toNumberOrNull(form.superficieConstrucciónM2),
   precioDesde: toNumberOrNull(form.precioDesde),
   tour360Url: form.tour360Url.trim() || null,
   orden: toNumberOrNull(form.orden) ?? 0,
@@ -238,13 +238,13 @@ export default function AdminProyectoModelosPage() {
     if (!form.nombre.trim()) return 'El nombre es requerido.';
 
     const numericos = [
-      ['recamaras', 'Recamaras'],
-      ['banos', 'Banos'],
-      ['mediosBanos', 'Medios banos'],
+      ['recamaras', 'Recámaras'],
+      ['banos', 'Baños'],
+      ['mediosBaños', 'Medios baños'],
       ['estacionamientos', 'Estacionamientos'],
       ['niveles', 'Niveles'],
       ['superficieTerrenoM2', 'Superficie terreno'],
-      ['superficieConstruccionM2', 'Superficie construccion'],
+      ['superficieConstrucciónM2', 'Superficie construccion'],
       ['precioDesde', 'Precio desde'],
       ['orden', 'Orden'],
     ];
@@ -342,7 +342,7 @@ export default function AdminProyectoModelosPage() {
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/editar`}>Editar proyecto</Link>
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/unidades`}>Unidades</Link>
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/plano`}>Plano interactivo</Link>
-          <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imagenes</Link>
+          <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imágenes</Link>
           <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyectoId}`}>Prospectos</Link>
           <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyectoId}`}>Apartados</Link>
           {puedeEditarModelo ? <button type="button" onClick={abrirNuevoModelo}>Nuevo modelo</button> : null}
@@ -384,9 +384,9 @@ export default function AdminProyectoModelosPage() {
                   <th>Orden</th>
                   <th>Nombre</th>
                   <th>Slug</th>
-                  <th>Recamaras</th>
-                  <th>Banos</th>
-                  <th>Medios banos</th>
+                  <th>Recámaras</th>
+                  <th>Baños</th>
+                  <th>Medios baños</th>
                   <th>Estac.</th>
                   <th>Niveles</th>
                   <th>Sup. terreno</th>
@@ -404,13 +404,13 @@ export default function AdminProyectoModelosPage() {
                     <td data-label="Orden">{modelo.orden ?? 0}</td>
                     <td data-label="Nombre"><strong>{modelo.nombre}</strong></td>
                     <td data-label="Slug">{modelo.slug || '-'}</td>
-                    <td data-label="Recamaras">{modelo.recamaras ?? '-'}</td>
-                    <td data-label="Banos">{modelo.banos ?? '-'}</td>
-                    <td data-label="Medios banos">{modelo.mediosBanos ?? '-'}</td>
+                    <td data-label="Recámaras">{modelo.recamaras ?? '-'}</td>
+                    <td data-label="Baños">{modelo.banos ?? '-'}</td>
+                    <td data-label="Medios baños">{modelo.mediosBaños ?? '-'}</td>
                     <td data-label="Estac.">{modelo.estacionamientos ?? '-'}</td>
                     <td data-label="Niveles">{modelo.niveles ?? '-'}</td>
                     <td data-label="Sup. terreno">{modelo.superficieTerrenoM2 ?? '-'}</td>
-                    <td data-label="Sup. construccion">{modelo.superficieConstruccionM2 ?? '-'}</td>
+                    <td data-label="Sup. construccion">{modelo.superficieConstrucciónM2 ?? '-'}</td>
                     <td data-label="Precio desde">{modelo.precioDesdeTexto}</td>
                     <td data-label="Imagen">
                       {modelo.imagenPrincipalUrl ? <a href={modelo.imagenPrincipalUrl} target="_blank" rel="noopener noreferrer">Ver imagen</a> : '-'}
@@ -457,14 +457,14 @@ export default function AdminProyectoModelosPage() {
               <div className="admin-proyecto-modelos-form-grid">
                 <label><span>Nombre</span><input name="nombre" value={form.nombre} onChange={actualizarCampo} required /></label>
                 <label><span>Slug</span><div className="admin-proyecto-modelos-inline"><input name="slug" value={form.slug} onChange={actualizarCampo} /><button type="button" onClick={generarSlugDesdeNombre}>Generar</button></div></label>
-                <label className="is-full"><span>Descripcion</span><textarea name="descripcion" value={form.descripcion} onChange={actualizarCampo} rows="4" /></label>
-                <label><span>Recamaras</span><input name="recamaras" type="number" min="0" step="1" value={form.recamaras} onChange={actualizarCampo} /></label>
-                <label><span>Banos</span><input name="banos" type="number" min="0" step="0.5" value={form.banos} onChange={actualizarCampo} /></label>
-                <label><span>Medios banos</span><input name="mediosBanos" type="number" min="0" step="1" value={form.mediosBanos} onChange={actualizarCampo} /></label>
+                <label className="is-full"><span>Descripción</span><textarea name="descripcion" value={form.descripcion} onChange={actualizarCampo} rows="4" /></label>
+                <label><span>Recámaras</span><input name="recamaras" type="number" min="0" step="1" value={form.recamaras} onChange={actualizarCampo} /></label>
+                <label><span>Baños</span><input name="banos" type="number" min="0" step="0.5" value={form.banos} onChange={actualizarCampo} /></label>
+                <label><span>Medios baños</span><input name="mediosBaños" type="number" min="0" step="1" value={form.mediosBaños} onChange={actualizarCampo} /></label>
                 <label><span>Estacionamientos</span><input name="estacionamientos" type="number" min="0" step="1" value={form.estacionamientos} onChange={actualizarCampo} /></label>
                 <label><span>Niveles</span><input name="niveles" type="number" min="0" step="1" value={form.niveles} onChange={actualizarCampo} /></label>
                 <label><span>Superficie terreno m2</span><input name="superficieTerrenoM2" type="number" min="0" step="0.01" value={form.superficieTerrenoM2} onChange={actualizarCampo} /></label>
-                <label><span>Superficie construccion m2</span><input name="superficieConstruccionM2" type="number" min="0" step="0.01" value={form.superficieConstruccionM2} onChange={actualizarCampo} /></label>
+                <label><span>Superficie construccion m2</span><input name="superficieConstrucciónM2" type="number" min="0" step="0.01" value={form.superficieConstrucciónM2} onChange={actualizarCampo} /></label>
                 <label><span>Precio desde</span><input name="precioDesde" type="number" min="0" step="0.01" value={form.precioDesde} onChange={actualizarCampo} /></label>
                 <label><span>Orden</span><input name="orden" type="number" min="0" step="1" value={form.orden} onChange={actualizarCampo} /></label>
                 {puedeEditarModelo ? (

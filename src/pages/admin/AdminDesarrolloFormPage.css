@@ -1,1 +1,27 @@
 @import './AdminDesarrollosPage.css';
+
+.admin-desarrollos-form-section {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.25rem 0 0.1rem;
+}
+
+.admin-desarrollos-form-section h2 {
+  margin: 0;
+  color: var(--azul-oscuro);
+  font-size: 1.05rem;
+  font-family: var(--fuente-titulos);
+}
+
+.admin-desarrollos-form-section p {
+  margin: 0;
+  color: var(--gris-elegante);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.admin-desarrollos-field-help {
+  color: var(--gris-elegante);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}

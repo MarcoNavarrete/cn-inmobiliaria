@@ -40,7 +40,7 @@ const FORM_INICIAL = {
   nivel: '',
   numeroInterior: '',
   superficieTerrenoM2: '',
-  superficieConstruccionM2: '',
+  superficieConstrucciónM2: '',
   precioM2: '',
   precioTotal: '',
   estatus: 'DISPONIBLE',
@@ -125,7 +125,7 @@ const mapUnidadToForm = (unidad = {}) => ({
   nivel: unidad.nivel || '',
   numeroInterior: unidad.numeroInterior || '',
   superficieTerrenoM2: toInputValue(unidad.superficieTerrenoM2),
-  superficieConstruccionM2: toInputValue(unidad.superficieConstruccionM2),
+  superficieConstrucciónM2: toInputValue(unidad.superficieConstrucciónM2),
   precioM2: toInputValue(unidad.precioM2),
   precioTotal: toInputValue(unidad.precioTotal),
   estatus: unidad.estatus || 'DISPONIBLE',
@@ -148,7 +148,7 @@ const buildPayload = (form, proyectoId) => ({
   nivel: form.nivel.trim() || null,
   numeroInterior: form.numeroInterior.trim() || null,
   superficieTerrenoM2: toNumberOrNull(form.superficieTerrenoM2),
-  superficieConstruccionM2: toNumberOrNull(form.superficieConstruccionM2),
+  superficieConstrucciónM2: toNumberOrNull(form.superficieConstrucciónM2),
   precioM2: toNumberOrNull(form.precioM2),
   precioTotal: toNumberOrNull(form.precioTotal),
   estatus: form.estatus,
@@ -282,7 +282,7 @@ export default function AdminProyectoUnidadesPage() {
       ['precioM2', 'Precio m2'],
       ['precioTotal', 'Precio total'],
       ['superficieTerrenoM2', 'Superficie terreno'],
-      ['superficieConstruccionM2', 'Superficie construccion'],
+      ['superficieConstrucciónM2', 'Superficie construccion'],
     ];
 
     for (const [key, label] of numericos) {
@@ -513,7 +513,7 @@ export default function AdminProyectoUnidadesPage() {
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/editar`}>Editar proyecto</Link>
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/modelos`}>Modelos</Link>
           <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/plano`}>Plano interactivo</Link>
-          <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imagenes</Link>
+          <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imágenes</Link>
           <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyectoId}`}>Prospectos</Link>
           <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyectoId}`}>Apartados</Link>
           {puedeEditarUnidades ? <button type="button" onClick={abrirNuevaUnidad}>Nueva unidad</button> : null}
@@ -618,7 +618,7 @@ export default function AdminProyectoUnidadesPage() {
                     <td data-label="Nivel">{unidad.nivel || '-'}</td>
                     <td data-label="Interior">{unidad.numeroInterior || '-'}</td>
                     <td data-label="Sup. terreno">{unidad.superficieTerrenoM2 || '-'}</td>
-                    <td data-label="Sup. construccion">{unidad.superficieConstruccionM2 || '-'}</td>
+                    <td data-label="Sup. construccion">{unidad.superficieConstrucciónM2 || '-'}</td>
                     <td data-label="Precio total">{unidad.precioTotalTexto}</td>
                     <td data-label="Estatus">
                       <span className={`admin-proyecto-unidades-status is-${unidad.estatus.toLowerCase()}`}>{unidad.estatus}</span>
@@ -801,7 +801,7 @@ export default function AdminProyectoUnidadesPage() {
                 <label><span>Nivel</span><input name="nivel" value={form.nivel} onChange={actualizarCampo} /></label>
                 <label><span>Numero interior</span><input name="numeroInterior" value={form.numeroInterior} onChange={actualizarCampo} /></label>
                 <label><span>Superficie terreno m2</span><input name="superficieTerrenoM2" type="number" min="0" step="0.01" value={form.superficieTerrenoM2} onChange={actualizarCampo} /></label>
-                <label><span>Superficie construccion m2</span><input name="superficieConstruccionM2" type="number" min="0" step="0.01" value={form.superficieConstruccionM2} onChange={actualizarCampo} /></label>
+                <label><span>Superficie construccion m2</span><input name="superficieConstrucciónM2" type="number" min="0" step="0.01" value={form.superficieConstrucciónM2} onChange={actualizarCampo} /></label>
                 <label><span>Precio m2</span><input name="precioM2" type="number" min="0" step="0.01" value={form.precioM2} onChange={actualizarCampo} /></label>
                 <label><span>Precio total</span><input name="precioTotal" type="number" min="0" step="0.01" value={form.precioTotal} onChange={actualizarCampo} /></label>
                 <label><span>Estatus</span><select name="estatus" value={form.estatus} onChange={actualizarCampo} required>{ESTATUS_UNIDAD.map((estatus) => <option key={estatus} value={estatus}>{estatus}</option>)}</select></label>

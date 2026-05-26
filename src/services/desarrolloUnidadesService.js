@@ -1,4 +1,9 @@
 import { getJson } from './apiClient';
+import {
+  determinarOrigenPrecio,
+  formatearMonedaMXN,
+  obtenerResumenPrecios,
+} from '../utils/preciosInmobiliarios';
 
 const normalizeList = (value) => {
   if (Array.isArray(value)) return value;
@@ -23,6 +28,18 @@ const toNumberOrNull = (value) => {
 
 const adaptUnidad = (unidad = {}) => {
   const codigoUnidad = toText(pickFirst(unidad.codigoUnidad, unidad.codigo, unidad.numero, unidad.nombre));
+  const preciosModelo = pickFirst(unidad.preciosModelo, unidad.modeloPrecios, unidad.modelo?.precios, unidad.preciosBase);
+  const preciosPersonalizados = pickFirst(unidad.preciosPersonalizados, unidad.precios, unidad.tarifas, unidad.tarifasPersonalizadas);
+  const precioFallback = pickFirst(unidad.precioDesde, unidad.precio, unidad.precioVenta);
+  const resumenPrecios = obtenerResumenPrecios({
+    precios: preciosPersonalizados || preciosModelo,
+    fallbackPrecio: precioFallback,
+  });
+  const origen = determinarOrigenPrecio({
+    preciosPersonalizados,
+    preciosModelo,
+    fallbackPrecio: precioFallback,
+  });
 
   return {
     unidadId: toText(pickFirst(unidad.unidadId, unidad.id, unidad.Id)),
@@ -32,7 +49,13 @@ const adaptUnidad = (unidad = {}) => {
     lote: toText(pickFirst(unidad.lote, unidad.loteNumero, unidad.numeroLote, unidad.codigoLote)),
     modeloId: toText(pickFirst(unidad.modeloId, unidad.desarrolloModeloId)),
     modeloNombre: toText(pickFirst(unidad.modeloNombre, unidad.modelo, unidad.nombreModelo), 'Modelo por confirmar'),
-    precio: toNumberOrNull(pickFirst(unidad.precio, unidad.precioVenta, unidad.precioDesde)),
+    ...resumenPrecios,
+    precio: toNumberOrNull(pickFirst(unidad.precio, unidad.precioVenta, unidad.precioDesde, resumenPrecios.precioDesde)),
+    precioTexto: formatearMonedaMXN(pickFirst(unidad.precio, unidad.precioVenta, unidad.precioDesde, resumenPrecios.precioDesde)),
+    precioOrigen: origen,
+    precioOrigenEtiqueta: origen === 'PERSONALIZADO' ? 'Personalizado' : origen === 'MODELO' ? 'Modelo' : origen === 'FALLBACK' ? 'Actual' : '',
+    preciosModelo: Array.isArray(preciosModelo) ? preciosModelo : [],
+    preciosPersonalizados: Array.isArray(preciosPersonalizados) ? preciosPersonalizados : [],
     terrenoM2: toNumberOrNull(pickFirst(unidad.terrenoM2, unidad.m2Terreno, unidad.metrosTerreno)),
     construccionM2: toNumberOrNull(pickFirst(unidad.construccionM2, unidad.m2Construccion, unidad.metrosConstruccion)),
     estatus: toText(pickFirst(unidad.estatus, unidad.status, unidad.estado), 'BLOQUEADO').toUpperCase(),

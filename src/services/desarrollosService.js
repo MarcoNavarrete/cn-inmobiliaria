@@ -1,4 +1,5 @@
 import { getJson, requestJson, resolveApiAssetUrl } from './apiClient';
+import { obtenerResumenPrecios } from '../utils/preciosInmobiliarios';
 
 const normalizeList = (value) => {
   if (Array.isArray(value)) {
@@ -74,6 +75,7 @@ const normalizeAmenidades = (value) =>
 const buildUbicacion = (desarrollo) =>
   [
     desarrollo.zona,
+    desarrollo.direccion,
     desarrollo.coloniaNombre,
     desarrollo.municipioNombre,
     desarrollo.estadoNombre,
@@ -93,6 +95,10 @@ const adaptModelo = (modelo) => {
   return {
     id: toText(pickFirst(modelo?.modeloId, modelo?.desarrolloModeloId, modelo?.id)),
     nombre: toText(modelo?.nombre, 'Modelo residencial'),
+    ...obtenerResumenPrecios({
+      precios: pickFirst(modelo?.precios, modelo?.tiposPrecio, modelo?.tarifas),
+      fallbackPrecio: pickFirst(modelo?.precio, modelo?.precioDesde),
+    }),
     precio: toNumberOrZero(pickFirst(modelo?.precio, modelo?.precioDesde)),
     recamaras: pickFirst(modelo?.recamaras, modelo?.habitaciones, 0),
     banos: pickFirst(modelo?.banos, modelo?.banios, 0),
@@ -125,6 +131,10 @@ const adaptDesarrollo = (desarrollo) => {
     municipioNombre: toText(desarrollo?.municipioNombre),
     coloniaNombre: toText(desarrollo?.coloniaNombre),
     zona: toText(desarrollo?.zona),
+    direccion: toText(desarrollo?.direccion),
+    latitud: pickFirst(desarrollo?.latitud, desarrollo?.latitude),
+    longitud: pickFirst(desarrollo?.longitud, desarrollo?.longitude),
+    urlGoogleMaps: toText(pickFirst(desarrollo?.urlGoogleMaps, desarrollo?.url_google_maps, desarrollo?.googleMapsUrl)),
     ubicacion: buildUbicacion(desarrollo),
     precioDesde: toNumberOrZero(desarrollo?.precioDesde),
     imagenPrincipalUrl: toText(desarrollo?.imagenPrincipalUrl),

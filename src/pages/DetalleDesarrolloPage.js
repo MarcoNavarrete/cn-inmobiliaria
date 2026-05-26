@@ -12,6 +12,7 @@ import { obtenerPlanoPublico } from '../services/adminDesarrolloPlanoService';
 import {
   obtenerTourPublicoModelo,
 } from '../services/tour360Service';
+import { formatearMonedaMXN } from '../utils/preciosInmobiliarios';
 import './DetalleDesarrolloPage.css';
 
 const DEFAULT_WHATSAPP_NUMBER = '+5215540859798';
@@ -61,9 +62,18 @@ const buildApartarMessage = (unit, desarrollo) => {
   const modeloTexto = modelo && modelo !== 'Modelo por confirmar' ? ` del modelo ${modelo}` : '';
   const desarrolloTexto = desarrolloNombre ? ` del desarrollo ${desarrolloNombre}` : '';
 
-  return `Me interesa la casa ${unidadTexto}${modeloTexto}${desarrolloTexto}. Quiero apartar.`
+  return `Me interesa la casa ${unidadTexto}${modeloTexto}${desarrolloTexto}. Quiero información sobre precios y formas de pago.`
     .replace(/\s+/g, ' ')
     .trim();
+};
+
+const buildMapsUrl = (latitud, longitud) => {
+  const lat = String(latitud || '').trim();
+  const lng = String(longitud || '').trim();
+  if (!lat || !lng) {
+    return '';
+  }
+  return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
 };
 
 export default function DetalleDesarrolloPage() {
@@ -72,7 +82,7 @@ export default function DetalleDesarrolloPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [imagenActual, setImagenActual] = useState(0);
-  const [imagenesModeloActivas, setImagenesModeloActivas] = useState({});
+  const [imagenesModeloActivas, setImágenesModeloActivas] = useState({});
   const [lightbox, setLightbox] = useState({
     images: [],
     initialIndex: 0,
@@ -173,7 +183,7 @@ export default function DetalleDesarrolloPage() {
   }, [slug, imagenesCarrusel.length]);
 
   useEffect(() => {
-    setImagenesModeloActivas({});
+    setImágenesModeloActivas({});
   }, [slug]);
 
   useEffect(() => {
@@ -228,6 +238,8 @@ export default function DetalleDesarrolloPage() {
   const heroStyle = desarrollo.imagenPrincipal
     ? { backgroundImage: `linear-gradient(90deg, rgba(9, 22, 35, 0.88), rgba(26, 61, 124, 0.42)), url(${desarrollo.imagenPrincipal})` }
     : undefined;
+  const googleMapsUrl = desarrollo.urlGoogleMaps || '';
+  const coordinatesMapsUrl = buildMapsUrl(desarrollo.latitud, desarrollo.longitud);
 
   const irAModelos = (event) => {
     event.preventDefault();
@@ -342,7 +354,7 @@ export default function DetalleDesarrolloPage() {
       return;
     }
 
-    setImagenesModeloActivas((actuales) => {
+    setImágenesModeloActivas((actuales) => {
       const actual = actuales[modeloId] || 0;
       return {
         ...actuales,
@@ -352,7 +364,7 @@ export default function DetalleDesarrolloPage() {
   };
 
   const seleccionarImagenModelo = (modeloId, index) => {
-    setImagenesModeloActivas((actuales) => ({
+    setImágenesModeloActivas((actuales) => ({
       ...actuales,
       [modeloId]: index,
     }));
@@ -403,7 +415,7 @@ export default function DetalleDesarrolloPage() {
         <div>
           <p>Desarrollo premium</p>
           <h1>{desarrollo.nombre}</h1>
-          <span>{desarrollo.ubicacion || 'Ubicacion por confirmar'}</span>
+          <span>{desarrollo.ubicacion || 'Ubicación por confirmar'}</span>
           {desarrollo.nombreContacto ? (
             <small className="detalle-desarrollo-contacto">Asesor asignado: {desarrollo.nombreContacto}</small>
           ) : null}
@@ -466,13 +478,36 @@ export default function DetalleDesarrolloPage() {
                 abrirModalProspecto();
               }}
             >
-              Solicitar informacion
+              Solicitar información
             </button>
           </aside>
         </div>
 
+        <section className="detalle-desarrollo-ubicacion">
+          <div className="detalle-desarrollo-section-head">
+            <p className="detalle-desarrollo-eyebrow">Ubicación</p>
+            <h2>Conoce dónde está ubicado el desarrollo</h2>
+          </div>
+          {googleMapsUrl || coordinatesMapsUrl ? (
+            <div className="detalle-desarrollo-ubicacion-actions">
+              {googleMapsUrl ? (
+                <a href={googleMapsUrl} target="_blank" rel="noreferrer">
+                  Ver ubicación en Google Maps
+                </a>
+              ) : null}
+              {coordinatesMapsUrl ? (
+                <a href={coordinatesMapsUrl} target="_blank" rel="noreferrer">
+                  Cómo llegar
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            <p className="detalle-desarrollo-ubicacion-empty">Ubicación disponible bajo solicitud</p>
+          )}
+        </section>
+
         {imagenesCarrusel.length > 0 ? (
-          <section className="detalle-desarrollo-carousel" aria-label="Galeria del desarrollo">
+          <section className="detalle-desarrollo-carousel" aria-label="Galería del desarrollo">
             <div className="detalle-desarrollo-carousel-main">
               <img
                 src={imagenesCarrusel[imagenActual]}
@@ -517,7 +552,7 @@ export default function DetalleDesarrolloPage() {
           </section>
         ) : (
           <section className="detalle-desarrollo-gallery-empty">
-            <p>Galeria proximamente disponible.</p>
+            <p>Galería próximamente disponible.</p>
           </section>
         )}
 
@@ -570,7 +605,7 @@ export default function DetalleDesarrolloPage() {
             <h2>Elige la distribucion que encaja con tu plan</h2>
           </div>
           {desarrollo.modelos.length === 0 ? (
-            <p className="detalle-desarrollo-modelos-empty">Proximamente modelos disponibles</p>
+            <p className="detalle-desarrollo-modelos-empty">Próximamente modelos disponibles</p>
           ) : (
             <div className="modelos-grid">
               {desarrollo.modelos.map((modelo) => {
@@ -581,6 +616,8 @@ export default function DetalleDesarrolloPage() {
                 const modeloKey = modelo.id || modelo.nombre;
                 const imagenModeloActual = Math.min(imagenesModeloActivas[modeloKey] || 0, Math.max(galeriaModelo.length - 1, 0));
                 const imagenModelo = galeriaModelo[imagenModeloActual] || '';
+                const preciosModelo = modelo.preciosActivos || modelo.precios || [];
+                const precioDesdeTexto = modelo.precioDesdeTexto || modelo.precioTexto || formatearMonedaMXN(modelo.precioDesde || modelo.precio);
 
                 return (
                   <article key={modeloKey} className="modelo-card">
@@ -588,7 +625,7 @@ export default function DetalleDesarrolloPage() {
                       {imagenModelo ? (
                         <img src={imagenModelo} alt={modelo.nombre} />
                       ) : (
-                        <div>Imagen proximamente</div>
+                        <div>Imagen próximamente</div>
                       )}
                       <span className={modelo.disponible ? 'is-available' : 'is-unavailable'}>
                         {modelo.disponible ? 'Disponible' : 'Lista de espera'}
@@ -619,7 +656,7 @@ export default function DetalleDesarrolloPage() {
                       ) : null}
                     </div>
                     {galeriaModelo.length > 1 ? (
-                      <div className="modelo-card-thumbs" aria-label={`Galeria de ${modelo.nombre}`}>
+                      <div className="modelo-card-thumbs" aria-label={`Galería de ${modelo.nombre}`}>
                         {galeriaModelo.slice(0, 4).map((imagen, index) => (
                           <button
                             key={`${modeloKey}-${imagen}-${index}`}
@@ -637,17 +674,34 @@ export default function DetalleDesarrolloPage() {
                     <div className="modelo-card-body">
                       <div>
                         <h3>{modelo.nombre}</h3>
-                        <strong>{formatCurrency(modelo.precio)}</strong>
+                        <strong>Desde {precioDesdeTexto}</strong>
+                        {preciosModelo.length > 0 ? <span className="modelo-card-price-note">Precio de contado</span> : null}
+                        {modelo.tieneMasDeUnPrecioActivo ? <span className="modelo-card-price-note">Otros esquemas de financiamiento disponibles</span> : null}
                       </div>
                       <MarkdownContent
                         content={modelo.descripcion}
                         fallback="Modelo disponible dentro del desarrollo."
                       />
+                      {preciosModelo.length > 0 ? (
+                        <section className="modelo-card-prices" aria-label={`Opciones de compra de ${modelo.nombre}`}>
+                          <h4>Opciones de compra</h4>
+                          <div className="modelo-card-prices-grid">
+                            {preciosModelo.map((precio) => (
+                              <article key={precio.id || `${modeloKey}-${precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre}`}>
+                                <span>{precio.tipoPrecioNombre}</span>
+                                <strong>{precio.precioTexto || formatearMonedaMXN(precio.precio)}</strong>
+                                {precio.descripcion ? <small>{precio.descripcion}</small> : null}
+                              </article>
+                            ))}
+                          </div>
+                          <small className="modelo-card-prices-note">Precios sujetos a disponibilidad, forma de pago y autorización de crédito.</small>
+                        </section>
+                      ) : null}
                       <dl>
-                        <div><dt>Recamaras</dt><dd>{modelo.recamaras}</dd></div>
-                        <div><dt>Banos</dt><dd>{modelo.banos}{modelo.medioBano ? ` + ${modelo.medioBano}/2` : ''}</dd></div>
+                        <div><dt>Recámaras</dt><dd>{modelo.recamaras}</dd></div>
+                        <div><dt>Baños</dt><dd>{modelo.banos}{modelo.medioBano ? ` + ${modelo.medioBano}/2` : ''}</dd></div>
                         <div><dt>Estac.</dt><dd>{modelo.estacionamientos}</dd></div>
-                        <div><dt>Construccion</dt><dd>{modelo.construccionM2} m2</dd></div>
+                        <div><dt>Construcción</dt><dd>{modelo.construccionM2} m2</dd></div>
                         <div><dt>Terreno</dt><dd>{modelo.terrenoM2} m2</dd></div>
                       </dl>
                       <button

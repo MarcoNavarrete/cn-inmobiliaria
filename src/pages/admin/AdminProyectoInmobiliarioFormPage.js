@@ -211,7 +211,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
   const [cargandoEmpresas, setCargandoEmpresas] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
-  const [errorUbicacion, setErrorUbicacion] = useState('');
+  const [errorUbicación, setErrorUbicación] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [permisoDenegado, setPermisoDenegado] = useState('');
   const poblacionesRequestRef = useRef(0);
@@ -279,7 +279,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
 
     const requestId = ++poblacionesRequestRef.current;
     setCargandoPoblaciones(true);
-    setErrorUbicacion('');
+    setErrorUbicación('');
 
     try {
       const data = await listarPoblacionesPorEstado(estadoId, options);
@@ -291,7 +291,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
       if (err.name !== 'AbortError' && requestId === poblacionesRequestRef.current) {
         setPoblaciones([]);
         setLocalidades([]);
-        setErrorUbicacion('No fue posible cargar municipios.');
+        setErrorUbicación('No fue posible cargar municipios.');
       }
       return [];
     } finally {
@@ -309,7 +309,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
 
     const requestId = ++localidadesRequestRef.current;
     setCargandoLocalidades(true);
-    setErrorUbicacion('');
+    setErrorUbicación('');
 
     try {
       const data = await listarLocalidadesPorPoblacion(estadoId, poblacionId, options);
@@ -320,7 +320,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
     } catch (err) {
       if (err.name !== 'AbortError' && requestId === localidadesRequestRef.current) {
         setLocalidades([]);
-        setErrorUbicacion('No fue posible cargar localidades.');
+        setErrorUbicación('No fue posible cargar localidades.');
       }
       return [];
     } finally {
@@ -333,7 +333,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
   const cargarEstadosCatalogo = React.useCallback(async (options = {}) => {
     const signal = options.signal;
     setCargandoEstados(true);
-    setErrorUbicacion('');
+    setErrorUbicación('');
 
     try {
       const data = await listarEstados(options);
@@ -344,7 +344,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
     } catch (err) {
       if (err.name !== 'AbortError' && (!signal || !signal.aborted)) {
         setEstados([]);
-        setErrorUbicacion('No fue posible cargar estados.');
+        setErrorUbicación('No fue posible cargar estados.');
       }
       return [];
     } finally {
@@ -398,16 +398,16 @@ export default function AdminProyectoInmobiliarioFormPage() {
       setMensaje('');
       setPermisoDenegado('');
       limpiarArchivosSeleccionados();
-      setErrorUbicacion('');
+      setErrorUbicación('');
 
       try {
-        let catalogo = [];
+        let catálogo = [];
 
         if (esAdminCn) {
           setCargandoEmpresas(true);
-          catalogo = await listarEmpresas({ soloActivas: true, signal: controller.signal });
+          catálogo = await listarEmpresas({ soloActivas: true, signal: controller.signal });
           if (!controller.signal.aborted) {
-            setEmpresasCatalogo(catalogo);
+            setEmpresasCatalogo(catálogo);
           }
         } else {
           setEmpresasCatalogo([]);
@@ -415,7 +415,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
 
         await cargarEstadosCatalogo({ signal: controller.signal });
 
-        const empresasBase = esAdminCn ? catalogo : empresasSesionAdministrables;
+        const empresasBase = esAdminCn ? catálogo : empresasSesionAdministrables;
 
         if (!esEdicion) {
           if (!puedeCrearProyecto || empresasBase.length === 0) {
@@ -550,7 +550,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
     }));
     setPoblaciones([]);
     setLocalidades([]);
-    setErrorUbicacion('');
+    setErrorUbicación('');
 
     if (!estadoId) {
       return;
@@ -568,7 +568,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
       localidadId: '',
     }));
     setLocalidades([]);
-    setErrorUbicacion('');
+    setErrorUbicación('');
 
     if (!form.estadoId || !poblacionId) {
       return;
@@ -879,11 +879,11 @@ export default function AdminProyectoInmobiliarioFormPage() {
               <input name="longitud" value={form.longitud} onChange={actualizarCampo} />
             </label>
           </div>
-          {errorUbicacion ? <p className="admin-proyecto-form-feedback is-error">{errorUbicacion}</p> : null}
+          {errorUbicación ? <p className="admin-proyecto-form-feedback is-error">{errorUbicación}</p> : null}
         </section>
 
         <section className="admin-proyecto-form-card">
-          <h2>Informacion comercial</h2>
+          <h2>Información comercial</h2>
           <div className="admin-proyecto-form-grid">
             <label><span>Precio desde</span><input name="precioDesde" type="number" min="0" step="0.01" value={form.precioDesde} onChange={actualizarCampo} /></label>
             <label><span>Superficie desde m2</span><input name="superficieDesdeM2" type="number" min="0" step="0.01" value={form.superficieDesdeM2} onChange={actualizarCampo} /></label>
@@ -1011,7 +1011,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
               <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/unidades`}>Unidades</Link>
               <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/modelos`}>Modelos</Link>
               <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/plano`}>Plano</Link>
-              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imagenes</Link>
+              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imágenes</Link>
               <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyectoId}`}>Prospectos</Link>
               <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyectoId}`}>Apartados</Link>
               {form.slug ? (
