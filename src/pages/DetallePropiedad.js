@@ -20,6 +20,37 @@ const FORMULARIO_INICIAL = {
   mensaje: '',
 };
 
+const obtenerBasePublica = () => {
+  const envUrl =
+    process.env.REACT_APP_FRONTEND_PUBLIC_URL ||
+    process.env.REACT_APP_SITE_URL ||
+    process.env.REACT_APP_BASE_URL;
+
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, '');
+  }
+
+  return typeof window !== 'undefined' ? window.location.origin : 'https://cninmobiliaria.com.mx';
+};
+
+const copiarTexto = async (texto) => {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(texto);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = texto;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.top = '-9999px';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+};
+
 export default function DetallePropiedad() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -36,6 +67,7 @@ export default function DetallePropiedad() {
   const [enviandoProspecto, setEnviandoProspecto] = useState(false);
   const [errorProspecto, setErrorProspecto] = useState('');
   const [exitoProspecto, setExitoProspecto] = useState('');
+  const [mensajeCompartir, setMensajeCompartir] = useState('');
 
   const token = obtenerToken();
   const usuario = token ? getCurrentUser() : null;
@@ -101,6 +133,41 @@ export default function DetallePropiedad() {
     propiedad?.tipoInmuebleNombre ||
     tiposInmuebleMap.get(String(propiedad?.tipoInmueble)) ||
     'No especificado';
+
+  const shareData = useMemo(() => {
+    if (!propiedad) {
+      return null;
+    }
+
+    const propiedadId = propiedad.id || id;
+    const shareUrl = `${obtenerBasePublica()}/#/propiedad/${propiedadId}`;
+    const detalles = [];
+
+    if (tipoInmuebleNombre && tipoInmuebleNombre !== 'No especificado') {
+      detalles.push(tipoInmuebleNombre);
+    }
+
+    if (propiedad.ubicacion) {
+      detalles.push(`en ${propiedad.ubicacion}`);
+    }
+
+    if (propiedad.precio) {
+      detalles.push(`Precio: ${propiedad.precio}`);
+    }
+
+    const titulo = propiedad.titulo ? `: ${propiedad.titulo}` : '';
+    const detalleTexto = detalles.length ? `. ${detalles.join(' ')}` : '';
+    const shareTextWithoutUrl = `Encontré esta propiedad en CN Inmobiliaria${titulo}${detalleTexto}.`;
+    const shareText = `${shareTextWithoutUrl} ${shareUrl}`;
+
+    return {
+      facebookUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      shareText,
+      shareTextWithoutUrl,
+      shareUrl,
+      whatsappUrl: `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+    };
+  }, [id, propiedad, tipoInmuebleNombre]);
 
   useEffect(() => {
     const usuarioActual = getCurrentUser();
@@ -313,6 +380,37 @@ export default function DetallePropiedad() {
     }
   };
 
+  const copiarEnlacePropiedad = async () => {
+    if (!shareData) {
+      return;
+    }
+
+    try {
+      await copiarTexto(shareData.shareUrl);
+      setMensajeCompartir('Enlace copiado');
+      window.setTimeout(() => setMensajeCompartir(''), 3000);
+    } catch (_) {
+      setMensajeCompartir('No fue posible copiar el enlace');
+      window.setTimeout(() => setMensajeCompartir(''), 3000);
+    }
+  };
+
+  const compartirNativo = async () => {
+    if (!shareData || !navigator.share) {
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: 'CN Inmobiliaria',
+        text: shareData.shareTextWithoutUrl,
+        url: shareData.shareUrl,
+      });
+    } catch (_) {
+      // El usuario puede cancelar el dialogo nativo sin que sea un error de la pagina.
+    }
+  };
+
   if (loading) {
     return (
       <section className="detalle">
@@ -391,6 +489,31 @@ export default function DetallePropiedad() {
         <p className="ubicacion">{'\u{1F4CD}'} {propiedad.ubicacion}</p>
         <p className="propiedad-tipo-inmueble"><strong>Tipo de inmueble:</strong> {tipoInmuebleNombre}</p>
         <RichTextContent className="descripcion" value={propiedad.descripcion} />
+
+        {shareData ? (
+          <div className="compartir-propiedad">
+            <div className="compartir-propiedad-header">
+              <h2>Compartir propiedad</h2>
+              {mensajeCompartir ? <p>{mensajeCompartir}</p> : null}
+            </div>
+            <div className="compartir-propiedad-acciones">
+              {typeof navigator !== 'undefined' && navigator.share ? (
+                <button type="button" onClick={compartirNativo}>
+                  Compartir
+                </button>
+              ) : null}
+              <a href={shareData.whatsappUrl} target="_blank" rel="noopener noreferrer">
+                WhatsApp
+              </a>
+              <a href={shareData.facebookUrl} target="_blank" rel="noopener noreferrer">
+                Facebook
+              </a>
+              <button type="button" onClick={copiarEnlacePropiedad}>
+                Copiar enlace
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {tieneTour360 ? <Tour360Viewer tour={tour360} /> : null}
 

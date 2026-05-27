@@ -107,6 +107,68 @@
   font-weight: 700;
 }
 
+.compartir-propiedad {
+  margin: 1.2rem 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid rgba(15, 41, 64, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.compartir-propiedad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.compartir-propiedad h2 {
+  margin: 0;
+  color: var(--azul-oscuro);
+  font-size: 1rem;
+}
+
+.compartir-propiedad-header p {
+  margin: 0;
+  color: #21633a;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.compartir-propiedad-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.compartir-propiedad-acciones a,
+.compartir-propiedad-acciones button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid rgba(15, 41, 64, 0.14);
+  border-radius: 999px;
+  padding: 0.58rem 0.95rem;
+  background: var(--blanco);
+  color: var(--azul-oscuro);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.compartir-propiedad-acciones a:hover,
+.compartir-propiedad-acciones button:hover {
+  border-color: var(--dorado-suave);
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+}
+
 .recorrido-virtual {
   margin: 1.5rem 0;
   padding: 1.25rem;
@@ -706,6 +768,21 @@
 
   .acciones-contacto {
     flex-direction: column;
+  }
+
+  .compartir-propiedad-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .compartir-propiedad-acciones {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .compartir-propiedad-acciones a,
+  .compartir-propiedad-acciones button {
+    width: 100%;
   }
 
   .prospecto-formulario-encabezado {
