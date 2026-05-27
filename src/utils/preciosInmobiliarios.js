@@ -28,6 +28,14 @@ export const normalizarListaPrecios = (value) => {
     return value;
   }
 
+  if (Array.isArray(value?.precios)) {
+    return value.precios;
+  }
+
+  if (Array.isArray(value?.preciosActivos)) {
+    return value.preciosActivos;
+  }
+
   if (Array.isArray(value?.items)) {
     return value.items;
   }
@@ -78,7 +86,34 @@ export const normalizarPrecioInmobiliario = (precio = {}, index = 0) => {
     precio.clave,
     tipoPrecioNombre
   ));
-  const precioValor = pickFirst(precio.precio, precio.monto, precio.valor, precio.precioTotal, precio.precioDesde);
+  const precioHeredado = pickFirst(
+    precio.precioHeredado,
+    precio.precioModelo,
+    precio.precioBase,
+    precio.precioAnterior
+  );
+  const precioPersonalizado = pickFirst(
+    precio.precioPersonalizado,
+    precio.precioUnidad,
+    precio.precioCustom,
+    precio.precioEspecial
+  );
+  const precioValor = pickFirst(
+    precio.precioEfectivo,
+    precio.precio,
+    precio.monto,
+    precio.valor,
+    precio.precioTotal,
+    precio.precioDesde,
+    precioPersonalizado,
+    precioHeredado
+  );
+  const origenPrecio = normalizeText(pickFirst(precio.origenPrecio, precio.origen, precio.origenPrecioEtiqueta));
+  const esPersonalizado =
+    precio.esPersonalizado === true ||
+    origenPrecio === 'UNIDAD' ||
+    origenPrecio === 'PERSONALIZADO' ||
+    (precioPersonalizado !== null && precioPersonalizado !== undefined && precioPersonalizado !== '');
 
   return {
     id: String(pickFirst(precio.precioId, precio.id, precio.Id, `${tipoPrecioId || tipoPrecioCodigo}-${index}`) ?? '').trim(),
@@ -86,11 +121,20 @@ export const normalizarPrecioInmobiliario = (precio = {}, index = 0) => {
     tipoPrecioCodigo,
     tipoPrecioNombre,
     descripcion: String(precio.descripcion ?? precio.detalle ?? '').trim(),
+    precioHeredado: toNumberOrNull(precioHeredado),
+    precioHeredadoTexto: formatearMonedaMXN(precioHeredado),
+    precioPersonalizado: toNumberOrNull(precioPersonalizado),
+    precioPersonalizadoTexto: formatearMonedaMXN(precioPersonalizado),
+    precioEfectivo: toNumberOrNull(precioValor),
+    precioEfectivoTexto: formatearMonedaMXN(precioValor),
     precio: toNumberOrNull(precioValor),
     precioTexto: formatearMonedaMXN(precioValor),
     activo: precio.activo !== false,
     esPrincipal: precio.esPrincipal === true || precio.principal === true,
+    esPersonalizado,
+    origenPrecio,
     orden: Number(precio.orden ?? index) || 0,
+    tienePrecioPersonalizado: esPersonalizado,
   };
 };
 
@@ -108,7 +152,11 @@ export const filtrarPreciosActivos = (precios = []) => ordenarPreciosInmobiliari
 
 export const obtenerPrecioContado = (precios = []) => {
   const preciosActivos = filtrarPreciosActivos(precios);
-  const contado = preciosActivos.find((precio) => PRECIO_CONTADO_KEYS.has(normalizeText(precio.tipoPrecioCodigo)) || PRECIO_CONTADO_KEYS.has(normalizeText(precio.tipoPrecioNombre)));
+  const contado = preciosActivos.find((precio) =>
+    PRECIO_CONTADO_KEYS.has(normalizeText(precio.tipoPrecioCodigo)) ||
+    PRECIO_CONTADO_KEYS.has(normalizeText(precio.tipoPrecioNombre)) ||
+    precio.esPrincipal === true
+  );
   return contado || preciosActivos[0] || null;
 };
 
@@ -144,11 +192,15 @@ export const obtenerResumenPrecios = ({ precios = [], fallbackPrecio = null } = 
 };
 
 export const determinarOrigenPrecio = ({ preciosPersonalizados = [], preciosModelo = [], fallbackPrecio = null } = {}) => {
+  if (normalizarPreciosInmobiliarios(preciosPersonalizados).some((precio) => precio.esPersonalizado || precio.origenPrecio === 'UNIDAD')) {
+    return 'PERSONALIZADO';
+  }
+
   if (filtrarPreciosActivos(preciosPersonalizados).length > 0) {
     return 'PERSONALIZADO';
   }
 
-  if (filtrarPreciosActivos(preciosModelo).length > 0) {
+  if (normalizarPreciosInmobiliarios(preciosModelo).length > 0) {
     return 'MODELO';
   }
 
@@ -162,6 +214,7 @@ export const determinarOrigenPrecio = ({ preciosPersonalizados = [], preciosMode
 export const obtenerEtiquetaOrigenPrecio = (origen) => {
   switch (String(origen || '').toUpperCase()) {
     case 'PERSONALIZADO':
+    case 'UNIDAD':
       return 'Personalizado';
     case 'MODELO':
       return 'Modelo';
@@ -171,4 +224,3 @@ export const obtenerEtiquetaOrigenPrecio = (origen) => {
       return '';
   }
 };
-
