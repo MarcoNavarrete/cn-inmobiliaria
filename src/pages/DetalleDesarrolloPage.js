@@ -12,10 +12,9 @@ import { obtenerPlanoPublico } from '../services/adminDesarrolloPlanoService';
 import {
   obtenerTourPublicoModelo,
 } from '../services/tour360Service';
+import { getWhatsAppPhone } from '../config/contacto';
 import { formatearMonedaMXN } from '../utils/preciosInmobiliarios';
 import './DetalleDesarrolloPage.css';
-
-const DEFAULT_WHATSAPP_NUMBER = '+5215540859798';
 
 const formatCurrency = (value) => {
   if (!value || Number.isNaN(Number(value))) {
@@ -29,20 +28,16 @@ const formatCurrency = (value) => {
   }).format(Number(value));
 };
 
-const normalizeWhatsAppNumber = (value) => String(value || '').replace(/[^\d]/g, '');
-
 const isInternalSvgUrl = (value) => {
   const url = String(value || '').trim();
   return /^\/uploads\/.+\.svg($|\?)/i.test(url) || /^\.?\/assets\/.+\.svg($|\?)/i.test(url);
 };
 
 const whatsappHref = (desarrollo, modelo) => {
-  const telefono =
-    normalizeWhatsAppNumber(desarrollo.telefonoContacto) ||
-    normalizeWhatsAppNumber(DEFAULT_WHATSAPP_NUMBER);
+  const telefono = getWhatsAppPhone(desarrollo?.telefonoContacto);
   const texto = modelo
-    ? `Hola, me interesa el modelo ${modelo.nombre} del desarrollo ${desarrollo.nombre}. ¿Me pueden dar más información?`
-    : `Hola, me interesa el desarrollo ${desarrollo.nombre}. ¿Me pueden dar más información?`;
+    ? `Me interesa el modelo ${modelo.nombre} del desarrollo ${desarrollo.nombre}. Quiero mas información.`
+    : `Me interesa el desarrollo ${desarrollo.nombre}. Quiero mas información.`;
 
   return `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`;
 };
@@ -82,7 +77,7 @@ export default function DetalleDesarrolloPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [imagenActual, setImagenActual] = useState(0);
-  const [imagenesModeloActivas, setImágenesModeloActivas] = useState({});
+  const [imagenesModeloActivas, setImagenesModeloActivas] = useState({});
   const [lightbox, setLightbox] = useState({
     images: [],
     initialIndex: 0,
@@ -183,7 +178,7 @@ export default function DetalleDesarrolloPage() {
   }, [slug, imagenesCarrusel.length]);
 
   useEffect(() => {
-    setImágenesModeloActivas({});
+    setImagenesModeloActivas({});
   }, [slug]);
 
   useEffect(() => {
@@ -282,9 +277,7 @@ export default function DetalleDesarrolloPage() {
     });
 
     if (mensaje) {
-      const telefono =
-        normalizeWhatsAppNumber(desarrolloActual.telefonoContacto) ||
-        normalizeWhatsAppNumber(DEFAULT_WHATSAPP_NUMBER);
+      const telefono = getWhatsAppPhone(desarrolloActual?.telefonoContacto);
       window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
       return;
     }
@@ -354,7 +347,7 @@ export default function DetalleDesarrolloPage() {
       return;
     }
 
-    setImágenesModeloActivas((actuales) => {
+    setImagenesModeloActivas((actuales) => {
       const actual = actuales[modeloId] || 0;
       return {
         ...actuales,
@@ -364,7 +357,7 @@ export default function DetalleDesarrolloPage() {
   };
 
   const seleccionarImagenModelo = (modeloId, index) => {
-    setImágenesModeloActivas((actuales) => ({
+    setImagenesModeloActivas((actuales) => ({
       ...actuales,
       [modeloId]: index,
     }));
@@ -602,7 +595,7 @@ export default function DetalleDesarrolloPage() {
         <section id="modelos-disponibles" className="detalle-desarrollo-section">
           <div className="detalle-desarrollo-section-head">
             <p className="detalle-desarrollo-eyebrow">Modelos disponibles</p>
-            <h2>Elige la distribucion que encaja con tu plan</h2>
+            <h2>Elige la distribución que encaja con tu plan</h2>
           </div>
           {desarrollo.modelos.length === 0 ? (
             <p className="detalle-desarrollo-modelos-empty">Próximamente modelos disponibles</p>

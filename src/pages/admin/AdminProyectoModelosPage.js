@@ -10,6 +10,15 @@ import {
 } from '../../services/proyectoModelosService';
 import { obtenerProyecto } from '../../services/proyectosInmobiliariosService';
 import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
+import {
+  guardarPreciosModeloProyecto,
+  listarPreciosModeloProyecto,
+  listarTiposPrecioInmobiliario,
+} from '../../services/proyectoPreciosService';
+import {
+  formatearMonedaMXN,
+  obtenerResumenPrecios,
+} from '../../utils/preciosInmobiliarios';
 import './AdminProyectoModelosPage.css';
 
 const FORM_INICIAL = {
@@ -18,11 +27,11 @@ const FORM_INICIAL = {
   descripcion: '',
   recamaras: '',
   banos: '',
-  mediosBaños: '',
+  mediosBanos: '',
   estacionamientos: '',
   niveles: '',
   superficieTerrenoM2: '',
-  superficieConstrucciónM2: '',
+  superficieConstruccionM2: '',
   precioDesde: '',
   tour360Url: '',
   orden: '0',
@@ -75,11 +84,11 @@ const mapModeloToForm = (modelo = {}) => ({
   descripcion: modelo.descripcion || '',
   recamaras: toInputValue(modelo.recamaras),
   banos: toInputValue(modelo.banos),
-  mediosBaños: toInputValue(modelo.mediosBaños),
+  mediosBanos: toInputValue(modelo.mediosBanos),
   estacionamientos: toInputValue(modelo.estacionamientos),
   niveles: toInputValue(modelo.niveles),
   superficieTerrenoM2: toInputValue(modelo.superficieTerrenoM2),
-  superficieConstrucciónM2: toInputValue(modelo.superficieConstrucciónM2),
+  superficieConstruccionM2: toInputValue(modelo.superficieConstruccionM2),
   precioDesde: toInputValue(modelo.precioDesde),
   tour360Url: modelo.tour360Url || '',
   orden: toInputValue(modelo.orden || 0),
@@ -92,11 +101,11 @@ const buildPayload = (form, proyectoId) => ({
   descripcion: form.descripcion.trim() || null,
   recamaras: toNumberOrNull(form.recamaras),
   banos: toNumberOrNull(form.banos),
-  mediosBaños: toNumberOrNull(form.mediosBaños),
+  mediosBanos: toNumberOrNull(form.mediosBanos),
   estacionamientos: toNumberOrNull(form.estacionamientos),
   niveles: toNumberOrNull(form.niveles),
   superficieTerrenoM2: toNumberOrNull(form.superficieTerrenoM2),
-  superficieConstrucciónM2: toNumberOrNull(form.superficieConstrucciónM2),
+  superficieConstruccionM2: toNumberOrNull(form.superficieConstruccionM2),
   precioDesde: toNumberOrNull(form.precioDesde),
   tour360Url: form.tour360Url.trim() || null,
   orden: toNumberOrNull(form.orden) ?? 0,
@@ -126,6 +135,13 @@ export default function AdminProyectoModelosPage() {
   const [accionando, setAccionando] = useState('');
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [tiposPrecio, setTiposPrecio] = useState([]);
+  const [preciosModelo, setPreciosModelo] = useState([]);
+  const [modeloPreciosAbierto, setModeloPreciosAbierto] = useState(null);
+  const [cargandoPrecios, setCargandoPrecios] = useState(false);
+  const [guardandoPrecios, setGuardandoPrecios] = useState(false);
+  const [errorPrecios, setErrorPrecios] = useState('');
+  const [mensajePrecios, setMensajePrecios] = useState('');
 
   const cargarDatos = useCallback(async (options = {}) => {
     setCargando(true);
@@ -153,11 +169,79 @@ export default function AdminProyectoModelosPage() {
     }
   }, [proyectoId, soloActivos]);
 
+  const cargarTiposPrecio = useCallback(async (options = {}) => {
+    try {
+      const tipos = await listarTiposPrecioInmobiliario(options);
+      setTiposPrecio(tipos);
+      return tipos;
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setTiposPrecio([]);
+      }
+      return [];
+    }
+  }, []);
+
+  const cargarPreciosModelo = useCallback(async (modelo) => {
+    if (!modelo?.id) {
+      setPreciosModelo([]);
+      return;
+    }
+
+    setCargandoPrecios(true);
+    setErrorPrecios('');
+    setMensajePrecios('');
+
+    try {
+      const [tipos, precios] = await Promise.all([
+        tiposPrecio.length > 0 ? Promise.resolve(tiposPrecio) : cargarTiposPrecio(),
+        listarPreciosModeloProyecto(modelo.id).catch(() => []),
+      ]);
+
+      const resumenPrecios = obtenerResumenPrecios({
+        precios,
+        fallbackPrecio: modelo.precioDesde ?? form.precioDesde,
+      });
+      const mapaExistentes = new Map(
+        resumenPrecios.precios.map((precio) => [String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase(), precio])
+      );
+      const catalogoBase = tipos.length > 0 ? tipos : resumenPrecios.precios;
+
+      setPreciosModelo(catalogoBase.map((tipo, index) => {
+        const tipoKey = String(tipo.id || tipo.tipoPrecioId || tipo.codigo || tipo.nombre || index).toUpperCase();
+        const existente = mapaExistentes.get(tipoKey)
+          || resumenPrecios.precios.find((precio) => String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase() === tipoKey);
+
+        return {
+          id: existente?.id || `${tipo.id || tipo.tipoPrecioId || tipoKey}-${index}`,
+          tipoPrecioId: tipo.id || tipo.tipoPrecioId || '',
+          tipoPrecioCodigo: tipo.codigo || tipo.tipoPrecioCodigo || '',
+          tipoPrecioNombre: tipo.nombre || tipo.tipoPrecioNombre || tipo.descripcion || `Esquema ${index + 1}`,
+          descripcion: existente?.descripcion || tipo.descripcion || '',
+          precio: existente?.precio ?? '',
+          activo: existente ? existente.activo !== false : false,
+          esPrincipal: existente?.esPrincipal === true,
+          orden: existente?.orden ?? tipo.orden ?? index,
+        };
+      }));
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setPreciosModelo([]);
+        setErrorPrecios(getApiErrorMessage(err));
+      }
+    } finally {
+      setCargandoPrecios(false);
+    }
+  }, [cargarTiposPrecio, form.precioDesde, tiposPrecio]);
   useEffect(() => {
     const controller = new AbortController();
     cargarDatos({ signal: controller.signal });
     return () => controller.abort();
   }, [cargarDatos]);
+
+  useEffect(() => {
+    cargarTiposPrecio();
+  }, [cargarTiposPrecio]);
 
   useEffect(() => () => {
     if (imagenPreview?.startsWith('blob:')) {
@@ -240,11 +324,11 @@ export default function AdminProyectoModelosPage() {
     const numericos = [
       ['recamaras', 'Recámaras'],
       ['banos', 'Baños'],
-      ['mediosBaños', 'Medios baños'],
+      ['mediosBanos', 'Medios baños'],
       ['estacionamientos', 'Estacionamientos'],
       ['niveles', 'Niveles'],
       ['superficieTerrenoM2', 'Superficie terreno'],
-      ['superficieConstrucciónM2', 'Superficie construccion'],
+      ['superficieConstruccionM2', 'Superficie construccion'],
       ['precioDesde', 'Precio desde'],
       ['orden', 'Orden'],
     ];
@@ -322,6 +406,72 @@ export default function AdminProyectoModelosPage() {
     }
   };
 
+  const abrirPreciosModelo = async (modelo) => {
+    setModeloPreciosAbierto(modelo);
+    await cargarPreciosModelo(modelo);
+  };
+
+  const cerrarPreciosModelo = () => {
+    if (guardandoPrecios) return;
+    setModeloPreciosAbierto(null);
+    setPreciosModelo([]);
+    setErrorPrecios('');
+    setMensajePrecios('');
+  };
+
+  const actualizarPrecioModeloFila = (index, cambios) => {
+    setPreciosModelo((actuales) =>
+      actuales.map((fila, filaIndex) => (filaIndex === index ? { ...fila, ...cambios } : fila))
+    );
+  };
+
+  const validarPreciosModelo = () => {
+    for (const fila of preciosModelo) {
+      if (fila.activo && (fila.precio === '' || fila.precio === null || fila.precio === undefined)) {
+        return `El precio de ${fila.tipoPrecioNombre} es requerido si el esquema esta activo.`;
+      }
+
+      if (fila.precio !== '' && fila.precio !== null && Number(fila.precio) < 0) {
+        return `El precio de ${fila.tipoPrecioNombre} no puede ser negativo.`;
+      }
+    }
+
+    return '';
+  };
+
+  const guardarPreciosDelModelo = async () => {
+    if (!modeloPreciosAbierto?.id) return;
+
+    const validacion = validarPreciosModelo();
+    if (validacion) {
+      setErrorPrecios(validacion);
+      return;
+    }
+
+    setGuardandoPrecios(true);
+    setErrorPrecios('');
+    setMensajePrecios('');
+
+    try {
+      await guardarPreciosModeloProyecto(modeloPreciosAbierto.id, preciosModelo.map((fila, index) => ({
+        tipoPrecioId: fila.tipoPrecioId || null,
+        tipoPrecioCodigo: fila.tipoPrecioCodigo || null,
+        tipoPrecioNombre: fila.tipoPrecioNombre || null,
+        descripcion: fila.descripcion || null,
+        precio: fila.precio === '' || fila.precio === null || fila.precio === undefined ? null : Number(fila.precio),
+        activo: fila.activo === true,
+        esPrincipal: fila.esPrincipal === true,
+        orden: fila.orden ?? index,
+      })));
+      setMensajePrecios('Precios del modelo guardados correctamente.');
+      await cargarDatos();
+      await cargarPreciosModelo(modeloPreciosAbierto);
+    } catch (err) {
+      setErrorPrecios(getApiErrorMessage(err));
+    } finally {
+      setGuardandoPrecios(false);
+    }
+  };
   if (cargando) {
     return (
       <main className="admin-proyecto-modelos">
@@ -406,11 +556,11 @@ export default function AdminProyectoModelosPage() {
                     <td data-label="Slug">{modelo.slug || '-'}</td>
                     <td data-label="Recámaras">{modelo.recamaras ?? '-'}</td>
                     <td data-label="Baños">{modelo.banos ?? '-'}</td>
-                    <td data-label="Medios baños">{modelo.mediosBaños ?? '-'}</td>
+                    <td data-label="Medios baños">{modelo.mediosBanos ?? '-'}</td>
                     <td data-label="Estac.">{modelo.estacionamientos ?? '-'}</td>
                     <td data-label="Niveles">{modelo.niveles ?? '-'}</td>
                     <td data-label="Sup. terreno">{modelo.superficieTerrenoM2 ?? '-'}</td>
-                    <td data-label="Sup. construccion">{modelo.superficieConstrucciónM2 ?? '-'}</td>
+                    <td data-label="Sup. construccion">{modelo.superficieConstruccionM2 ?? '-'}</td>
                     <td data-label="Precio desde">{modelo.precioDesdeTexto}</td>
                     <td data-label="Imagen">
                       {modelo.imagenPrincipalUrl ? <a href={modelo.imagenPrincipalUrl} target="_blank" rel="noopener noreferrer">Ver imagen</a> : '-'}
@@ -428,6 +578,9 @@ export default function AdminProyectoModelosPage() {
                         {puedeEditarModelo ? (
                           <>
                             <button type="button" onClick={() => abrirEditarModelo(modelo)}>Editar</button>
+                            <button type="button" onClick={() => abrirPreciosModelo(modelo)} disabled={guardandoPrecios}>
+                              Precios
+                            </button>
                             <button type="button" onClick={() => alternarActivo(modelo)} disabled={accionando === modelo.id}>
                               {modelo.activo ? 'Desactivar' : 'Activar'}
                             </button>
@@ -443,6 +596,91 @@ export default function AdminProyectoModelosPage() {
         )}
       </section>
 
+      {modeloPreciosAbierto ? (
+        <div className="admin-proyecto-modelos-modal-overlay" role="presentation" onMouseDown={cerrarPreciosModelo}>
+          <section className="admin-proyecto-modelos-prices-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="admin-proyecto-modelos-modal-head">
+              <div>
+                <p className="admin-proyecto-modelos-eyebrow">Precios del modelo</p>
+                <h2>{modeloPreciosAbierto.nombre}</h2>
+              </div>
+              <button type="button" onClick={cerrarPreciosModelo} disabled={guardandoPrecios} aria-label="Cerrar">x</button>
+            </div>
+
+            <div className="admin-proyecto-modelos-prices-body">
+              <p className="admin-proyecto-modelos-prices-help">Configura el precio por cada esquema de compra o financiamiento.</p>
+              {cargandoPrecios ? <p className="admin-proyecto-modelos-empty">Cargando precios...</p> : null}
+              {errorPrecios ? <p className="admin-proyecto-modelos-feedback is-error">{errorPrecios}</p> : null}
+              {mensajePrecios ? <p className="admin-proyecto-modelos-feedback is-ok">{mensajePrecios}</p> : null}
+
+              {!cargandoPrecios && preciosModelo.length === 0 ? (
+                <p className="admin-proyecto-modelos-empty">No se encontraron esquemas en el catalogo.</p>
+              ) : null}
+
+              {!cargandoPrecios && preciosModelo.length > 0 ? (
+                <div className="admin-proyecto-modelos-prices-table-wrap">
+                  <table className="admin-proyecto-modelos-prices-table">
+                    <thead>
+                      <tr>
+                        <th>Esquema</th>
+                        <th>Precio</th>
+                        <th>Descripcion</th>
+                        <th>Activo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preciosModelo.map((fila, index) => (
+                        <tr key={fila.id || `${modeloPreciosAbierto.id}-precio-${index}`}>
+                          <td data-label="Esquema">
+                            <strong>{fila.tipoPrecioNombre}</strong>
+                            {fila.tipoPrecioCodigo ? <small>{fila.tipoPrecioCodigo}</small> : null}
+                          </td>
+                          <td data-label="Precio">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={fila.precio}
+                              onChange={(event) => actualizarPrecioModeloFila(index, { precio: event.target.value })}
+                              disabled={!fila.activo}
+                              placeholder="0"
+                            />
+                            <small>{fila.precio !== '' && fila.precio !== null ? formatearMonedaMXN(fila.precio) : 'MXN'}</small>
+                          </td>
+                          <td data-label="Descripcion">
+                            <input
+                              value={fila.descripcion}
+                              onChange={(event) => actualizarPrecioModeloFila(index, { descripcion: event.target.value })}
+                              placeholder="Opcional"
+                            />
+                          </td>
+                          <td data-label="Activo">
+                            <label className="admin-proyecto-modelos-check">
+                              <input
+                                type="checkbox"
+                                checked={fila.activo}
+                                onChange={(event) => actualizarPrecioModeloFila(index, { activo: event.target.checked })}
+                              />
+                              <span>{fila.activo ? 'Si' : 'No'}</span>
+                            </label>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="admin-proyecto-modelos-modal-actions">
+              <button type="button" onClick={guardarPreciosDelModelo} disabled={guardandoPrecios || cargandoPrecios || preciosModelo.length === 0}>
+                {guardandoPrecios ? 'Guardando...' : 'Guardar precios del modelo'}
+              </button>
+              <button type="button" onClick={cerrarPreciosModelo} disabled={guardandoPrecios}>Cerrar</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
       {modalOpen ? (
         <div className="admin-proyecto-modelos-modal-overlay" role="presentation" onMouseDown={cerrarModal}>
           <section className="admin-proyecto-modelos-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
@@ -460,11 +698,11 @@ export default function AdminProyectoModelosPage() {
                 <label className="is-full"><span>Descripción</span><textarea name="descripcion" value={form.descripcion} onChange={actualizarCampo} rows="4" /></label>
                 <label><span>Recámaras</span><input name="recamaras" type="number" min="0" step="1" value={form.recamaras} onChange={actualizarCampo} /></label>
                 <label><span>Baños</span><input name="banos" type="number" min="0" step="0.5" value={form.banos} onChange={actualizarCampo} /></label>
-                <label><span>Medios baños</span><input name="mediosBaños" type="number" min="0" step="1" value={form.mediosBaños} onChange={actualizarCampo} /></label>
+                <label><span>Medios baños</span><input name="mediosBanos" type="number" min="0" step="1" value={form.mediosBanos} onChange={actualizarCampo} /></label>
                 <label><span>Estacionamientos</span><input name="estacionamientos" type="number" min="0" step="1" value={form.estacionamientos} onChange={actualizarCampo} /></label>
                 <label><span>Niveles</span><input name="niveles" type="number" min="0" step="1" value={form.niveles} onChange={actualizarCampo} /></label>
                 <label><span>Superficie terreno m2</span><input name="superficieTerrenoM2" type="number" min="0" step="0.01" value={form.superficieTerrenoM2} onChange={actualizarCampo} /></label>
-                <label><span>Superficie construccion m2</span><input name="superficieConstrucciónM2" type="number" min="0" step="0.01" value={form.superficieConstrucciónM2} onChange={actualizarCampo} /></label>
+                <label><span>Superficie construccion m2</span><input name="superficieConstruccionM2" type="number" min="0" step="0.01" value={form.superficieConstruccionM2} onChange={actualizarCampo} /></label>
                 <label><span>Precio desde</span><input name="precioDesde" type="number" min="0" step="0.01" value={form.precioDesde} onChange={actualizarCampo} /></label>
                 <label><span>Orden</span><input name="orden" type="number" min="0" step="1" value={form.orden} onChange={actualizarCampo} /></label>
                 {puedeEditarModelo ? (
@@ -492,7 +730,7 @@ export default function AdminProyectoModelosPage() {
                           event.target.value = '';
                         }}
                       />
-                      <small>JPG, JPEG, PNG o WEBP. Tamano maximo 10MB.</small>
+                      <small>JPG, JPEG, PNG o WEBP. Tamaño máximo 10MB.</small>
                     </label>
                     {modeloEditando?.imagenPrincipalUrl ? (
                       <p className="admin-proyecto-modelos-image-current">URL actual: {modeloEditando.imagenPrincipalUrl}</p>
@@ -515,3 +753,9 @@ export default function AdminProyectoModelosPage() {
     </main>
   );
 }
+
+
+
+
+
+

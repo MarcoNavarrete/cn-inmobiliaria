@@ -488,7 +488,7 @@ export default function AdminDesarrolloUnidadesPage() {
         await eliminarPreciosPersonalizadosUnidad(unidadPreciosAbierta.id);
         await cargar();
         await abrirPreciosUnidad(unidadActual);
-        setMensajePrecios('La unidad volviÃ³ a heredar los precios del modelo.');
+        setMensajePrecios('La unidad volvió a heredar los precios del modelo.');
         return;
       }
 
@@ -756,7 +756,7 @@ export default function AdminDesarrolloUnidadesPage() {
       const url = response?.url || response?.Url || response?.data?.url || '';
 
       if (!url) {
-        throw new Error('El API no devolviÃ³ la URL del SVG.');
+        throw new Error('El API no devolvió la URL del SVG.');
       }
 
       setPlanoForm((actual) => ({
@@ -840,7 +840,7 @@ export default function AdminDesarrolloUnidadesPage() {
     <main className="admin-unidades">
       <section className="admin-unidades-hero">
         <div>
-          <p className="admin-unidades-eyebrow">AdministraciÃ³n</p>
+          <p className="admin-unidades-eyebrow">Administración</p>
           <h1>Unidades del desarrollo</h1>
         </div>
         <div className="admin-unidades-hero-actions">
@@ -1051,7 +1051,7 @@ export default function AdminDesarrolloUnidadesPage() {
           <Field label="Terreno m2">
             <input name="terrenoM2" type="number" min="0" step="0.01" value={form.terrenoM2} onChange={actualizarCampo} />
           </Field>
-          <Field label="ConstrucciÃ³n m2">
+          <Field label="Construcción m2">
             <input name="construccionM2" type="number" min="0" step="0.01" value={form.construccionM2} onChange={actualizarCampo} />
           </Field>
           <Field label="Estatus">
@@ -1131,7 +1131,7 @@ export default function AdminDesarrolloUnidadesPage() {
                   <th>Precio</th>
                   <th>Origen</th>
                   <th>Terreno</th>
-                  <th>ConstrucciÃ³n</th>
+                  <th>Construcción</th>
                   <th>Estatus</th>
                   <th>SVG</th>
                   <th>Activo</th>
@@ -1152,7 +1152,7 @@ export default function AdminDesarrolloUnidadesPage() {
                       {unidad.precioOrigenEtiqueta ? <span className={`admin-unidades-pill ${unidad.precioOrigen === 'PERSONALIZADO' ? 'is-ok' : unidad.precioOrigen === 'MODELO' ? '' : 'is-off'}`}>{unidad.precioOrigenEtiqueta}</span> : '-'}
                     </td>
                     <td data-label="Terreno">{unidad.terrenoM2 ? `${unidad.terrenoM2} m2` : '-'}</td>
-                    <td data-label="ConstrucciÃ³n">{unidad.construccionM2 ? `${unidad.construccionM2} m2` : '-'}</td>
+                    <td data-label="Construcción">{unidad.construccionM2 ? `${unidad.construccionM2} m2` : '-'}</td>
                     <td data-label="Estatus"><span className={`admin-unidades-status is-${unidad.estatus.toLowerCase()}`}>{unidad.estatus}</span></td>
                     <td data-label="SVG">
                       <span>{unidad.svgElementId || '-'}</span>
@@ -1271,7 +1271,7 @@ export default function AdminDesarrolloUnidadesPage() {
                 type="button"
                 className="is-secondary"
                 onClick={async () => {
-                  if (!window.confirm('Â¿Volver a heredar los precios del modelo?')) return;
+                  if (!window.confirm('¿Volver a heredar los precios del modelo?')) return;
                   await guardarPreciosUnidadEditados();
                 }}
                 disabled={cargandoPrecios || guardandoPrecios}

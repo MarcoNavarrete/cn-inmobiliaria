@@ -401,7 +401,7 @@ export default function AdminEmpresasInmobiliariasPage() {
                   <tr>
                     <th>Nombre comercial</th>
                     <th>Razon social</th>
-                    <th>Telefono</th>
+                    <th>Teléfono</th>
                     <th>Correo</th>
                     <th>Sitio web</th>
                     <th>Estatus suscripcion</th>
@@ -418,7 +418,7 @@ export default function AdminEmpresasInmobiliariasPage() {
                     <tr key={empresa.id}>
                       <td data-label="Nombre comercial"><strong>{empresa.nombreComercial || empresa.nombre}</strong></td>
                       <td data-label="Razon social">{empresa.razonSocial || '-'}</td>
-                      <td data-label="Telefono">{empresa.telefono || '-'}</td>
+                      <td data-label="Teléfono">{empresa.telefono || '-'}</td>
                       <td data-label="Correo">{empresa.email || '-'}</td>
                       <td data-label="Sitio web">
                         {empresa.sitioWeb ? <a href={empresa.sitioWeb.startsWith('http') ? empresa.sitioWeb : `https://${empresa.sitioWeb}`} target="_blank" rel="noreferrer">{empresa.sitioWeb}</a> : '-'}
@@ -483,7 +483,7 @@ export default function AdminEmpresasInmobiliariasPage() {
                 <input name="razonSocial" value={form.razonSocial} onChange={actualizarCampo} />
               </label>
               <label>
-                <span>Telefono</span>
+                <span>Teléfono</span>
                 <input name="telefono" value={form.telefono} onChange={actualizarCampo} />
               </label>
               <label>

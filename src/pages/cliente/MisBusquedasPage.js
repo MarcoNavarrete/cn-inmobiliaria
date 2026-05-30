@@ -32,7 +32,7 @@ const getUbicacion = (busqueda) => {
     busqueda.localidadNombre || busqueda.localidadId,
   ].filter(Boolean);
 
-  return partes.length > 0 ? partes.join(' / ') : 'Sin ubicacion';
+  return partes.length > 0 ? partes.join(' / ') : 'Sin ubicación';
 };
 
 const buildSearchParams = (busqueda) => {

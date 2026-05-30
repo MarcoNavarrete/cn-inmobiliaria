@@ -1,10 +1,11 @@
 import React from 'react';
 import { trackEvent } from '../lib/analytics';
+import { getWhatsAppPhone } from '../config/contacto';
 import { trackMetaEvent } from '../lib/metaPixel';
 import './WhatsAppFlotante.css';
 
 export default function WhatsAppFlotante() {
-  const numeroWhatsApp = '5215540859798';
+  const numeroWhatsApp = getWhatsAppPhone();
 
   return (
     <div className="whatsapp-flotante">

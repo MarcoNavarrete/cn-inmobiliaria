@@ -1,10 +1,11 @@
 import React from 'react';
 import { trackEvent } from '../lib/analytics';
+import { CN_PHONE_GENERAL, getWhatsAppPhone } from '../config/contacto';
 import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
 import './Contacto.css';
 
-const whatsappNumber = '5217716707794';
-const phoneNumber = '7717581695';
+const whatsappNumber = getWhatsAppPhone();
+const phoneNumber = CN_PHONE_GENERAL;
 
 // Dirección mostrada al usuario como referencia.
 // El mapa usa coordenadas exactas para evitar errores de geolocalización por dirección.
@@ -31,8 +32,8 @@ export default function Contacto() {
               <strong>{officeAddress}</strong>
             </div>
             <div className="info-item">
-              <span>Telefono</span>
-              <strong>(771) 758 1695</strong>
+              <span>Teléfono</span>
+              <strong>771 670 7794</strong>
             </div>
             <div className="info-item">
               <span>WhatsApp</span>

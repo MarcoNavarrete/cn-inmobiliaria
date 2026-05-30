@@ -28,7 +28,7 @@ const buildUbicacion = (item = {}) =>
     item.municipioNombre,
     item.poblacionNombre,
     item.estadoNombre,
-  ].filter(Boolean).join(', ') || toText(item.ubicacion, 'Sin ubicacion');
+  ].filter(Boolean).join(', ') || toText(item.ubicacion, 'Sin ubicación');
 
 export const adaptProyectoInmobiliario = (item = {}) => {
   const id = toText(pickFirst(item.proyectoId, item.id, item.Id));

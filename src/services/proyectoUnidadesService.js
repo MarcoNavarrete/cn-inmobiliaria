@@ -1,12 +1,17 @@
 import { API_BASE_URL, getJson, requestFormData, requestJson } from './apiClient';
 import {
   cleanQuery,
-  formatCurrency,
   normalizeList,
   pickFirst,
   toBool,
   toText,
 } from './proyectosInmobiliariosUtils';
+import {
+  determinarOrigenPrecio,
+  obtenerEtiquetaOrigenPrecio,
+  obtenerResumenPrecios,
+  normalizarPreciosInmobiliarios,
+} from '../utils/preciosInmobiliarios';
 
 const BASE_URL = '/api/admin/proyectos-inmobiliarios';
 const AUTH_TOKEN_KEY = 'cn_inmobiliaria_auth_token';
@@ -14,7 +19,21 @@ const MAX_CSV_SIZE = 5 * 1024 * 1024;
 
 export const adaptProyectoUnidad = (item = {}) => {
   const id = toText(pickFirst(item.unidadId, item.proyectoUnidadId, item.id, item.Id));
-  const precioTotal = pickFirst(item.precioTotal, item.precio, item.precioVenta);
+  const fallbackPrecio = pickFirst(item.precioTotal, item.precio, item.precioVenta, item.precioDesde);
+  const preciosPersonalizados = normalizarPreciosInmobiliarios(pickFirst(item.preciosPersonalizados, item.preciosUnidad, item.tarifasPersonalizadas, []));
+  const preciosModelo = normalizarPreciosInmobiliarios(pickFirst(item.preciosModelo, item.modeloPrecios, item.modelo?.precios, item.preciosBase, []));
+  const preciosApi = normalizarPreciosInmobiliarios(pickFirst(item.preciosActivos, item.precios, item.tarifas, []));
+  const origenPrecio = pickFirst(
+    item.precioOrigen,
+    item.origenPrecio,
+    determinarOrigenPrecio({ preciosPersonalizados, preciosModelo, fallbackPrecio })
+  );
+  const preciosFuente = preciosPersonalizados.length > 0
+    ? preciosPersonalizados
+    : preciosApi.length > 0
+      ? preciosApi
+      : preciosModelo;
+  const resumenPrecios = obtenerResumenPrecios({ precios: preciosFuente, fallbackPrecio });
 
   return {
     id,
@@ -33,8 +52,17 @@ export const adaptProyectoUnidad = (item = {}) => {
     superficieTerrenoM2: pickFirst(item.superficieTerrenoM2, item.terrenoM2, item.m2Terreno),
     superficieConstruccionM2: pickFirst(item.superficieConstruccionM2, item.construccionM2, item.m2Construccion),
     precioM2: pickFirst(item.precioM2, item.precioPorM2),
-    precioTotal,
-    precioTotalTexto: formatCurrency(precioTotal),
+    precioTotal: resumenPrecios.precioDesde,
+    precioTotalTexto: resumenPrecios.precioDesdeTexto,
+    precioDesde: resumenPrecios.precioDesde,
+    precioDesdeTexto: resumenPrecios.precioDesdeTexto,
+    precioContadoTexto: resumenPrecios.precioContadoTexto,
+    precios: preciosFuente,
+    preciosActivos: resumenPrecios.preciosActivos,
+    preciosModelo,
+    preciosPersonalizados,
+    precioOrigen: String(origenPrecio || '').toUpperCase(),
+    precioOrigenEtiqueta: obtenerEtiquetaOrigenPrecio(origenPrecio),
     estatus: toText(pickFirst(item.estatus, item.status, item.estado), 'DISPONIBLE').toUpperCase(),
     svgElementId: toText(pickFirst(item.svgElementId, item.svgId, item.elementoSvgId)),
     colorHex: toText(pickFirst(item.colorHex, item.color)),
@@ -44,7 +72,6 @@ export const adaptProyectoUnidad = (item = {}) => {
     activo: item.activo !== false,
   };
 };
-
 export const listarUnidades = (proyectoId, filtros = {}) => {
   const { signal, ...query } = filtros;
 
@@ -144,3 +171,4 @@ export const confirmarImportCsv = (proyectoId, file) => {
     body,
   });
 };
+

@@ -52,7 +52,7 @@ const desarrollos = [
         estacionamientos: 2,
         construccionM2: 176,
         terrenoM2: 140,
-        descripcion: 'Distribucion ampliada con sala de TV, terraza privada y acabados superiores.',
+        descripcion: 'Distribución ampliada con sala de TV, terraza privada y acabados superiores.',
         imagenes: [asset('casa_san_alfonso/imagen9.jpg'), asset('casa_san_alfonso/imagen10.jpg')],
         disponible: true,
       },

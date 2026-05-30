@@ -245,7 +245,7 @@ export default function ProyectoPlanoInteractivo({
               <strong>{tooltip.unidad.codigo}</strong>
               <span>{getStatusLabel(tooltip.unidad.estatus)}</span>
               <span>{tooltip.unidad.tipoUnidad}</span>
-              <span>{formatCurrency(tooltip.unidad.precioTotal)}</span>
+              <span>{tooltip.unidad.precioDesdeTexto || tooltip.unidad.precioTotalTexto || formatCurrency(tooltip.unidad.precioTotal)}</span>
             </div>
           ) : null}
         </div>
@@ -253,3 +253,4 @@ export default function ProyectoPlanoInteractivo({
     </div>
   );
 }
+

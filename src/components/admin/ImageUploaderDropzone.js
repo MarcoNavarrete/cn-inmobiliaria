@@ -117,7 +117,7 @@ export default function ImageUploaderDropzone({
           hidden
         />
         <strong>Arrastra una imagen aqui o haz clic para seleccionarla</strong>
-        <p>JPG, PNG o WEBP. Tamano maximo 10MB.</p>
+        <p>JPG, PNG o WEBP. Tamaño máximo 10MB.</p>
         <div className="admin-upload-actions">
           <button type="button" onClick={() => inputRef.current?.click()} disabled={disabled || subiendo}>
             Seleccionar archivo

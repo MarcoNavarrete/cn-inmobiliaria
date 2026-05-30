@@ -12,6 +12,18 @@ import {
   setUnidadEstatus,
 } from '../../services/proyectoUnidadesService';
 import { obtenerProyecto } from '../../services/proyectosInmobiliariosService';
+import {
+  eliminarPreciosPersonalizadosUnidadProyecto,
+  guardarPreciosUnidadProyecto,
+  listarPreciosModeloProyecto,
+  listarPreciosUnidadProyecto,
+  listarTiposPrecioInmobiliario,
+} from '../../services/proyectoPreciosService';
+import {
+  formatearMonedaMXN,
+  obtenerResumenPrecios,
+  normalizarPreciosInmobiliarios,
+} from '../../utils/preciosInmobiliarios';
 import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
 import './AdminProyectoUnidadesPage.css';
 
@@ -40,7 +52,7 @@ const FORM_INICIAL = {
   nivel: '',
   numeroInterior: '',
   superficieTerrenoM2: '',
-  superficieConstrucciónM2: '',
+  superficieConstruccionM2: '',
   precioM2: '',
   precioTotal: '',
   estatus: 'DISPONIBLE',
@@ -125,7 +137,7 @@ const mapUnidadToForm = (unidad = {}) => ({
   nivel: unidad.nivel || '',
   numeroInterior: unidad.numeroInterior || '',
   superficieTerrenoM2: toInputValue(unidad.superficieTerrenoM2),
-  superficieConstrucciónM2: toInputValue(unidad.superficieConstrucciónM2),
+  superficieConstruccionM2: toInputValue(unidad.superficieConstruccionM2),
   precioM2: toInputValue(unidad.precioM2),
   precioTotal: toInputValue(unidad.precioTotal),
   estatus: unidad.estatus || 'DISPONIBLE',
@@ -148,7 +160,7 @@ const buildPayload = (form, proyectoId) => ({
   nivel: form.nivel.trim() || null,
   numeroInterior: form.numeroInterior.trim() || null,
   superficieTerrenoM2: toNumberOrNull(form.superficieTerrenoM2),
-  superficieConstrucciónM2: toNumberOrNull(form.superficieConstrucciónM2),
+  superficieConstruccionM2: toNumberOrNull(form.superficieConstruccionM2),
   precioM2: toNumberOrNull(form.precioM2),
   precioTotal: toNumberOrNull(form.precioTotal),
   estatus: form.estatus,
@@ -184,6 +196,14 @@ export default function AdminProyectoUnidadesPage() {
   const [accionando, setAccionando] = useState('');
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [unidadPreciosAbierta, setUnidadPreciosAbierta] = useState(null);
+  const [tiposPrecio, setTiposPrecio] = useState([]);
+  const [preciosUnidadEditando, setPreciosUnidadEditando] = useState([]);
+  const [preciosUnidadPersonalizados, setPreciosUnidadPersonalizados] = useState(false);
+  const [cargandoPrecios, setCargandoPrecios] = useState(false);
+  const [guardandoPrecios, setGuardandoPrecios] = useState(false);
+  const [errorPrecios, setErrorPrecios] = useState('');
+  const [mensajePrecios, setMensajePrecios] = useState('');
 
   const modeloPorId = useMemo(
     () => Object.fromEntries(modelos.map((modelo) => [String(modelo.id), modelo])),
@@ -282,7 +302,7 @@ export default function AdminProyectoUnidadesPage() {
       ['precioM2', 'Precio m2'],
       ['precioTotal', 'Precio total'],
       ['superficieTerrenoM2', 'Superficie terreno'],
-      ['superficieConstrucciónM2', 'Superficie construccion'],
+      ['superficieConstruccionM2', 'Superficie construccion'],
     ];
 
     for (const [key, label] of numericos) {
@@ -493,6 +513,217 @@ export default function AdminProyectoUnidadesPage() {
     }
   };
 
+  const cargarCatalogoPrecios = useCallback(async () => {
+    if (tiposPrecio.length > 0) {
+      return tiposPrecio;
+    }
+
+    try {
+      const tipos = await listarTiposPrecioInmobiliario();
+      setTiposPrecio(tipos);
+      return tipos;
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setTiposPrecio([]);
+      }
+      return [];
+    }
+  }, [tiposPrecio]);
+
+  const abrirPreciosUnidad = async (unidad) => {
+    setUnidadPreciosAbierta(unidad);
+    setCargandoPrecios(true);
+    setErrorPrecios('');
+    setMensajePrecios('');
+    setPreciosUnidadEditando([]);
+    setPreciosUnidadPersonalizados(false);
+
+    try {
+      const [tipos, preciosModeloData, preciosUnidadData] = await Promise.all([
+        cargarCatalogoPrecios(),
+        unidad.modeloId ? listarPreciosModeloProyecto(unidad.modeloId).catch(() => []) : Promise.resolve([]),
+        listarPreciosUnidadProyecto(unidad.id).catch(() => []),
+      ]);
+
+      const preciosModeloFuente = preciosModeloData.length > 0
+        ? preciosModeloData
+        : normalizarPreciosInmobiliarios(unidad.preciosModelo || unidad.modelo?.precios || unidad.modeloPrecios || unidad.preciosBase || []);
+      const preciosUnidadFuente = preciosUnidadData.length > 0
+        ? preciosUnidadData
+        : normalizarPreciosInmobiliarios(unidad.preciosPersonalizados || unidad.precios || unidad.tarifasPersonalizadas || []);
+      const resumenModelo = obtenerResumenPrecios({
+        precios: preciosModeloFuente,
+        fallbackPrecio: unidad.precioDesde ?? unidad.precioTotal ?? null,
+      });
+      const tiposBase = tipos.length > 0 ? tipos : resumenModelo.precios;
+      const mapaModelo = new Map(
+        preciosModeloFuente.map((precio) => [String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase(), precio])
+      );
+      const mapaUnidad = new Map(
+        preciosUnidadFuente.map((precio) => [String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase(), precio])
+      );
+      const unidadTienePersonalizados =
+        unidad.precioOrigen === 'PERSONALIZADO' ||
+        unidad.precioOrigen === 'UNIDAD' ||
+        unidad.precioOrigenEtiqueta === 'Personalizado' ||
+        preciosUnidadFuente.some((precio) => Boolean(
+          precio?.esPersonalizado ||
+          precio?.origenPrecio === 'UNIDAD' ||
+          precio?.origenPrecio === 'PERSONALIZADO' ||
+          (precio?.precioPersonalizado !== null && precio?.precioPersonalizado !== undefined && precio?.precioPersonalizado !== '')
+        ));
+      const catalogo = tiposBase.length > 0 ? tiposBase : preciosModeloFuente;
+      const fallbackPrecio = unidad.precioDesde ?? unidad.precioTotal ?? '';
+      const filas = (catalogo.length > 0 ? catalogo : [{
+        id: 'precio-actual',
+        tipoPrecioId: '',
+        tipoPrecioCodigo: 'FALLBACK',
+        tipoPrecioNombre: 'Precio actual',
+        descripcion: '',
+        precio: fallbackPrecio,
+        activo: true,
+        esPrincipal: true,
+        orden: 0,
+      }]).map((tipo, index) => {
+        const tipoKey = String(tipo.id || tipo.tipoPrecioId || tipo.codigo || tipo.nombre || index).toUpperCase();
+        const precioModelo = mapaModelo.get(tipoKey) || preciosModeloFuente.find((precio) => String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase() === tipoKey);
+        const precioUnidad = mapaUnidad.get(tipoKey) || preciosUnidadFuente.find((precio) => String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase() === tipoKey);
+        const precioHeredado = precioUnidad?.precioHeredado ?? precioModelo?.precio ?? (index === 0 ? fallbackPrecio : '');
+        const precioPersonalizado = precioUnidad?.precioPersonalizado ?? precioUnidad?.precioUnidad ?? precioUnidad?.precio ?? '';
+        const precioEfectivo = precioUnidad?.precioEfectivo ?? precioPersonalizado ?? precioHeredado;
+
+        return {
+          id: precioUnidad?.id || precioModelo?.id || `${tipoKey}-${index}`,
+          tipoPrecioId: tipo.id || tipo.tipoPrecioId || '',
+          tipoPrecioCodigo: tipo.codigo || tipo.tipoPrecioCodigo || '',
+          tipoPrecioNombre: tipo.nombre || tipo.tipoPrecioNombre || tipo.descripcion || `Esquema ${index + 1}`,
+          precioHeredado,
+          precioHeredadoTexto: formatearMonedaMXN(precioHeredado),
+          precioPersonalizado: precioPersonalizado === null || precioPersonalizado === undefined ? '' : String(precioPersonalizado),
+          precioEfectivo,
+          precioEfectivoTexto: formatearMonedaMXN(precioEfectivo),
+          descripcion: precioUnidad?.descripcion || precioModelo?.descripcion || '',
+          activo: unidadTienePersonalizados ? (precioUnidad?.activo !== false) : Boolean(precioModelo || index === 0),
+          orden: precioUnidad?.orden ?? precioModelo?.orden ?? index,
+        };
+      });
+
+      setPreciosUnidadEditando(filas);
+      setPreciosUnidadPersonalizados(unidadTienePersonalizados);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setErrorPrecios(getApiErrorMessage(err));
+      }
+    } finally {
+      setCargandoPrecios(false);
+    }
+  };
+
+  const cerrarPreciosUnidad = () => {
+    if (guardandoPrecios) return;
+    setUnidadPreciosAbierta(null);
+    setPreciosUnidadEditando([]);
+    setPreciosUnidadPersonalizados(false);
+    setErrorPrecios('');
+    setMensajePrecios('');
+  };
+
+  const actualizarPrecioUnidadFila = (index, cambios) => {
+    setPreciosUnidadEditando((actuales) =>
+      actuales.map((fila, filaIndex) => (filaIndex === index ? { ...fila, ...cambios } : fila))
+    );
+  };
+
+  const personalizarPreciosUnidad = () => {
+    setPreciosUnidadPersonalizados(true);
+    setPreciosUnidadEditando((actuales) =>
+      actuales.map((fila) => ({
+        ...fila,
+        precioPersonalizado: fila.precioHeredado === '' || fila.precioHeredado === null || fila.precioHeredado === undefined
+          ? ''
+          : String(fila.precioHeredado),
+      }))
+    );
+  };
+
+  const validarPreciosUnidad = () => {
+    if (!preciosUnidadPersonalizados) return '';
+
+    for (const fila of preciosUnidadEditando) {
+      if (fila.precioPersonalizado === '' || fila.precioPersonalizado === null || fila.precioPersonalizado === undefined) {
+        continue;
+      }
+
+      if (Number(fila.precioPersonalizado) < 0) {
+        return `El precio personalizado de ${fila.tipoPrecioNombre} no puede ser negativo.`;
+      }
+    }
+
+    return '';
+  };
+
+  const guardarPreciosUnidadEditados = async () => {
+    if (!unidadPreciosAbierta?.id) return;
+
+    const unidadActual = unidades.find((item) => String(item.id) === String(unidadPreciosAbierta.id)) || unidadPreciosAbierta;
+    const validacion = validarPreciosUnidad();
+    if (validacion) {
+      setErrorPrecios(validacion);
+      return;
+    }
+
+    setGuardandoPrecios(true);
+    setErrorPrecios('');
+    setMensajePrecios('');
+
+    try {
+      if (!preciosUnidadPersonalizados) {
+        await eliminarPreciosPersonalizadosUnidadProyecto(unidadPreciosAbierta.id);
+        await cargarDatos();
+        await abrirPreciosUnidad(unidadActual);
+        setMensajePrecios('La unidad volvio a heredar los precios del modelo.');
+        return;
+      }
+
+      await guardarPreciosUnidadProyecto(unidadPreciosAbierta.id, preciosUnidadEditando.map((fila, index) => ({
+        tipoPrecioId: fila.tipoPrecioId || null,
+        tipoPrecioCodigo: fila.tipoPrecioCodigo || null,
+        tipoPrecioNombre: fila.tipoPrecioNombre || null,
+        descripcion: fila.descripcion || null,
+        precio: fila.precioPersonalizado === '' || fila.precioPersonalizado === null || fila.precioPersonalizado === undefined
+          ? null
+          : Number(fila.precioPersonalizado),
+        activo: fila.precioPersonalizado !== '' && fila.precioPersonalizado !== null && fila.precioPersonalizado !== undefined,
+        orden: fila.orden ?? index,
+      })));
+      await cargarDatos();
+      await abrirPreciosUnidad(unidadActual);
+      setMensajePrecios('Precios personalizados guardados correctamente.');
+    } catch (err) {
+      setErrorPrecios(getApiErrorMessage(err));
+    } finally {
+      setGuardandoPrecios(false);
+    }
+  };
+  const volverAHeredarPreciosUnidad = async () => {
+    if (!unidadPreciosAbierta?.id) return;
+    const unidadActual = unidades.find((item) => String(item.id) === String(unidadPreciosAbierta.id)) || unidadPreciosAbierta;
+
+    setGuardandoPrecios(true);
+    setErrorPrecios('');
+    setMensajePrecios('');
+
+    try {
+      await eliminarPreciosPersonalizadosUnidadProyecto(unidadPreciosAbierta.id);
+      await cargarDatos();
+      await abrirPreciosUnidad(unidadActual);
+      setMensajePrecios('La unidad volvio a heredar los precios del modelo.');
+    } catch (err) {
+      setErrorPrecios(getApiErrorMessage(err));
+    } finally {
+      setGuardandoPrecios(false);
+    }
+  };
   if (cargando) {
     return (
       <main className="admin-proyecto-unidades">
@@ -618,7 +849,7 @@ export default function AdminProyectoUnidadesPage() {
                     <td data-label="Nivel">{unidad.nivel || '-'}</td>
                     <td data-label="Interior">{unidad.numeroInterior || '-'}</td>
                     <td data-label="Sup. terreno">{unidad.superficieTerrenoM2 || '-'}</td>
-                    <td data-label="Sup. construccion">{unidad.superficieConstrucciónM2 || '-'}</td>
+                    <td data-label="Sup. construccion">{unidad.superficieConstruccionM2 || '-'}</td>
                     <td data-label="Precio total">{unidad.precioTotalTexto}</td>
                     <td data-label="Estatus">
                       <span className={`admin-proyecto-unidades-status is-${unidad.estatus.toLowerCase()}`}>{unidad.estatus}</span>
@@ -666,6 +897,109 @@ export default function AdminProyectoUnidadesPage() {
         )}
       </section>
 
+      {unidadPreciosAbierta ? (
+        <div className="admin-proyecto-unidades-modal-overlay" role="presentation" onMouseDown={cerrarPreciosUnidad}>
+          <section className="admin-proyecto-unidades-prices-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="admin-proyecto-unidades-modal-head">
+              <div>
+                <p className="admin-proyecto-unidades-eyebrow">Precios de unidad</p>
+                <h2>{unidadPreciosAbierta.codigo}</h2>
+                <span>{unidadPreciosAbierta.modeloNombre}</span>
+              </div>
+              <button type="button" onClick={cerrarPreciosUnidad} aria-label="Cerrar" disabled={guardandoPrecios}>x</button>
+            </div>
+
+            <div className="admin-proyecto-unidades-modal-summary">
+              <article>
+                <span>Origen actual</span>
+                <strong>{unidadPreciosAbierta.precioOrigenEtiqueta || (preciosUnidadPersonalizados ? 'Personalizado' : 'Modelo')}</strong>
+              </article>
+              <article>
+                <span>Precio efectivo</span>
+                <strong>{unidadPreciosAbierta.precioDesdeTexto || unidadPreciosAbierta.precioTotalTexto || formatearMonedaMXN(unidadPreciosAbierta.precioTotal)}</strong>
+              </article>
+            </div>
+
+            <div className="admin-proyecto-unidades-prices-body">
+              {cargandoPrecios ? <p className="admin-proyecto-unidades-empty">Cargando precios...</p> : null}
+              {errorPrecios ? <p className="admin-proyecto-unidades-feedback is-error">{errorPrecios}</p> : null}
+              {mensajePrecios ? <p className="admin-proyecto-unidades-feedback is-ok">{mensajePrecios}</p> : null}
+
+              {!cargandoPrecios && preciosUnidadEditando.length === 0 ? (
+                <p className="admin-proyecto-unidades-empty">No se pudieron cargar esquemas de precio para esta unidad.</p>
+              ) : null}
+
+              {!cargandoPrecios && preciosUnidadEditando.length > 0 ? (
+                <div className="admin-proyecto-unidades-prices-table-wrap">
+                  <table className="admin-proyecto-unidades-prices-table">
+                    <thead>
+                      <tr>
+                        <th>Esquema</th>
+                        <th>Precio heredado</th>
+                        <th>Precio personalizado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preciosUnidadEditando.map((fila, index) => (
+                        <tr key={fila.id || `${unidadPreciosAbierta.id}-precio-${index}`}>
+                          <td data-label="Esquema">
+                            <strong>{fila.tipoPrecioNombre}</strong>
+                            {fila.tipoPrecioCodigo ? <small>{fila.tipoPrecioCodigo}</small> : null}
+                          </td>
+                          <td data-label="Precio heredado">
+                            <strong>{fila.precioHeredadoTexto || formatearMonedaMXN(fila.precioHeredado)}</strong>
+                          </td>
+                          <td data-label="Precio personalizado">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={fila.precioPersonalizado}
+                              onChange={(event) => actualizarPrecioUnidadFila(index, { precioPersonalizado: event.target.value })}
+                              disabled={!preciosUnidadPersonalizados}
+                              placeholder={preciosUnidadPersonalizados ? '0' : ''}
+                            />
+                            <small>
+                              {preciosUnidadPersonalizados
+                                ? (fila.precioPersonalizado !== '' ? formatearMonedaMXN(fila.precioPersonalizado) : 'Captura un precio para activar el esquema.')
+                                : 'Heredado del modelo'}
+                            </small>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="admin-proyecto-unidades-modal-actions">
+              {!preciosUnidadPersonalizados ? (
+                <button type="button" onClick={personalizarPreciosUnidad} disabled={cargandoPrecios || guardandoPrecios}>
+                  Personalizar precios de esta unidad
+                </button>
+              ) : null}
+              {preciosUnidadPersonalizados ? (
+                <button type="button" onClick={guardarPreciosUnidadEditados} disabled={cargandoPrecios || guardandoPrecios}>
+                  {guardandoPrecios ? 'Guardando...' : 'Guardar precios personalizados'}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="is-secondary"
+                onClick={async () => {
+                  if (!window.confirm('Volver a heredar los precios del modelo?')) return;
+                  await volverAHeredarPreciosUnidad();
+                }}
+                disabled={cargandoPrecios || guardandoPrecios}
+              >
+                Volver a heredar precios del modelo
+              </button>
+              <button type="button" onClick={cerrarPreciosUnidad} disabled={cargandoPrecios || guardandoPrecios}>Cerrar</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
       {csvModalOpen ? (
         <div className="admin-proyecto-unidades-modal-overlay" role="presentation" onMouseDown={cerrarCsvModal}>
           <section className="admin-proyecto-unidades-csv-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
@@ -691,7 +1025,7 @@ export default function AdminProyectoUnidadesPage() {
                     event.target.value = '';
                   }}
                 />
-                <small>Solo .csv. Tamano maximo 5MB.</small>
+                <small>Solo .csv. Tamaño máximo 5MB.</small>
               </label>
               {csvFile ? <p className="admin-proyecto-unidades-csv-file">{csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)</p> : null}
               {csvError ? <p className="admin-proyecto-unidades-feedback is-error">{csvError}</p> : null}
@@ -801,7 +1135,7 @@ export default function AdminProyectoUnidadesPage() {
                 <label><span>Nivel</span><input name="nivel" value={form.nivel} onChange={actualizarCampo} /></label>
                 <label><span>Numero interior</span><input name="numeroInterior" value={form.numeroInterior} onChange={actualizarCampo} /></label>
                 <label><span>Superficie terreno m2</span><input name="superficieTerrenoM2" type="number" min="0" step="0.01" value={form.superficieTerrenoM2} onChange={actualizarCampo} /></label>
-                <label><span>Superficie construccion m2</span><input name="superficieConstrucciónM2" type="number" min="0" step="0.01" value={form.superficieConstrucciónM2} onChange={actualizarCampo} /></label>
+                <label><span>Superficie construccion m2</span><input name="superficieConstruccionM2" type="number" min="0" step="0.01" value={form.superficieConstruccionM2} onChange={actualizarCampo} /></label>
                 <label><span>Precio m2</span><input name="precioM2" type="number" min="0" step="0.01" value={form.precioM2} onChange={actualizarCampo} /></label>
                 <label><span>Precio total</span><input name="precioTotal" type="number" min="0" step="0.01" value={form.precioTotal} onChange={actualizarCampo} /></label>
                 <label><span>Estatus</span><select name="estatus" value={form.estatus} onChange={actualizarCampo} required>{ESTATUS_UNIDAD.map((estatus) => <option key={estatus} value={estatus}>{estatus}</option>)}</select></label>
@@ -822,3 +1156,9 @@ export default function AdminProyectoUnidadesPage() {
     </main>
   );
 }
+
+
+
+
+
+

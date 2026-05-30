@@ -9,7 +9,7 @@ const FORM_INICIAL = {
 };
 
 const getApiErrorMessage = (err) =>
-  err.data?.mensaje || err.data?.message || err.message || 'No fue posible iniciar sesion.';
+  err.data?.mensaje || err.data?.message || err.message || 'No fue posible iniciar sesión.';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -54,8 +54,8 @@ export default function LoginPage() {
   return (
     <main className="login-page">
       <section className="login-card">
-        <p className="login-eyebrow">Administracion</p>
-        <h1>Iniciar sesion</h1>
+        <p className="login-eyebrow">Administración</p>
+        <h1>Iniciar sesión</h1>
         <form className="login-form" onSubmit={enviar}>
           <label>
             <span>Email</span>

@@ -457,7 +457,7 @@ export default function AdminProyectoImagenesPage() {
                           event.target.value = '';
                         }}
                       />
-                      <small>JPG, JPEG, PNG o WEBP. Tamano maximo 10MB.</small>
+                      <small>JPG, JPEG, PNG o WEBP. Tamaño máximo 10MB.</small>
                     </label>
                     <div className="admin-proyecto-imagenes-upload-preview">
                       {archivoPreview ? <img src={archivoPreview} alt="Preview de imagen" /> : <span>Preview</span>}

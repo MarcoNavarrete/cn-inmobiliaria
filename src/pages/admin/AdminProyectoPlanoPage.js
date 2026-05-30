@@ -882,7 +882,7 @@ export default function AdminProyectoPlanoPage() {
                   event.target.value = '';
                 }}
               />
-              <small>Solo archivos .svg. Tamano maximo 10MB.</small>
+              <small>Solo archivos .svg. Tamaño máximo 10MB.</small>
             </label>
             <div className="admin-proyecto-plano-file-preview">
               {archivoSvg ? (
@@ -895,7 +895,7 @@ export default function AdminProyectoPlanoPage() {
               )}
             </div>
           </div>
-          <p className="admin-proyecto-plano-warning">El SVG sera publico y no debe contener informacion sensible, datos privados ni documentos internos.</p>
+          <p className="admin-proyecto-plano-warning">El SVG sera publico y no debe contener información sensible, datos privados ni documentos internos.</p>
           <button type="submit" disabled={guardando}>{guardando ? 'Subiendo...' : 'Subir SVG del plano'}</button>
 
           {esAdminCn ? (

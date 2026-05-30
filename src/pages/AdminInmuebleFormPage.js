@@ -176,7 +176,7 @@ export default function AdminInmuebleFormPage() {
         }
       } catch (err) {
         if (err.name !== 'AbortError') {
-          setError(err.message || 'No fue posible cargar la informacion del inmueble.');
+          setError(err.message || 'No fue posible cargar la información del inmueble.');
         }
       } finally {
         if (!controller.signal.aborted) {

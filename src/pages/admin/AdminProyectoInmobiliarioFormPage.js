@@ -915,7 +915,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
                         event.target.value = '';
                       }}
                     />
-                    <small>JPG, JPEG, PNG o WEBP. Tamano maximo 10MB.</small>
+                    <small>JPG, JPEG, PNG o WEBP. Tamaño máximo 10MB.</small>
                   </label>
                   {form.imagenPrincipalUrl ? (
                     <p className="admin-proyecto-form-media-current">URL actual: {form.imagenPrincipalUrl}</p>
@@ -949,7 +949,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
                         event.target.value = '';
                       }}
                     />
-                    <small>JPG, JPEG, PNG o WEBP. Tamano maximo 10MB.</small>
+                    <small>JPG, JPEG, PNG o WEBP. Tamaño máximo 10MB.</small>
                   </label>
                   {form.logoUrl ? (
                     <p className="admin-proyecto-form-media-current">URL actual: {form.logoUrl}</p>
@@ -976,7 +976,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
           <h2>Contacto</h2>
           <div className="admin-proyecto-form-grid">
             <label><span>Nombre contacto</span><input name="nombreContacto" value={form.nombreContacto} onChange={actualizarCampo} /></label>
-            <label><span>Telefono contacto</span><input name="telefonoContacto" value={form.telefonoContacto} onChange={actualizarCampo} /></label>
+            <label><span>Teléfono contacto</span><input name="telefonoContacto" value={form.telefonoContacto} onChange={actualizarCampo} /></label>
             <label><span>WhatsApp contacto</span><input name="whatsappContacto" value={form.whatsappContacto} onChange={actualizarCampo} /></label>
             <label><span>Correo contacto</span><input name="correoContacto" type="email" value={form.correoContacto} onChange={actualizarCampo} /></label>
           </div>

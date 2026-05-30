@@ -56,7 +56,7 @@ const buildUbicacion = (item) =>
     item.municipioNombre,
     item.poblacionNombre,
     item.estadoNombre,
-  ].filter(Boolean).join(', ') || 'Sin ubicacion';
+  ].filter(Boolean).join(', ') || 'Sin ubicación';
 
 export const normalizeDesarrolloPayload = (payload = {}) => ({
   nombre: toText(payload.nombre),

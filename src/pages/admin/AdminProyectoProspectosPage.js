@@ -210,7 +210,7 @@ export default function AdminProyectoProspectosPage() {
                     <th>Unidad</th>
                     <th>Empresa</th>
                     <th>Prospecto</th>
-                    <th>Telefono</th>
+                    <th>Teléfono</th>
                     <th>Correo</th>
                     <th>Origen</th>
                     <th>Estatus</th>

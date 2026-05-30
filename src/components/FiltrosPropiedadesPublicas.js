@@ -62,7 +62,7 @@ export default function FiltrosPropiedadesPublicas({
         setEstados(data);
       } catch (err) {
         if (err.name !== 'AbortError') {
-          setCatalogosError('No fue posible cargar los filtros de ubicacion.');
+          setCatalogosError('No fue posible cargar los filtros de ubicación.');
         }
       } finally {
         if (!controller.signal.aborted) {

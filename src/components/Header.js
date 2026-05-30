@@ -129,7 +129,7 @@ export default function Header() {
           <span className="nav-user" title="Cargando cuenta">Cargando...</span>
         ) : (
           <div className="auth-links">
-            <Link to="/login" onClick={cerrarMenus}>Iniciar sesion</Link>
+            <Link to="/login" onClick={cerrarMenus}>Iniciar sesión</Link>
             <Link to="/register" onClick={cerrarMenus}>Registrarse</Link>
           </div>
         )}

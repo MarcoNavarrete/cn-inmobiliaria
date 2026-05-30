@@ -46,7 +46,7 @@ export default function ProspectoDesarrolloModal({
   }, [desarrollo?.nombre, initialMessage, isOpen, modelo]);
 
   const titulo = useMemo(
-    () => (modelo ? `Me interesa ${modelo.nombre}` : 'Solicitar informacion'),
+    () => (modelo ? `Me interesa ${modelo.nombre}` : 'Solicitar información'),
     [modelo]
   );
 
@@ -144,7 +144,7 @@ export default function ProspectoDesarrolloModal({
           </label>
 
           <label>
-            <span>Telefono</span>
+            <span>Teléfono</span>
             <input
               name="telefono"
               value={form.telefono}

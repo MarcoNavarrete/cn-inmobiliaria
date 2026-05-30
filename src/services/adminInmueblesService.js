@@ -74,7 +74,7 @@ const buildUbicacion = (inmueble) =>
     inmueble.estadoNombre,
   ]
     .filter(Boolean)
-    .join(', ') || 'Sin ubicacion';
+    .join(', ') || 'Sin ubicación';
 
 const adaptInmuebleAdmin = (inmueble) => ({
   id: String(

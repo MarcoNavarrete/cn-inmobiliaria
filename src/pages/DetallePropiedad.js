@@ -604,7 +604,7 @@ export default function DetallePropiedad() {
           <div className="prospecto-formulario-encabezado">
             <div>
               <p>Solicitud</p>
-              <h2>Solicitar informacion</h2>
+              <h2>Solicitar información</h2>
             </div>
             {usuarioAutenticado ? (
               <Link to="/mis-solicitudes" className="prospecto-seguimiento-link">
@@ -616,7 +616,7 @@ export default function DetallePropiedad() {
                 state={{ from: location }}
                 className="prospecto-seguimiento-link"
               >
-                Iniciar sesion
+                Iniciar sesión
               </Link>
             )}
           </div>
@@ -627,7 +627,7 @@ export default function DetallePropiedad() {
             </p>
           ) : (
             <p className="prospecto-ayuda">
-              Puedes llenar tus datos como visitante o iniciar sesion para dar seguimiento a tu solicitud.
+              Puedes llenar tus datos como visitante o iniciar sesión para dar seguimiento a tu solicitud.
             </p>
           )}
 
@@ -645,7 +645,7 @@ export default function DetallePropiedad() {
             </label>
 
             <label className="campo-contacto">
-              <span>Telefono</span>
+              <span>Teléfono</span>
               <input
                 type="tel"
                 name="telefono"
@@ -686,7 +686,7 @@ export default function DetallePropiedad() {
                 className="btn-contacto"
                 disabled={enviandoProspecto}
               >
-                {enviandoProspecto ? 'Enviando...' : 'Solicitar informacion'}
+                {enviandoProspecto ? 'Enviando...' : 'Solicitar información'}
               </button>
               {!usuarioAutenticado ? (
                 <Link
@@ -694,7 +694,7 @@ export default function DetallePropiedad() {
                   state={{ from: location }}
                   className="btn-contacto btn-contacto-secundario"
                 >
-                  Iniciar sesion para seguimiento
+                  Iniciar sesión para seguimiento
                 </Link>
               ) : null}
             </div>

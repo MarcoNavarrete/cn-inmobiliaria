@@ -8,6 +8,10 @@ import {
   toBool,
   toText,
 } from './proyectosInmobiliariosUtils';
+import {
+  obtenerResumenPrecios,
+  normalizarPreciosInmobiliarios,
+} from '../utils/preciosInmobiliarios';
 
 const BASE_URL = '/api/proyectos-inmobiliarios';
 
@@ -62,7 +66,9 @@ export const adaptProyectoPublico = (item = {}) => {
 
 export const adaptModeloPublico = (item = {}) => {
   const id = toText(pickFirst(item.modeloId, item.proyectoModeloId, item.id, item.Id));
-  const precioDesde = pickFirst(item.precioDesde, item.precio, item.precioMinimo);
+  const fallbackPrecio = pickFirst(item.precioDesde, item.precio, item.precioMinimo);
+  const precios = normalizarPreciosInmobiliarios(pickFirst(item.preciosActivos, item.precios, item.preciosModelo, []));
+  const resumenPrecios = obtenerResumenPrecios({ precios, fallbackPrecio });
 
   return {
     id,
@@ -77,18 +83,25 @@ export const adaptModeloPublico = (item = {}) => {
     niveles: pickFirst(item.niveles, item.pisos, '-'),
     superficieTerrenoM2: pickFirst(item.superficieTerrenoM2, item.terrenoM2, item.m2Terreno),
     superficieConstruccionM2: pickFirst(item.superficieConstruccionM2, item.construccionM2, item.m2Construccion),
-    precioDesde,
-    precioDesdeTexto: formatCurrency(precioDesde),
+    precioDesde: resumenPrecios.precioDesde,
+    precioDesdeTexto: resumenPrecios.precioDesdeTexto,
+    precioContadoTexto: resumenPrecios.precioContadoTexto,
+    preciosActivos: resumenPrecios.preciosActivos,
+    tieneMasDeUnPrecioActivo: resumenPrecios.tieneMasDeUnPrecioActivo,
     imagenPrincipalUrl: toText(pickFirst(item.imagenPrincipalUrl, item.imagenPrincipal, item.imagenUrl)),
     tour360Url: toText(pickFirst(item.tour360Url, item.tourUrl)),
     orden: toNumberValue(pickFirst(item.orden, item.order, item.posicion)) ?? 0,
     activo: toBool(pickFirst(item.activo, item.esActivo), true),
   };
 };
-
 export const adaptUnidadPublica = (item = {}) => {
   const id = toText(pickFirst(item.unidadId, item.proyectoUnidadId, item.id, item.Id));
-  const precioTotal = pickFirst(item.precioTotal, item.precio, item.precioVenta);
+  const fallbackPrecio = pickFirst(item.precioTotal, item.precio, item.precioVenta, item.precioDesde);
+  const preciosPersonalizados = normalizarPreciosInmobiliarios(pickFirst(item.preciosPersonalizados, item.preciosUnidad, item.tarifasPersonalizadas, []));
+  const preciosModelo = normalizarPreciosInmobiliarios(pickFirst(item.preciosModelo, item.modeloPrecios, item.modelo?.precios, item.preciosBase, []));
+  const preciosApi = normalizarPreciosInmobiliarios(pickFirst(item.preciosActivos, item.precios, item.tarifas, []));
+  const preciosFuente = preciosPersonalizados.length > 0 ? preciosPersonalizados : preciosApi.length > 0 ? preciosApi : preciosModelo;
+  const resumenPrecios = obtenerResumenPrecios({ precios: preciosFuente, fallbackPrecio });
 
   return {
     id,
@@ -105,14 +118,17 @@ export const adaptUnidadPublica = (item = {}) => {
     numeroInterior: toText(pickFirst(item.numeroInterior, item.interior)),
     superficieTerrenoM2: pickFirst(item.superficieTerrenoM2, item.terrenoM2, item.m2Terreno),
     superficieConstruccionM2: pickFirst(item.superficieConstruccionM2, item.construccionM2, item.m2Construccion),
-    precioTotal,
-    precioTotalTexto: formatCurrency(precioTotal),
+    precioTotal: resumenPrecios.precioDesde,
+    precioTotalTexto: resumenPrecios.precioDesdeTexto,
+    precioDesde: resumenPrecios.precioDesde,
+    precioDesdeTexto: resumenPrecios.precioDesdeTexto,
+    precioContadoTexto: resumenPrecios.precioContadoTexto,
+    preciosActivos: resumenPrecios.preciosActivos,
     estatus: toText(pickFirst(item.estatus, item.status, item.estado), 'DISPONIBLE').toUpperCase(),
     svgElementId: toText(pickFirst(item.svgElementId, item.svgId, item.elementoSvgId)),
     visiblePublico: item.visiblePublico !== false && item.mostrarEnPublico !== false,
   };
 };
-
 export const adaptPlanoPublico = (item = {}) => {
   if (!item) return null;
 
@@ -164,3 +180,4 @@ export const listarImagenesPublicas = (slug, options = {}) =>
 
 export const crearProspectoPublico = (slug, data) =>
   requestJson(`${BASE_URL}/${slug}/prospectos`, { method: 'POST', body: data });
+

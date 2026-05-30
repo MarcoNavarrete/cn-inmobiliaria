@@ -314,7 +314,7 @@ export default function AdminDesarrolloFormPage() {
               value={form.telefonoContacto}
               onChange={actualizarCampo}
               maxLength="30"
-              placeholder="Ej. +52 55 4085 9798"
+              placeholder="Ej. +52 771 670 7794"
             />
           </Field>
           <Field label="Nombre de contacto">

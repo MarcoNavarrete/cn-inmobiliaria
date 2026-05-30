@@ -312,3 +312,68 @@
     grid-template-columns: 1fr;
   }
 }
+
+.admin-proyecto-modelos-prices-modal {
+  width: min(1040px, 100%);
+  margin: 2rem 0;
+  border-radius: 12px;
+  background: var(--blanco);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.admin-proyecto-modelos-prices-body {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.admin-proyecto-modelos-prices-help {
+  margin: 0;
+  border-radius: 10px;
+  padding: 0.8rem 0.9rem;
+  background: rgba(26, 61, 124, 0.06);
+  color: var(--gris-elegante);
+  font-weight: 800;
+}
+
+.admin-proyecto-modelos-prices-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-proyecto-modelos-prices-table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: collapse;
+}
+
+.admin-proyecto-modelos-prices-table th,
+.admin-proyecto-modelos-prices-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(26, 61, 124, 0.08);
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-proyecto-modelos-prices-table th {
+  color: rgba(26, 61, 124, 0.82);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.admin-proyecto-modelos-prices-table small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--gris-elegante);
+  font-weight: 700;
+}
+
+.admin-proyecto-modelos-check {
+  display: inline-flex;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.admin-proyecto-modelos-check input {
+  width: auto;
+}

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom';
 import RichTextContent from '../components/common/RichTextContent';
 import ProyectoPlanoInteractivo from '../components/proyectos/ProyectoPlanoInteractivo';
+import { getWhatsAppPhone } from '../config/contacto';
 import { trackEvent } from '../lib/analytics';
 import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
 import { resolveApiAssetUrl } from '../services/apiClient';
@@ -16,7 +17,6 @@ import {
 import './ProyectoInmobiliarioDetallePage.css';
 
 const CN_LOGO = './assets/logo.png';
-const DEFAULT_WHATSAPP_NUMBER = '+5215540859798';
 const UNIDADES_PAGE_SIZE = 12;
 const ESTATUS_UNIDAD = ['DISPONIBLE', 'APARTADO', 'EN_PROCESO', 'VENDIDO', 'LIQUIDADO', 'BLOQUEADO', 'NO_DISPONIBLE'];
 const TIPOS_UNIDAD = ['LOTE', 'CASA', 'DEPARTAMENTO', 'LOCAL', 'OFICINA', 'MACROLOTE', 'OTRO'];
@@ -30,8 +30,6 @@ const FILTROS_UNIDADES_INICIALES = {
 const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No fue posible procesar la solicitud.';
 
-const normalizePhone = (value) => String(value || '').replace(/\D/g, '');
-
 const formatArea = (value) => {
   if (!value || Number.isNaN(Number(value))) return '-';
   return `${Number(value).toLocaleString('es-MX')} m2`;
@@ -41,7 +39,7 @@ const getStatusClass = (status) =>
   `is-${String(status || '').trim().toLowerCase().replace(/\s+/g, '_')}`;
 
 const buildUnidadMessage = (unidad, proyecto) =>
-  `Me interesa la unidad ${unidad?.codigo || 'seleccionada'} del proyecto ${proyecto?.nombre || ''}. Quiero recibir mas informacion.`
+  `Me interesa la unidad ${unidad?.codigo || 'seleccionada'} del proyecto ${proyecto?.nombre || ''}. Quiero recibir mas información.`
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -261,8 +259,8 @@ export default function ProyectoInmobiliarioDetallePage() {
 
   const abrirWhatsapp = () => {
     if (!proyecto) return;
-    const telefono = normalizePhone(proyecto.whatsappContacto || proyecto.telefonoContacto) || normalizePhone(DEFAULT_WHATSAPP_NUMBER);
-    const text = `Hola, me interesa el proyecto ${proyecto.nombre}. Me gustaria recibir mas informacion.`;
+    const telefono = getWhatsAppPhone(proyecto.telefonoContacto || proyecto.whatsappContacto);
+    const text = `Hola, me interesa el proyecto ${proyecto.nombre}. Me gustaria recibir mas información.`;
     trackEvent('click_whatsapp', {
       source: 'proyecto_inmobiliario_detalle',
       project_slug: slug,
@@ -299,11 +297,11 @@ export default function ProyectoInmobiliarioDetallePage() {
         nombre: form.nombre.trim(),
         telefono: form.telefono.trim() || null,
         correo: form.correo.trim() || null,
-        mensaje: form.mensaje.trim() || `Me interesa recibir informacion del proyecto ${proyecto.nombre}.`,
+        mensaje: form.mensaje.trim() || `Me interesa recibir información del proyecto ${proyecto.nombre}.`,
         unidadId: unidadSeleccionada?.id || unidadSeleccionada?.unidadId || null,
         origen: 'WEB',
       });
-      setMensaje('Gracias, recibimos tus datos. Un asesor se pondra en contacto contigo.');
+      setMensaje('Gracias, recibimos tus datos. Un asesor se pondrá en contacto contigo.');
       setForm(FORM_INICIAL);
       setUnidadSeleccionada(null);
     } catch (err) {
@@ -487,16 +485,30 @@ export default function ProyectoInmobiliarioDetallePage() {
                   <div className="proyecto-modelo-info">
                     <div className="proyecto-modelo-header">
                       <h3>{modelo.nombre}</h3>
-                      <strong>{modelo.precioDesdeTexto}</strong>
+                      <strong>Desde {modelo.precioDesdeTexto}</strong>
                     </div>
                     <p>{modelo.descripcion || 'Modelo disponible dentro del proyecto.'}</p>
+                    <div className="proyecto-modelo-prices">
+                      <span>{modelo.precioContadoTexto ? 'Precio de contado' : 'Precio desde'}</span>
+                      {modelo.tieneMasDeUnPrecioActivo ? <small>Otros esquemas de financiamiento disponibles</small> : null}
+                    </div>
+                    {modelo.preciosActivos?.length ? (
+                      <div className="proyecto-modelo-price-options">
+                        <strong>Opciones de compra</strong>
+                        {modelo.preciosActivos.map((precio) => (
+                          <span key={precio.id || precio.tipoPrecioCodigo || precio.tipoPrecioNombre}>
+                            {precio.tipoPrecioNombre}: {precio.precioTexto}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                     <dl className="proyecto-modelo-features">
                       <div><dt>Recámaras</dt><dd>{modelo.recamaras}</dd></div>
-                      <div><dt>Baños</dt><dd>{modelo.banos}{modelo.mediosBaños ? ` + ${modelo.mediosBaños}/2` : ''}</dd></div>
+                      <div><dt>Baños</dt><dd>{modelo.banos}{modelo.mediosBanos ? ` + ${modelo.mediosBanos}/2` : ''}</dd></div>
                       <div><dt>Estac.</dt><dd>{modelo.estacionamientos}</dd></div>
                       <div><dt>Niveles</dt><dd>{modelo.niveles}</dd></div>
                       <div><dt>Terreno</dt><dd>{formatArea(modelo.superficieTerrenoM2)}</dd></div>
-                      <div><dt>Construcción</dt><dd>{formatArea(modelo.superficieConstrucciónM2)}</dd></div>
+                      <div><dt>Construcción</dt><dd>{formatArea(modelo.superficieConstruccionM2)}</dd></div>
                     </dl>
                     <div className="proyecto-modelo-actions">
                       {modelo.imagenPrincipalUrl ? (
@@ -619,8 +631,8 @@ export default function ProyectoInmobiliarioDetallePage() {
                           <td>{unidad.torre || '-'}</td>
                           <td>{unidad.nivel || '-'}</td>
                           <td>{formatArea(unidad.superficieTerrenoM2)}</td>
-                          <td>{formatArea(unidad.superficieConstrucciónM2)}</td>
-                          <td>{unidad.precioTotalTexto}</td>
+                          <td>{formatArea(unidad.superficieConstruccionM2)}</td>
+                          <td>{unidad.precioDesdeTexto || unidad.precioTotalTexto}</td>
                           <td><span className={`proyecto-publico-status ${getStatusClass(unidad.estatus)}`}>{unidad.estatus}</span></td>
                           <td><button type="button" onClick={() => seleccionarUnidadYContactar(unidad)}>Me interesa</button></td>
                         </tr>
@@ -694,8 +706,8 @@ export default function ProyectoInmobiliarioDetallePage() {
         <section className="proyecto-publico-contact" ref={contactoRef}>
           <div>
             <p className="proyecto-publico-eyebrow">Contacto</p>
-            <h2>Solicita informacion</h2>
-            <p>Comparte tus datos y un asesor se pondra en contacto contigo.</p>
+            <h2>Solicita información</h2>
+            <p>Comparte tus datos y un asesor se pondrá en contacto contigo.</p>
             {unidadSeleccionada ? (
               <span className="proyecto-publico-selected-pill">Unidad seleccionada: {unidadSeleccionada.codigo}</span>
             ) : null}
@@ -706,7 +718,7 @@ export default function ProyectoInmobiliarioDetallePage() {
               <input name="nombre" value={form.nombre} onChange={actualizarCampo} required />
             </label>
             <label>
-              <span>Telefono</span>
+              <span>Teléfono</span>
               <input name="telefono" value={form.telefono} onChange={actualizarCampo} />
             </label>
             <label>
@@ -736,3 +748,5 @@ export default function ProyectoInmobiliarioDetallePage() {
     </main>
   );
 }
+
+

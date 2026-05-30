@@ -61,7 +61,7 @@ export default function RegisterPage() {
         return;
       }
 
-      setExito('Cuenta registrada correctamente. Ahora puedes iniciar sesion.');
+      setExito('Cuenta registrada correctamente. Ahora puedes iniciar sesión.');
       setTimeout(() => navigate('/login', { replace: true, state: { from } }), 900);
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -131,7 +131,7 @@ export default function RegisterPage() {
           </button>
         </form>
         <p className="login-alt">
-          ¿Ya tienes cuenta? <Link to="/login" state={{ from }}>Inicia sesion</Link>
+          ¿Ya tienes cuenta? <Link to="/login" state={{ from }}>Inicia sesión</Link>
         </p>
       </section>
     </main>
