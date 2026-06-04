@@ -98,7 +98,9 @@ export const desactivarUsuario = (usuarioId) =>
     method: 'PUT',
   });
 
-export const resetPasswordUsuario = (usuarioId) =>
+export const resetPasswordUsuario = (usuarioId, nuevaPassword) =>
   requestJson(`/api/admin/usuarios/${usuarioId}/reset-password`, {
     method: 'PUT',
+    body: { nuevaPassword },
+    suppressForbiddenAlert: true,
   });

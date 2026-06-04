@@ -15,6 +15,7 @@ import {
   listarEmpresaUsuarios,
   setEmpresaUsuarioActivo,
 } from '../services/empresasUsuariosService';
+import useAuthSession from '../hooks/useAuthSession';
 import './AdminUsuariosPage.css';
 
 const ROLES_FALLBACK = [
@@ -33,6 +34,12 @@ const FORM_INICIAL = {
   passwordTemporal: '',
   empresaId: '',
   rolEmpresa: 'ADMIN_EMPRESA',
+};
+
+
+const RESET_PASSWORD_FORM_INICIAL = {
+  nuevaPassword: '',
+  confirmarPassword: '',
 };
 
 const ROLES_GLOBAL_CN = ['ADMIN', 'SUPERADMIN'];
@@ -77,13 +84,19 @@ export default function AdminUsuariosPage() {
   const [guardando, setGuardando] = useState(false);
   const [accionandoRelacionId, setAccionandoRelacionId] = useState('');
   const [accionandoId, setAccionandoId] = useState('');
+  const [usuarioResetPassword, setUsuarioResetPassword] = useState(null);
+  const [resetPasswordForm, setResetPasswordForm] = useState(RESET_PASSWORD_FORM_INICIAL);
+  const [resetPasswordError, setResetPasswordError] = useState('');
+  const [reseteandoPassword, setReseteandoPassword] = useState(false);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const { rolGlobal } = useAuthSession();
 
   const esEdicion = Boolean(form.id);
   const rolesDisponibles = roles.length > 0 ? roles : ROLES_FALLBACK;
   const tieneEmpresaSeleccionada = Boolean(form.empresaId);
   const rolGlobalConEmpresa = tieneEmpresaSeleccionada && ROLES_GLOBAL_CN.includes(String(form.rol || '').toUpperCase());
+  const esSuperAdmin = String(rolGlobal || '').toUpperCase() === 'SUPERADMIN';
 
   const cargarUsuarios = useCallback(async (options = {}) => {
     setCargando(true);
@@ -302,16 +315,87 @@ export default function AdminUsuariosPage() {
     );
   };
 
-  const resetPassword = (usuario) => {
-    if (!window.confirm('Confirmar reseteo de contraseña?')) {
+  const abrirResetPassword = (usuario) => {
+    setUsuarioResetPassword(usuario);
+    setResetPasswordForm(RESET_PASSWORD_FORM_INICIAL);
+    setResetPasswordError('');
+    setError('');
+    setMensaje('');
+  };
+
+  const cerrarResetPassword = () => {
+    if (reseteandoPassword) {
       return;
     }
 
-    ejecutarAccion(
-      usuario.id,
-      () => resetPasswordUsuario(usuario.id),
-      'Contraseña reseteada correctamente.'
-    );
+    setUsuarioResetPassword(null);
+    setResetPasswordForm(RESET_PASSWORD_FORM_INICIAL);
+    setResetPasswordError('');
+  };
+
+  const actualizarResetPasswordCampo = (event) => {
+    const { name, value } = event.target;
+    setResetPasswordForm((actual) => ({
+      ...actual,
+      [name]: value,
+    }));
+    setResetPasswordError('');
+  };
+
+  const guardarResetPassword = async (event) => {
+    event.preventDefault();
+
+    const nuevaPassword = resetPasswordForm.nuevaPassword;
+    const confirmarPassword = resetPasswordForm.confirmarPassword;
+
+    if (!nuevaPassword) {
+      setResetPasswordError('La nueva contraseña temporal es obligatoria.');
+      return;
+    }
+
+    if (!confirmarPassword) {
+      setResetPasswordError('Confirma la contraseña temporal.');
+      return;
+    }
+
+    if (nuevaPassword.length < 8) {
+      setResetPasswordError('La contraseña temporal debe tener mínimo 8 caracteres.');
+      return;
+    }
+
+    if (nuevaPassword !== confirmarPassword) {
+      setResetPasswordError('Las contraseñas temporales no coinciden.');
+      return;
+    }
+
+    if (!usuarioResetPassword?.id) {
+      setResetPasswordError('No fue posible identificar el usuario seleccionado.');
+      return;
+    }
+
+    setReseteandoPassword(true);
+    setResetPasswordError('');
+    setError('');
+    setMensaje('');
+
+    try {
+      await resetPasswordUsuario(usuarioResetPassword.id, nuevaPassword);
+      setMensaje('Contraseña temporal actualizada correctamente.');
+      setUsuarioResetPassword(null);
+      setResetPasswordForm(RESET_PASSWORD_FORM_INICIAL);
+    } catch (err) {
+      if (err.status === 403) {
+        setResetPasswordError('No tienes permisos para resetear contraseñas. Esta acción es exclusiva de SUPERADMIN.');
+      } else if (err.status === 400) {
+        setResetPasswordError(err.data?.mensaje || err.data?.message || err.message || 'La contraseña no cumple con los requisitos.');
+      } else if (err.status === 404) {
+        setResetPasswordError('Usuario no encontrado.');
+      } else {
+        setResetPasswordError('No se pudo actualizar la contraseña del usuario.');
+      }
+    } finally {
+      setReseteandoPassword(false);
+    }
   };
 
   const alternarRelacionEmpresa = async (relacion) => {
@@ -393,14 +477,16 @@ export default function AdminUsuariosPage() {
                           >
                             {usuario.activo ? 'Desactivar' : 'Activar'}
                           </button>
-                          <button
-                            type="button"
-                            className="is-danger"
-                            onClick={() => resetPassword(usuario)}
-                            disabled={!usuario.id || accionandoId === usuario.id}
-                          >
-                            Reset password
-                          </button>
+                          {esSuperAdmin ? (
+                            <button
+                              type="button"
+                              className="is-danger"
+                              onClick={() => abrirResetPassword(usuario)}
+                              disabled={!usuario.id || accionandoId === usuario.id}
+                            >
+                              Resetear contraseña
+                            </button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -543,6 +629,55 @@ export default function AdminUsuariosPage() {
                   {guardando ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Crear usuario'}
                 </button>
                 <button type="button" onClick={cerrarPanel} disabled={guardando}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </aside>
+      ) : null}
+      {usuarioResetPassword ? (
+        <aside className="admin-usuarios-panel" role="dialog" aria-modal="true" aria-label="Resetear contraseña">
+          <div className="admin-usuarios-panel-card">
+            <div className="admin-usuarios-panel-head">
+              <h2>Resetear contraseña</h2>
+              <button type="button" onClick={cerrarResetPassword} disabled={reseteandoPassword}>Cerrar</button>
+            </div>
+
+            <form className="admin-usuarios-form" onSubmit={guardarResetPassword}>
+              <p className="admin-usuarios-reset-user">
+                Usuario: <strong>{usuarioResetPassword.nombre || usuarioResetPassword.email}</strong>
+              </p>
+              <label>
+                <span>Nueva contraseña temporal</span>
+                <input
+                  name="nuevaPassword"
+                  type="password"
+                  value={resetPasswordForm.nuevaPassword}
+                  onChange={actualizarResetPasswordCampo}
+                  autoComplete="new-password"
+                  minLength="8"
+                  required
+                />
+              </label>
+              <label>
+                <span>Confirmar contraseña temporal</span>
+                <input
+                  name="confirmarPassword"
+                  type="password"
+                  value={resetPasswordForm.confirmarPassword}
+                  onChange={actualizarResetPasswordCampo}
+                  autoComplete="new-password"
+                  minLength="8"
+                  required
+                />
+              </label>
+              {resetPasswordError ? <p className="admin-usuarios-form-error">{resetPasswordError}</p> : null}
+              <div className="admin-usuarios-form-actions">
+                <button type="submit" className="admin-usuarios-primary" disabled={reseteandoPassword}>
+                  {reseteandoPassword ? 'Guardando...' : 'Guardar contraseña'}
+                </button>
+                <button type="button" onClick={cerrarResetPassword} disabled={reseteandoPassword}>
                   Cancelar
                 </button>
               </div>
