@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { resolveApiAssetUrl } from '../../services/apiClient';
 import './ImageUploaderDropzone.css';
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -30,6 +29,15 @@ export default function ImageUploaderDropzone({
     }
 
     setPreviewUrl('');
+  };
+
+  const limpiarSeleccion = () => {
+    limpiarPreview();
+    setArchivo(null);
+
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
   };
 
   const seleccionarArchivo = (file) => {
@@ -84,10 +92,11 @@ export default function ImageUploaderDropzone({
         throw new Error('El API no devolvio la URL de la imagen.');
       }
 
-      limpiarPreview();
-      setPreviewUrl(resolveApiAssetUrl(url));
-      await onUploaded?.(response);
-      setArchivo(null);
+      const limpiarDespuesDeRegistrar = await onUploaded?.(response);
+
+      if (limpiarDespuesDeRegistrar !== false) {
+        limpiarSeleccion();
+      }
     } catch (err) {
       setError(err.data?.mensaje || err.data?.message || err.message || 'No fue posible subir la imagen.');
     } finally {
@@ -122,7 +131,7 @@ export default function ImageUploaderDropzone({
           <button type="button" onClick={() => inputRef.current?.click()} disabled={disabled || subiendo}>
             Seleccionar archivo
           </button>
-          <button type="button" onClick={subir} disabled={disabled || subiendo}>
+          <button type="button" onClick={subir} disabled={disabled || subiendo || !archivo}>
             {subiendo ? 'Subiendo...' : 'Subir imagen'}
           </button>
         </div>
@@ -137,3 +146,4 @@ export default function ImageUploaderDropzone({
     </section>
   );
 }
+

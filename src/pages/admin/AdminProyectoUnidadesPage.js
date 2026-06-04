@@ -66,6 +66,52 @@ const FORM_INICIAL = {
 const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No fue posible procesar la accion.';
 
+const hasPrecioValue = (value) => value !== '' && value !== null && value !== undefined;
+
+const parsePrecioValue = (value) => {
+  if (!hasPrecioValue(value)) return null;
+  const cleaned = String(value).replace(/[^0-9.-]/g, '');
+  if (!cleaned) return null;
+  const number = Number(cleaned);
+  return Number.isFinite(number) ? number : null;
+};
+
+const getTipoPrecioIdValue = (fila = {}) => {
+  const value = fila.tipoPrecioId ?? fila.tipoPrecioInmobiliarioId ?? fila.catalogoTipoPrecioId;
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : null;
+};
+
+const getTipoPrecioKeys = (item = {}) => [
+  item.tipoPrecioId,
+  item.tipoPrecioInmobiliarioId,
+  item.id,
+  item.codigo,
+  item.tipoPrecioCodigo,
+  item.nombre,
+  item.tipoPrecioNombre,
+]
+  .map((value) => String(value || '').trim().toUpperCase())
+  .filter(Boolean);
+
+const findPrecioByTipo = (precios = [], tipo = {}) => {
+  const keys = new Set(getTipoPrecioKeys(tipo));
+  return precios.find((precio) => getTipoPrecioKeys(precio).some((key) => keys.has(key))) || null;
+};
+
+const buildPrecioUnidadRowKey = (fila = {}, index = 0) => {
+  const tipoPrecioId = getTipoPrecioIdValue(fila);
+  if (tipoPrecioId) return `precio-proyecto-unidad-${tipoPrecioId}`;
+  return `precio-proyecto-unidad-${fila.tipoPrecioCodigo || 'tipo'}-${index}`;
+};
+
+const isPrecioPersonalizadoActivoInvalido = (fila = {}) => {
+  if (fila.activo === false) return false;
+  const precio = parsePrecioValue(fila.precioPersonalizado);
+  return precio === null || precio <= 0;
+};
+
+
 const pickFirst = (...values) =>
   values.find((value) => value !== undefined && value !== null && value !== '');
 
@@ -555,13 +601,6 @@ export default function AdminProyectoUnidadesPage() {
         precios: preciosModeloFuente,
         fallbackPrecio: unidad.precioDesde ?? unidad.precioTotal ?? null,
       });
-      const tiposBase = tipos.length > 0 ? tipos : resumenModelo.precios;
-      const mapaModelo = new Map(
-        preciosModeloFuente.map((precio) => [String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase(), precio])
-      );
-      const mapaUnidad = new Map(
-        preciosUnidadFuente.map((precio) => [String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase(), precio])
-      );
       const unidadTienePersonalizados =
         unidad.precioOrigen === 'PERSONALIZADO' ||
         unidad.precioOrigen === 'UNIDAD' ||
@@ -570,11 +609,17 @@ export default function AdminProyectoUnidadesPage() {
           precio?.esPersonalizado ||
           precio?.origenPrecio === 'UNIDAD' ||
           precio?.origenPrecio === 'PERSONALIZADO' ||
-          (precio?.precioPersonalizado !== null && precio?.precioPersonalizado !== undefined && precio?.precioPersonalizado !== '')
+          hasPrecioValue(precio?.precioPersonalizado)
         ));
-      const catalogo = tiposBase.length > 0 ? tiposBase : preciosModeloFuente;
+      const fuenteFilas = preciosUnidadFuente.length > 0
+        ? preciosUnidadFuente
+        : preciosModeloFuente.length > 0
+          ? preciosModeloFuente
+          : tipos.length > 0
+            ? tipos
+            : resumenModelo.precios;
       const fallbackPrecio = unidad.precioDesde ?? unidad.precioTotal ?? '';
-      const filas = (catalogo.length > 0 ? catalogo : [{
+      const filasFuente = fuenteFilas.length > 0 ? fuenteFilas : [{
         id: 'precio-actual',
         tipoPrecioId: '',
         tipoPrecioCodigo: 'FALLBACK',
@@ -582,31 +627,43 @@ export default function AdminProyectoUnidadesPage() {
         descripcion: '',
         precio: fallbackPrecio,
         activo: true,
-        esPrincipal: true,
+        tipoPrecioActivo: true,
         orden: 0,
-      }]).map((tipo, index) => {
-        const tipoKey = String(tipo.id || tipo.tipoPrecioId || tipo.codigo || tipo.nombre || index).toUpperCase();
-        const precioModelo = mapaModelo.get(tipoKey) || preciosModeloFuente.find((precio) => String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase() === tipoKey);
-        const precioUnidad = mapaUnidad.get(tipoKey) || preciosUnidadFuente.find((precio) => String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase() === tipoKey);
-        const precioHeredado = precioUnidad?.precioHeredado ?? precioModelo?.precio ?? (index === 0 ? fallbackPrecio : '');
-        const precioPersonalizado = precioUnidad?.precioPersonalizado ?? precioUnidad?.precioUnidad ?? precioUnidad?.precio ?? '';
-        const precioEfectivo = precioUnidad?.precioEfectivo ?? precioPersonalizado ?? precioHeredado;
+      }];
 
-        return {
-          id: precioUnidad?.id || precioModelo?.id || `${tipoKey}-${index}`,
-          tipoPrecioId: tipo.id || tipo.tipoPrecioId || '',
-          tipoPrecioCodigo: tipo.codigo || tipo.tipoPrecioCodigo || '',
-          tipoPrecioNombre: tipo.nombre || tipo.tipoPrecioNombre || tipo.descripcion || `Esquema ${index + 1}`,
-          precioHeredado,
-          precioHeredadoTexto: formatearMonedaMXN(precioHeredado),
-          precioPersonalizado: precioPersonalizado === null || precioPersonalizado === undefined ? '' : String(precioPersonalizado),
-          precioEfectivo,
-          precioEfectivoTexto: formatearMonedaMXN(precioEfectivo),
-          descripcion: precioUnidad?.descripcion || precioModelo?.descripcion || '',
-          activo: unidadTienePersonalizados ? (precioUnidad?.activo !== false) : Boolean(precioModelo || index === 0),
-          orden: precioUnidad?.orden ?? precioModelo?.orden ?? index,
-        };
-      });
+      const filas = filasFuente
+        .map((tipo, index) => {
+          const precioModelo = findPrecioByTipo(preciosModeloFuente, tipo);
+          const precioUnidad = preciosUnidadFuente.includes(tipo) ? tipo : findPrecioByTipo(preciosUnidadFuente, tipo);
+          const tipoPrecioId = getTipoPrecioIdValue(precioUnidad) || getTipoPrecioIdValue(precioModelo) || getTipoPrecioIdValue(tipo);
+          const precioHeredado = precioUnidad?.precioHeredado ?? (!precioUnidad?.esPersonalizado ? precioUnidad?.precio : undefined) ?? precioModelo?.precio ?? (index === 0 ? fallbackPrecio : '');
+          const precioPersonalizado = precioUnidad?.precioPersonalizado ?? precioUnidad?.precioUnidad ?? (precioUnidad?.esPersonalizado ? precioUnidad?.precio : '');
+          const precioEfectivo = precioUnidad?.precioEfectivo ?? precioUnidad?.precio ?? precioPersonalizado ?? precioHeredado;
+          const tipoPrecioActivo = (precioUnidad?.tipoPrecioActivo ?? precioModelo?.tipoPrecioActivo ?? tipo.tipoPrecioActivo ?? tipo.activo ?? true) !== false;
+          const rowKey = buildPrecioUnidadRowKey({
+            tipoPrecioId,
+            tipoPrecioCodigo: precioUnidad?.tipoPrecioCodigo || precioModelo?.tipoPrecioCodigo || tipo.codigo || tipo.tipoPrecioCodigo || '',
+          }, index);
+
+          return {
+            id: rowKey,
+            rowKey,
+            precioId: precioUnidad?.precioId || precioUnidad?.id || null,
+            tipoPrecioId: tipoPrecioId || '',
+            tipoPrecioCodigo: precioUnidad?.tipoPrecioCodigo || precioModelo?.tipoPrecioCodigo || tipo.codigo || tipo.tipoPrecioCodigo || '',
+            tipoPrecioNombre: precioUnidad?.tipoPrecioNombre || precioModelo?.tipoPrecioNombre || tipo.nombre || tipo.tipoPrecioNombre || tipo.descripcion || `Esquema ${index + 1}`,
+            precioHeredado,
+            precioHeredadoTexto: formatearMonedaMXN(precioHeredado),
+            precioPersonalizado: hasPrecioValue(precioPersonalizado) ? String(precioPersonalizado) : '',
+            precioEfectivo,
+            precioEfectivoTexto: formatearMonedaMXN(precioEfectivo),
+            descripcion: precioUnidad?.descripcion || precioModelo?.descripcion || tipo.descripcion || '',
+            activo: unidadTienePersonalizados ? (precioUnidad?.activo !== false) : Boolean(precioModelo || precioUnidad || index === 0),
+            tipoPrecioActivo,
+            orden: precioUnidad?.orden ?? precioModelo?.orden ?? tipo.orden ?? index + 1,
+          };
+        })
+        .filter((fila) => fila.tipoPrecioActivo || hasPrecioValue(fila.precioHeredado) || hasPrecioValue(fila.precioPersonalizado) || hasPrecioValue(fila.precioEfectivo));
 
       setPreciosUnidadEditando(filas);
       setPreciosUnidadPersonalizados(unidadTienePersonalizados);
@@ -629,6 +686,10 @@ export default function AdminProyectoUnidadesPage() {
   };
 
   const actualizarPrecioUnidadFila = (index, cambios) => {
+    if ('precioPersonalizado' in cambios) {
+      setErrorPrecios('');
+    }
+
     setPreciosUnidadEditando((actuales) =>
       actuales.map((fila, filaIndex) => (filaIndex === index ? { ...fila, ...cambios } : fila))
     );
@@ -639,9 +700,9 @@ export default function AdminProyectoUnidadesPage() {
     setPreciosUnidadEditando((actuales) =>
       actuales.map((fila) => ({
         ...fila,
-        precioPersonalizado: fila.precioHeredado === '' || fila.precioHeredado === null || fila.precioHeredado === undefined
-          ? ''
-          : String(fila.precioHeredado),
+        precioPersonalizado: hasPrecioValue(fila.precioHeredado)
+          ? String(fila.precioHeredado)
+          : '',
       }))
     );
   };
@@ -650,12 +711,8 @@ export default function AdminProyectoUnidadesPage() {
     if (!preciosUnidadPersonalizados) return '';
 
     for (const fila of preciosUnidadEditando) {
-      if (fila.precioPersonalizado === '' || fila.precioPersonalizado === null || fila.precioPersonalizado === undefined) {
-        continue;
-      }
-
-      if (Number(fila.precioPersonalizado) < 0) {
-        return `El precio personalizado de ${fila.tipoPrecioNombre} no puede ser negativo.`;
+      if (fila.activo !== false && isPrecioPersonalizadoActivoInvalido(fila)) {
+        return `El precio personalizado de ${fila.tipoPrecioNombre} debe ser mayor a $0 si el esquema está activo.`;
       }
     }
 
@@ -681,21 +738,30 @@ export default function AdminProyectoUnidadesPage() {
         await eliminarPreciosPersonalizadosUnidadProyecto(unidadPreciosAbierta.id);
         await cargarDatos();
         await abrirPreciosUnidad(unidadActual);
-        setMensajePrecios('La unidad volvio a heredar los precios del modelo.');
+        setMensajePrecios('La unidad volvió a heredar los precios del modelo.');
         return;
       }
 
-      await guardarPreciosUnidadProyecto(unidadPreciosAbierta.id, preciosUnidadEditando.map((fila, index) => ({
-        tipoPrecioId: fila.tipoPrecioId || null,
-        tipoPrecioCodigo: fila.tipoPrecioCodigo || null,
-        tipoPrecioNombre: fila.tipoPrecioNombre || null,
-        descripcion: fila.descripcion || null,
-        precio: fila.precioPersonalizado === '' || fila.precioPersonalizado === null || fila.precioPersonalizado === undefined
-          ? null
-          : Number(fila.precioPersonalizado),
-        activo: fila.precioPersonalizado !== '' && fila.precioPersonalizado !== null && fila.precioPersonalizado !== undefined,
-        orden: fila.orden ?? index,
-      })));
+      const payload = preciosUnidadEditando
+        .map((fila, index) => {
+          const tipoPrecioId = getTipoPrecioIdValue(fila);
+          const precio = parsePrecioValue(fila.precioPersonalizado);
+
+          if (!tipoPrecioId || fila.activo === false || precio === null || precio <= 0) {
+            return null;
+          }
+
+          return {
+            tipoPrecioId,
+            precio,
+            descripcion: fila.descripcion || null,
+            orden: Number(fila.orden || index + 1),
+            activo: true,
+          };
+        })
+        .filter(Boolean);
+
+      await guardarPreciosUnidadProyecto(unidadPreciosAbierta.id, payload);
       await cargarDatos();
       await abrirPreciosUnidad(unidadActual);
       setMensajePrecios('Precios personalizados guardados correctamente.');
@@ -717,7 +783,7 @@ export default function AdminProyectoUnidadesPage() {
       await eliminarPreciosPersonalizadosUnidadProyecto(unidadPreciosAbierta.id);
       await cargarDatos();
       await abrirPreciosUnidad(unidadActual);
-      setMensajePrecios('La unidad volvio a heredar los precios del modelo.');
+        setMensajePrecios('La unidad volvió a heredar los precios del modelo.');
     } catch (err) {
       setErrorPrecios(getApiErrorMessage(err));
     } finally {
@@ -941,23 +1007,24 @@ export default function AdminProyectoUnidadesPage() {
                     </thead>
                     <tbody>
                       {preciosUnidadEditando.map((fila, index) => (
-                        <tr key={fila.id || `${unidadPreciosAbierta.id}-precio-${index}`}>
+                        <tr key={fila.rowKey || buildPrecioUnidadRowKey(fila, index)}>
                           <td data-label="Esquema">
                             <strong>{fila.tipoPrecioNombre}</strong>
                             {fila.tipoPrecioCodigo ? <small>{fila.tipoPrecioCodigo}</small> : null}
+                            {fila.tipoPrecioActivo === false ? <span className="admin-proyecto-unidades-price-badge is-inactive">Inactivo</span> : null}
                           </td>
                           <td data-label="Precio heredado">
                             <strong>{fila.precioHeredadoTexto || formatearMonedaMXN(fila.precioHeredado)}</strong>
                           </td>
                           <td data-label="Precio personalizado">
                             <input
-                              type="number"
-                              min="0"
-                              step="0.01"
+                              type="text"
+                              inputMode="decimal"
+                              className={errorPrecios && preciosUnidadPersonalizados && isPrecioPersonalizadoActivoInvalido(fila) ? 'is-invalid' : ''}
                               value={fila.precioPersonalizado}
                               onChange={(event) => actualizarPrecioUnidadFila(index, { precioPersonalizado: event.target.value })}
                               disabled={!preciosUnidadPersonalizados}
-                              placeholder={preciosUnidadPersonalizados ? '0' : ''}
+                              placeholder={preciosUnidadPersonalizados ? 'Ej. 1681000' : ''}
                             />
                             <small>
                               {preciosUnidadPersonalizados
@@ -988,7 +1055,7 @@ export default function AdminProyectoUnidadesPage() {
                 type="button"
                 className="is-secondary"
                 onClick={async () => {
-                  if (!window.confirm('Volver a heredar los precios del modelo?')) return;
+                  if (!window.confirm('¿Volver a heredar los precios del modelo?')) return;
                   await volverAHeredarPreciosUnidad();
                 }}
                 disabled={cargandoPrecios || guardandoPrecios}
@@ -1156,6 +1223,11 @@ export default function AdminProyectoUnidadesPage() {
     </main>
   );
 }
+
+
+
+
+
 
 
 

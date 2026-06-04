@@ -89,3 +89,23 @@
   font-size: 0.82rem;
   font-weight: 700;
 }
+
+.admin-desarrollos-price-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.admin-desarrollos-price-badge.is-inactive {
+  color: #59636d;
+  background: rgba(89, 99, 109, 0.12);
+}
+
+.admin-desarrollos-prices-table input.is-invalid {
+  border-color: #8f2d24;
+  background: rgba(143, 45, 36, 0.06);
+}

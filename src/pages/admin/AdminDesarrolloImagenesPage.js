@@ -69,7 +69,7 @@ export default function AdminDesarrolloImagenesPage() {
 
     if (!url) {
       setError('El API no devolvió la URL de la imagen.');
-      return;
+      return false;
     }
 
     setRegistrandoUpload(true);
@@ -85,6 +85,7 @@ export default function AdminDesarrolloImagenesPage() {
       });
       setMensaje('Imagen subida y registrada correctamente.');
       await cargar();
+      return true;
     } catch (err) {
       setForm((actual) => ({
         ...actual,
@@ -94,6 +95,7 @@ export default function AdminDesarrolloImagenesPage() {
       }));
       setMostrarManual(true);
       setError('La imagen se subio al servidor, pero no se pudo registrar. Intenta agregarla manualmente.');
+      return false;
     } finally {
       setRegistrandoUpload(false);
     }
@@ -282,3 +284,4 @@ export default function AdminDesarrolloImagenesPage() {
     </main>
   );
 }
+

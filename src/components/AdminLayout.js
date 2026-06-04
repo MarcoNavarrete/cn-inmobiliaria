@@ -551,7 +551,7 @@ export default function AdminLayout() {
               {esAdminCn ? (
                 <NavLink to="/admin/catalogos">
                   <MenuIcon icono="folderopen" />
-                  <span>Catalogos</span>
+                  <span>Catálogos</span>
                 </NavLink>
               ) : null}
               {esAdminCn ? (
@@ -589,3 +589,4 @@ export default function AdminLayout() {
     </div>
   );
 }
+

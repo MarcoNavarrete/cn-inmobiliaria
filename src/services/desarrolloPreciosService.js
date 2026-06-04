@@ -28,6 +28,7 @@ export const adaptTipoPrecioInmobiliario = (item = {}) => ({
   codigo: toText(pickFirst(item.codigo, item.clave, item.tipoPrecioCodigo)),
   descripcion: toText(item.descripcion),
   activo: item.activo !== false,
+  tipoPrecioActivo: item.activo !== false,
   orden: toNumberOrNull(item.orden) ?? 0,
 });
 

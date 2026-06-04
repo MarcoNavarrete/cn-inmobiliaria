@@ -130,6 +130,7 @@ export const normalizarPrecioInmobiliario = (precio = {}, index = 0) => {
     precio: toNumberOrNull(precioValor),
     precioTexto: formatearMonedaMXN(precioValor),
     activo: precio.activo !== false,
+    tipoPrecioActivo: pickFirst(precio.tipoPrecioActivo, precio.catalogoActivo, precio.tipoActivo, precio.activoTipoPrecio, precio.tipoPrecio?.activo, true) !== false,
     esPrincipal: precio.esPrincipal === true || precio.principal === true,
     esPersonalizado,
     origenPrecio,

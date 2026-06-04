@@ -117,6 +117,52 @@ const getPreviewUrl = (modelo, imagenPreview) =>
 const pickModeloId = (value) =>
   value?.modeloId || value?.id || value?.Id || value?.data?.modeloId || value?.data?.id || '';
 
+const hasPrecioValue = (value) => value !== '' && value !== null && value !== undefined;
+
+const parsePrecioValue = (value) => {
+  if (!hasPrecioValue(value)) return null;
+  const cleaned = String(value).replace(/[^0-9.-]/g, '');
+  if (!cleaned) return null;
+  const number = Number(cleaned);
+  return Number.isFinite(number) ? number : null;
+};
+
+const getTipoPrecioIdValue = (fila = {}) => {
+  const value = fila.tipoPrecioId ?? fila.tipoPrecioInmobiliarioId ?? fila.catalogoTipoPrecioId;
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : null;
+};
+
+const getTipoPrecioKeys = (item = {}) => [
+  item.tipoPrecioId,
+  item.tipoPrecioInmobiliarioId,
+  item.id,
+  item.codigo,
+  item.tipoPrecioCodigo,
+  item.nombre,
+  item.tipoPrecioNombre,
+]
+  .map((value) => String(value || '').trim().toUpperCase())
+  .filter(Boolean);
+
+const findPrecioByTipo = (precios = [], tipo = {}) => {
+  const keys = new Set(getTipoPrecioKeys(tipo));
+  return precios.find((precio) => getTipoPrecioKeys(precio).some((key) => keys.has(key))) || null;
+};
+
+const buildPrecioModeloRowKey = (fila = {}, index = 0) => {
+  const tipoPrecioId = getTipoPrecioIdValue(fila);
+  if (tipoPrecioId) return `precio-proyecto-modelo-${tipoPrecioId}`;
+  return `precio-proyecto-modelo-${fila.tipoPrecioCodigo || 'tipo'}-${index}`;
+};
+
+const isPrecioActivoInvalido = (fila = {}) => {
+  if (fila.activo !== true) return false;
+  const precio = parsePrecioValue(fila.precio);
+  return precio === null || precio <= 0;
+};
+
+
 export default function AdminProyectoModelosPage() {
   const permisosEmpresa = usePermisosEmpresa();
   const puedeEditarModelo = permisosEmpresa.puedeEditarModelos;
@@ -202,28 +248,36 @@ export default function AdminProyectoModelosPage() {
         precios,
         fallbackPrecio: modelo.precioDesde ?? form.precioDesde,
       });
-      const mapaExistentes = new Map(
-        resumenPrecios.precios.map((precio) => [String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase(), precio])
-      );
-      const catalogoBase = tipos.length > 0 ? tipos : resumenPrecios.precios;
+      const fuenteFilas = resumenPrecios.precios.length > 0 ? resumenPrecios.precios : tipos;
 
-      setPreciosModelo(catalogoBase.map((tipo, index) => {
-        const tipoKey = String(tipo.id || tipo.tipoPrecioId || tipo.codigo || tipo.nombre || index).toUpperCase();
-        const existente = mapaExistentes.get(tipoKey)
-          || resumenPrecios.precios.find((precio) => String(precio.tipoPrecioId || precio.tipoPrecioCodigo || precio.tipoPrecioNombre).toUpperCase() === tipoKey);
+      const filasBase = fuenteFilas
+        .map((tipo, index) => {
+          const existente = resumenPrecios.precios.includes(tipo) ? tipo : findPrecioByTipo(resumenPrecios.precios, tipo);
+          const precio = existente?.precio ?? '';
+          const tipoPrecioActivo = (existente?.tipoPrecioActivo ?? tipo.tipoPrecioActivo ?? tipo.activo ?? true) !== false;
+          const tipoPrecioId = getTipoPrecioIdValue(existente) || getTipoPrecioIdValue(tipo);
+          const rowKey = buildPrecioModeloRowKey({
+            tipoPrecioId,
+            tipoPrecioCodigo: existente?.tipoPrecioCodigo || tipo.codigo || tipo.tipoPrecioCodigo || '',
+          }, index);
 
-        return {
-          id: existente?.id || `${tipo.id || tipo.tipoPrecioId || tipoKey}-${index}`,
-          tipoPrecioId: tipo.id || tipo.tipoPrecioId || '',
-          tipoPrecioCodigo: tipo.codigo || tipo.tipoPrecioCodigo || '',
-          tipoPrecioNombre: tipo.nombre || tipo.tipoPrecioNombre || tipo.descripcion || `Esquema ${index + 1}`,
-          descripcion: existente?.descripcion || tipo.descripcion || '',
-          precio: existente?.precio ?? '',
-          activo: existente ? existente.activo !== false : false,
-          esPrincipal: existente?.esPrincipal === true,
-          orden: existente?.orden ?? tipo.orden ?? index,
-        };
-      }));
+          return {
+            id: rowKey,
+            rowKey,
+            precioId: existente?.precioId || existente?.id || null,
+            tipoPrecioId: tipoPrecioId || '',
+            tipoPrecioCodigo: existente?.tipoPrecioCodigo || tipo.codigo || tipo.tipoPrecioCodigo || '',
+            tipoPrecioNombre: existente?.tipoPrecioNombre || tipo.nombre || tipo.tipoPrecioNombre || tipo.descripcion || `Esquema ${index + 1}`,
+            descripcion: existente?.descripcion || tipo.descripcion || '',
+            precio: hasPrecioValue(precio) ? precio : '',
+            activo: existente ? existente.activo !== false : false,
+            tipoPrecioActivo,
+            orden: existente?.orden ?? tipo.orden ?? index + 1,
+          };
+        })
+        .filter((fila) => fila.tipoPrecioActivo || hasPrecioValue(fila.precio));
+
+      setPreciosModelo(filasBase);
     } catch (err) {
       if (err.name !== 'AbortError') {
         setPreciosModelo([]);
@@ -233,6 +287,7 @@ export default function AdminProyectoModelosPage() {
       setCargandoPrecios(false);
     }
   }, [cargarTiposPrecio, form.precioDesde, tiposPrecio]);
+
   useEffect(() => {
     const controller = new AbortController();
     cargarDatos({ signal: controller.signal });
@@ -420,6 +475,10 @@ export default function AdminProyectoModelosPage() {
   };
 
   const actualizarPrecioModeloFila = (index, cambios) => {
+    if ('precio' in cambios || 'activo' in cambios) {
+      setErrorPrecios('');
+    }
+
     setPreciosModelo((actuales) =>
       actuales.map((fila, filaIndex) => (filaIndex === index ? { ...fila, ...cambios } : fila))
     );
@@ -427,12 +486,14 @@ export default function AdminProyectoModelosPage() {
 
   const validarPreciosModelo = () => {
     for (const fila of preciosModelo) {
-      if (fila.activo && (fila.precio === '' || fila.precio === null || fila.precio === undefined)) {
-        return `El precio de ${fila.tipoPrecioNombre} es requerido si el esquema esta activo.`;
+      const precioNumber = parsePrecioValue(fila.precio);
+
+      if (fila.activo === true && (precioNumber === null || precioNumber <= 0)) {
+        return `El precio de ${fila.tipoPrecioNombre} debe ser mayor a $0 si el esquema está activo.`;
       }
 
-      if (fila.precio !== '' && fila.precio !== null && Number(fila.precio) < 0) {
-        return `El precio de ${fila.tipoPrecioNombre} no puede ser negativo.`;
+      if (fila.activo !== true && hasPrecioValue(fila.precio) && precioNumber === null) {
+        return `El precio de ${fila.tipoPrecioNombre} debe ser un número válido.`;
       }
     }
 
@@ -453,16 +514,26 @@ export default function AdminProyectoModelosPage() {
     setMensajePrecios('');
 
     try {
-      await guardarPreciosModeloProyecto(modeloPreciosAbierto.id, preciosModelo.map((fila, index) => ({
-        tipoPrecioId: fila.tipoPrecioId || null,
-        tipoPrecioCodigo: fila.tipoPrecioCodigo || null,
-        tipoPrecioNombre: fila.tipoPrecioNombre || null,
-        descripcion: fila.descripcion || null,
-        precio: fila.precio === '' || fila.precio === null || fila.precio === undefined ? null : Number(fila.precio),
-        activo: fila.activo === true,
-        esPrincipal: fila.esPrincipal === true,
-        orden: fila.orden ?? index,
-      })));
+      const payload = preciosModelo
+        .map((fila, index) => {
+          const tipoPrecioId = getTipoPrecioIdValue(fila);
+          const precio = parsePrecioValue(fila.precio);
+
+          if (!tipoPrecioId || precio === null) {
+            return null;
+          }
+
+          return {
+            tipoPrecioId,
+            precio,
+            descripcion: fila.descripcion || null,
+            orden: Number(fila.orden || index + 1),
+            activo: Boolean(fila.activo),
+          };
+        })
+        .filter(Boolean);
+
+      await guardarPreciosModeloProyecto(modeloPreciosAbierto.id, payload);
       setMensajePrecios('Precios del modelo guardados correctamente.');
       await cargarDatos();
       await cargarPreciosModelo(modeloPreciosAbierto);
@@ -614,7 +685,7 @@ export default function AdminProyectoModelosPage() {
               {mensajePrecios ? <p className="admin-proyecto-modelos-feedback is-ok">{mensajePrecios}</p> : null}
 
               {!cargandoPrecios && preciosModelo.length === 0 ? (
-                <p className="admin-proyecto-modelos-empty">No se encontraron esquemas en el catalogo.</p>
+                <p className="admin-proyecto-modelos-empty">No se encontraron esquemas en el catálogo.</p>
               ) : null}
 
               {!cargandoPrecios && preciosModelo.length > 0 ? (
@@ -624,30 +695,31 @@ export default function AdminProyectoModelosPage() {
                       <tr>
                         <th>Esquema</th>
                         <th>Precio</th>
-                        <th>Descripcion</th>
+                        <th>Descripción</th>
                         <th>Activo</th>
                       </tr>
                     </thead>
                     <tbody>
                       {preciosModelo.map((fila, index) => (
-                        <tr key={fila.id || `${modeloPreciosAbierto.id}-precio-${index}`}>
+                        <tr key={fila.rowKey || buildPrecioModeloRowKey(fila, index)}>
                           <td data-label="Esquema">
                             <strong>{fila.tipoPrecioNombre}</strong>
                             {fila.tipoPrecioCodigo ? <small>{fila.tipoPrecioCodigo}</small> : null}
+                            {fila.tipoPrecioActivo === false ? <span className="admin-proyecto-modelos-price-badge is-inactive">Inactivo</span> : null}
                           </td>
                           <td data-label="Precio">
                             <input
-                              type="number"
-                              min="0"
-                              step="0.01"
+                              type="text"
+                              inputMode="decimal"
+                              className={errorPrecios && isPrecioActivoInvalido(fila) ? 'is-invalid' : ''}
                               value={fila.precio}
                               onChange={(event) => actualizarPrecioModeloFila(index, { precio: event.target.value })}
                               disabled={!fila.activo}
-                              placeholder="0"
+                              placeholder="Ej. 1681000"
                             />
                             <small>{fila.precio !== '' && fila.precio !== null ? formatearMonedaMXN(fila.precio) : 'MXN'}</small>
                           </td>
-                          <td data-label="Descripcion">
+                          <td data-label="Descripción">
                             <input
                               value={fila.descripcion}
                               onChange={(event) => actualizarPrecioModeloFila(index, { descripcion: event.target.value })}
@@ -661,7 +733,7 @@ export default function AdminProyectoModelosPage() {
                                 checked={fila.activo}
                                 onChange={(event) => actualizarPrecioModeloFila(index, { activo: event.target.checked })}
                               />
-                              <span>{fila.activo ? 'Si' : 'No'}</span>
+                              <span>{fila.activo ? 'Sí' : 'No'}</span>
                             </label>
                           </td>
                         </tr>
@@ -753,6 +825,12 @@ export default function AdminProyectoModelosPage() {
     </main>
   );
 }
+
+
+
+
+
+
 
 
 
