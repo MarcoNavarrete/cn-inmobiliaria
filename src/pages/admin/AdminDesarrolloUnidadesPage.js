@@ -115,7 +115,7 @@ const parsePrecioValue = (value) => {
 };
 
 const isPrecioPersonalizadoActivoInvalido = (fila = {}) => {
-  if (fila.activo === false) return false;
+  if (fila.activo === false || fila.disponible === false) return false;
   const precio = parsePrecioValue(fila.precioPersonalizado);
   return precio === null || precio <= 0;
 };
@@ -391,7 +391,8 @@ export default function AdminDesarrolloUnidadesPage() {
             precio?.esPersonalizado ||
             precio?.origenPrecio === 'UNIDAD' ||
             precio?.origenPrecio === 'PERSONALIZADO' ||
-            hasPrecioValue(precio?.precioPersonalizado)
+            hasPrecioValue(precio?.precioPersonalizado) ||
+            precio?.disponible === false
           )
         );
 
@@ -426,6 +427,7 @@ export default function AdminDesarrolloUnidadesPage() {
           const precioEfectivo = precioUnidad?.precioEfectivo ?? precioUnidad?.precio ?? precioPersonalizado ?? precioHeredado;
           const origenFila = precioUnidad?.origenPrecio || (precioUnidad?.esPersonalizado ? 'UNIDAD' : '');
           const tipoPrecioActivo = (precioUnidad?.tipoPrecioActivo ?? precioModelo?.tipoPrecioActivo ?? tipo.tipoPrecioActivo ?? tipo.activo ?? true) !== false;
+          const disponible = (precioUnidad?.disponible ?? precioUnidad?.estaDisponible ?? precioUnidad?.disponibleUnidad ?? true) !== false;
 
           return {
             id: precioUnidad?.id || precioModelo?.id || `${tipo.id || tipo.tipoPrecioId || tipo.tipoPrecioCodigo || tipo.codigo || index}-${index}`,
@@ -440,12 +442,13 @@ export default function AdminDesarrolloUnidadesPage() {
             precioEfectivoTexto: formatearMonedaMXN(precioEfectivo),
             descripcion: precioUnidad?.descripcion || precioModelo?.descripcion || tipo.descripcion || '',
             activo: unidadTienePersonalizados ? (precioUnidad?.activo !== false) : Boolean(precioModelo || precioUnidad || index === 0),
+            disponible,
             tipoPrecioActivo,
             orden: precioUnidad?.orden ?? precioModelo?.orden ?? tipo.orden ?? index,
             origenPrecio: origenFila || (hasPrecioValue(precioPersonalizado) ? 'UNIDAD' : precioModelo ? 'MODELO' : 'FALLBACK'),
           };
         })
-        .filter((fila) => fila.tipoPrecioActivo || hasPrecioValue(fila.precioHeredado) || hasPrecioValue(fila.precioPersonalizado) || hasPrecioValue(fila.precioEfectivo));
+        .filter((fila) => fila.tipoPrecioActivo || fila.disponible === false || hasPrecioValue(fila.precioHeredado) || hasPrecioValue(fila.precioPersonalizado) || hasPrecioValue(fila.precioEfectivo));
 
       setPreciosUnidad(preciosUnidadFuente);
       setPreciosUnidadEditando(filas);
@@ -469,7 +472,7 @@ export default function AdminDesarrolloUnidadesPage() {
   };
 
   const actualizarPrecioUnidadFila = (index, cambios) => {
-    if ('precioPersonalizado' in cambios) {
+    if ('precioPersonalizado' in cambios || 'disponible' in cambios) {
       setErrorPrecios('');
     }
 
@@ -486,6 +489,7 @@ export default function AdminDesarrolloUnidadesPage() {
         precioPersonalizado: fila.precioHeredado === '' || fila.precioHeredado === null || fila.precioHeredado === undefined
           ? ''
           : String(fila.precioHeredado),
+        disponible: true,
       }))
     );
   };
@@ -496,14 +500,13 @@ export default function AdminDesarrolloUnidadesPage() {
     }
 
     for (const fila of preciosUnidadEditando) {
-      if (fila.activo !== false && isPrecioPersonalizadoActivoInvalido(fila)) {
-        return `El precio personalizado de ${fila.tipoPrecioNombre} debe ser mayor a $0 si el esquema está activo.`;
+      if (fila.activo !== false && fila.disponible !== false && isPrecioPersonalizadoActivoInvalido(fila)) {
+        return `El precio personalizado de ${fila.tipoPrecioNombre} debe ser mayor a $0 si el esquema est\u00e1 disponible.`;
       }
     }
 
     return '';
   };
-
   const guardarPreciosUnidadEditados = async () => {
     if (!unidadPreciosAbierta?.id) {
       return;
@@ -532,6 +535,26 @@ export default function AdminDesarrolloUnidadesPage() {
 
       const payload = preciosUnidadEditando
         .map((fila, index) => {
+          const tipoPrecioId = fila.tipoPrecioId || null;
+          const disponible = fila.disponible !== false;
+
+          if (!tipoPrecioId) {
+            return null;
+          }
+
+          if (!disponible) {
+            return {
+              tipoPrecioId,
+              tipoPrecioCodigo: fila.tipoPrecioCodigo || null,
+              tipoPrecioNombre: fila.tipoPrecioNombre || null,
+              descripcion: fila.descripcion || 'No disponible para esta unidad',
+              precio: 0,
+              activo: fila.activo !== false,
+              disponible: false,
+              orden: fila.orden ?? index,
+            };
+          }
+
           const precio = parsePrecioValue(fila.precioPersonalizado);
 
           if (fila.activo === false || precio === null || precio <= 0) {
@@ -539,12 +562,13 @@ export default function AdminDesarrolloUnidadesPage() {
           }
 
           return {
-            tipoPrecioId: fila.tipoPrecioId || null,
+            tipoPrecioId,
             tipoPrecioCodigo: fila.tipoPrecioCodigo || null,
             tipoPrecioNombre: fila.tipoPrecioNombre || null,
             descripcion: fila.descripcion || null,
             precio,
             activo: true,
+            disponible: true,
             orden: fila.orden ?? index,
           };
         })
@@ -1243,7 +1267,7 @@ export default function AdminDesarrolloUnidadesPage() {
             <div className="admin-unidades-modal-summary">
               <article>
                 <span>Origen actual</span>
-                <strong>{unidadPreciosAbierta.precioOrigenEtiqueta || (preciosUnidadPersonalizados ? 'Personalizado' : 'Modelo')}</strong>
+                <strong>{preciosUnidadPersonalizados ? 'Personalizado' : (unidadPreciosAbierta.precioOrigenEtiqueta || 'Modelo')}</strong>
               </article>
               <article>
                 <span>Precio efectivo</span>
@@ -1266,6 +1290,7 @@ export default function AdminDesarrolloUnidadesPage() {
                     <tr>
                       <th>Esquema</th>
                       <th>Precio heredado</th>
+                      <th>Disponible</th>
                       <th>Precio personalizado</th>
                     </tr>
                   </thead>
@@ -1280,20 +1305,33 @@ export default function AdminDesarrolloUnidadesPage() {
                         <td data-label="Precio heredado">
                           <strong>{fila.precioHeredadoTexto || formatearMonedaMXN(fila.precioHeredado)}</strong>
                         </td>
+                        <td data-label="Disponible">
+                          <label className="admin-unidades-check-inline">
+                            <input
+                              type="checkbox"
+                              checked={fila.disponible !== false}
+                              onChange={(event) => actualizarPrecioUnidadFila(index, { disponible: event.target.checked, precioPersonalizado: event.target.checked ? fila.precioPersonalizado : '' })}
+                              disabled={!preciosUnidadPersonalizados}
+                            />
+                            <span>Disponible para esta unidad</span>
+                          </label>
+                        </td>
                         <td data-label="Precio personalizado">
                           <input
                             type="text"
                             inputMode="decimal"
-                            className={errorPrecios && preciosUnidadPersonalizados && isPrecioPersonalizadoActivoInvalido(fila) ? 'is-invalid' : ''}
+                            className={errorPrecios && preciosUnidadPersonalizados && fila.disponible !== false && isPrecioPersonalizadoActivoInvalido(fila) ? 'is-invalid' : ''}
                             value={fila.precioPersonalizado}
                             onChange={(event) => actualizarPrecioUnidadFila(index, { precioPersonalizado: event.target.value })}
-                            disabled={!preciosUnidadPersonalizados}
-                            placeholder={preciosUnidadPersonalizados ? 'Ej. 1681000' : ''}
+                            disabled={!preciosUnidadPersonalizados || fila.disponible === false}
+                            placeholder={preciosUnidadPersonalizados && fila.disponible !== false ? 'Ej. 1681000' : ''}
                           />
                           <small>
-                            {preciosUnidadPersonalizados
-                              ? (fila.precioPersonalizado !== '' ? fila.precioPersonalizadoTexto || formatearMonedaMXN(fila.precioPersonalizado) : 'Captura un precio para activar el esquema.')
-                              : 'Heredado del modelo'}
+                            {fila.disponible === false
+                              ? 'No disponible para esta unidad'
+                              : preciosUnidadPersonalizados
+                                ? (fila.precioPersonalizado !== '' ? fila.precioPersonalizadoTexto || formatearMonedaMXN(fila.precioPersonalizado) : 'Captura un precio para activar el esquema.')
+                                : 'Heredado del modelo'}
                           </small>
                         </td>
                       </tr>

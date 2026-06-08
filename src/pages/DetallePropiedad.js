@@ -1,5 +1,5 @@
 // src/pages/DetallePropiedad.js
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ImageGallery from 'react-image-gallery';
 import 'react-image-gallery/styles/css/image-gallery.css';
@@ -12,6 +12,7 @@ import { getCurrentUser, obtenerToken } from '../services/authService';
 import { agregarFavorito, eliminarFavorito, existeFavorito } from '../services/favoritosService';
 import RichTextContent from '../components/common/RichTextContent';
 import Tour360Viewer from '../components/Tour360Viewer';
+import { EVENTOS_CONVERSION, trackConversionEvent } from '../lib/conversionEvents';
 
 const FORMULARIO_INICIAL = {
   nombre: '',
@@ -68,6 +69,7 @@ export default function DetallePropiedad() {
   const [errorProspecto, setErrorProspecto] = useState('');
   const [exitoProspecto, setExitoProspecto] = useState('');
   const [mensajeCompartir, setMensajeCompartir] = useState('');
+  const conversionViewTrackedRef = useRef('');
 
   const token = obtenerToken();
   const usuario = token ? getCurrentUser() : null;
@@ -134,6 +136,30 @@ export default function DetallePropiedad() {
     tiposInmuebleMap.get(String(propiedad?.tipoInmueble)) ||
     'No especificado';
 
+
+  useEffect(() => {
+    if (!propiedad?.id) {
+      conversionViewTrackedRef.current = '';
+      return undefined;
+    }
+
+    const trackingKey = String(propiedad.id);
+    if (conversionViewTrackedRef.current === trackingKey) {
+      return undefined;
+    }
+
+    conversionViewTrackedRef.current = trackingKey;
+    trackConversionEvent({
+      tipoEvento: EVENTOS_CONVERSION.LANDING_VIEW,
+      entidadTipo: 'PROPIEDAD',
+      entidadId: propiedad.id,
+      slug: String(propiedad.id || id),
+      origen: 'landing',
+      gaParams: { property_title: propiedad.titulo || '' },
+    });
+
+    return undefined;
+  }, [id, propiedad?.id, propiedad?.titulo]);
   const shareData = useMemo(() => {
     if (!propiedad) {
       return null;
@@ -502,7 +528,19 @@ export default function DetallePropiedad() {
                   Compartir
                 </button>
               ) : null}
-              <a href={shareData.whatsappUrl} target="_blank" rel="noopener noreferrer">
+              <a
+                href={shareData.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackConversionEvent({
+                  tipoEvento: EVENTOS_CONVERSION.WHATSAPP_CLICK,
+                  entidadTipo: 'PROPIEDAD',
+                  entidadId: propiedad.id,
+                  slug: String(propiedad.id || id),
+                  origen: 'landing',
+                  metadata: { boton: 'compartir_whatsapp' },
+                })}
+              >
                 WhatsApp
               </a>
               <a href={shareData.facebookUrl} target="_blank" rel="noopener noreferrer">

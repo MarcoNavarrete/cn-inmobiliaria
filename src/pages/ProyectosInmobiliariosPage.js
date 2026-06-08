@@ -24,6 +24,8 @@ const FILTROS_INICIALES = {
   tipoProyecto: '',
 };
 
+const OTROS_PROYECTOS_KEY = '__otros_proyectos__';
+
 const formatAreaRange = (desde, hasta) => {
   const format = (value) => {
     if (!value || Number.isNaN(Number(value))) return '';
@@ -31,6 +33,87 @@ const formatAreaRange = (desde, hasta) => {
   };
   const values = [format(desde), format(hasta)].filter(Boolean);
   return values.length ? values.join(' - ') : 'Superficie por confirmar';
+};
+
+const normalizeGroupName = (value) => String(value || '').trim();
+
+const sortNumberOrNull = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const getEmpresaKey = (proyecto = {}) => {
+  const empresaId = String(proyecto.empresaId || '').trim();
+  if (empresaId) return `empresa-${empresaId}`;
+
+  const nombreEmpresa = normalizeGroupName(proyecto.empresaNombre);
+  return nombreEmpresa ? `empresa-nombre-${nombreEmpresa.toLowerCase()}` : OTROS_PROYECTOS_KEY;
+};
+
+const agruparProyectosPorEmpresa = (proyectos = []) => {
+  const grupos = new Map();
+
+  proyectos.forEach((proyecto, index) => {
+    const key = getEmpresaKey(proyecto);
+    const nombreEmpresa = normalizeGroupName(proyecto.empresaNombre) || 'Otros proyectos';
+    const grupoActual = grupos.get(key);
+
+    if (!grupoActual) {
+      grupos.set(key, {
+        key,
+        empresaId: proyecto.empresaId || '',
+        nombreEmpresa,
+        logoEmpresaUrl: proyecto.logoEmpresaUrl || '',
+        ordenEmpresa: sortNumberOrNull(proyecto.ordenEmpresa),
+        primerIndice: index,
+        proyectos: [{ ...proyecto, indiceOriginal: index }],
+      });
+      return;
+    }
+
+    if (!grupoActual.logoEmpresaUrl && proyecto.logoEmpresaUrl) {
+      grupoActual.logoEmpresaUrl = proyecto.logoEmpresaUrl;
+    }
+
+    if (grupoActual.ordenEmpresa === null && sortNumberOrNull(proyecto.ordenEmpresa) !== null) {
+      grupoActual.ordenEmpresa = sortNumberOrNull(proyecto.ordenEmpresa);
+    }
+
+    grupoActual.proyectos.push({ ...proyecto, indiceOriginal: index });
+  });
+
+  return Array.from(grupos.values())
+    .sort((a, b) => {
+      if (a.key === OTROS_PROYECTOS_KEY) return 1;
+      if (b.key === OTROS_PROYECTOS_KEY) return -1;
+
+      const ordenA = sortNumberOrNull(a.ordenEmpresa);
+      const ordenB = sortNumberOrNull(b.ordenEmpresa);
+      if (ordenA !== null || ordenB !== null) {
+        return (ordenA ?? Number.MAX_SAFE_INTEGER) - (ordenB ?? Number.MAX_SAFE_INTEGER);
+      }
+
+      return a.nombreEmpresa.localeCompare(b.nombreEmpresa, 'es-MX', { numeric: true });
+    })
+    .map((grupo) => ({
+      ...grupo,
+      proyectos: grupo.proyectos.sort((a, b) => {
+        const ordenA = sortNumberOrNull(a.ordenProyecto);
+        const ordenB = sortNumberOrNull(b.ordenProyecto);
+        if (ordenA !== null || ordenB !== null) {
+          return (ordenA ?? Number.MAX_SAFE_INTEGER) - (ordenB ?? Number.MAX_SAFE_INTEGER);
+        }
+        return a.indiceOriginal - b.indiceOriginal;
+      }),
+    }));
+};
+
+const getLogoVisible = (proyecto = {}) => {
+  if (proyecto.usarLogoEmpresa && proyecto.logoEmpresaUrl) {
+    return proyecto.logoEmpresaUrl;
+  }
+
+  return proyecto.logoProyectoUrl || null;
 };
 
 export default function ProyectosInmobiliariosPage() {
@@ -75,6 +158,7 @@ export default function ProyectosInmobiliariosPage() {
     [proyectos]
   );
 
+  const proyectosAgrupados = useMemo(() => agruparProyectosPorEmpresa(proyectos), [proyectos]);
   const hayFiltros = Boolean(filtrosAplicados.texto || filtrosAplicados.tipoProyecto);
 
   const actualizarFiltro = (event) => {
@@ -142,38 +226,65 @@ export default function ProyectosInmobiliariosPage() {
           </section>
         ) : null}
 
-        {!loading && !error && proyectos.length > 0 ? (
-          <section className="proyectos-publicos-grid" aria-label="Listado de proyectos inmobiliarios">
-            {proyectos.map((proyecto) => {
-              const imageUrl = resolveApiAssetUrl(proyecto.imagenPrincipalUrl);
-              const logoUrl = resolveApiAssetUrl(proyecto.logoUrl);
+        {!loading && !error && proyectosAgrupados.length > 0 ? (
+          <section className="proyectos-publicos-groups" aria-label="Listado de proyectos inmobiliarios por empresa">
+            {proyectosAgrupados.map((grupo) => {
+              const groupLogoUrl = resolveApiAssetUrl(grupo.logoEmpresaUrl);
 
               return (
-                <article key={proyecto.id || proyecto.slug} className="proyecto-publico-card">
-                  <div className={`proyecto-publico-card-media ${imageUrl ? '' : 'is-placeholder'}`}>
-                    {imageUrl ? (
-                      <img src={imageUrl} alt={proyecto.nombre} />
-                    ) : (
-                      <div>Imagen proximamente</div>
-                    )}
-                    <span>{TIPO_LABELS[proyecto.tipoProyecto] || proyecto.tipoProyecto}</span>
-                    {logoUrl ? <img className="proyecto-publico-card-logo" src={logoUrl} alt={proyecto.empresaNombre || proyecto.nombre} /> : null}
-                  </div>
-                  <div className="proyecto-publico-card-body">
+                <section key={grupo.key} className="proyectos-publicos-group">
+                  <header className="proyectos-publicos-group-head">
+                    {groupLogoUrl ? (
+                      <img src={groupLogoUrl} alt={grupo.nombreEmpresa} />
+                    ) : null}
                     <div>
-                      <h2>{proyecto.nombre}</h2>
-                      <p>{proyecto.ubicacionTexto || proyecto.ubicacion}</p>
+                      <span>{grupo.key === OTROS_PROYECTOS_KEY ? 'CN Inmobiliaria' : 'Empresa desarrolladora'}</span>
+                      <h2>{grupo.key === OTROS_PROYECTOS_KEY ? 'Otros proyectos' : `Proyectos de ${grupo.nombreEmpresa}`}</h2>
                     </div>
-                    {proyecto.resumen ? <p className="proyecto-publico-card-summary">{proyecto.resumen}</p> : null}
-                    <dl>
-                      <div><dt>Precio desde</dt><dd>{proyecto.precioDesdeTexto}</dd></div>
-                      <div><dt>Superficie</dt><dd>{formatAreaRange(proyecto.superficieDesdeM2, proyecto.superficieHastaM2)}</dd></div>
-                      <div><dt>Unidades</dt><dd>{proyecto.totalUnidades || 'Por confirmar'}</dd></div>
-                    </dl>
-                    {proyecto.empresaNombre ? <small>{proyecto.empresaNombre}</small> : null}
-                    <Link to={`/proyectos-inmobiliarios/${proyecto.slug}`}>Ver proyecto</Link>
+                  </header>
+
+                  <div className="proyectos-publicos-grid">
+                    {grupo.proyectos.map((proyecto) => {
+                      const imageUrl = resolveApiAssetUrl(proyecto.imagenPrincipalUrl);
+                      const logoVisibleUrl = resolveApiAssetUrl(getLogoVisible(proyecto));
+
+                      return (
+                        <article key={proyecto.id || proyecto.slug} className={`proyecto-publico-card ${logoVisibleUrl ? 'has-logo' : ''}`}>
+                          {logoVisibleUrl ? (
+                            <aside className="proyecto-publico-card-logo-panel" aria-label={`Logo de ${proyecto.empresaNombre || proyecto.nombre}`}>
+                              <img src={logoVisibleUrl} alt={proyecto.empresaNombre || proyecto.nombre} />
+                            </aside>
+                          ) : null}
+
+                          <div className="proyecto-publico-card-content">
+                            <div className={`proyecto-publico-card-media ${imageUrl ? '' : 'is-placeholder'}`}>
+                              {imageUrl ? (
+                                <img src={imageUrl} alt={proyecto.nombre} />
+                              ) : (
+                                <div>Imagen proximamente</div>
+                              )}
+                              <span>{TIPO_LABELS[proyecto.tipoProyecto] || proyecto.tipoProyecto}</span>
+                            </div>
+                            <div className="proyecto-publico-card-body">
+                              <div>
+                                <h2>{proyecto.nombre}</h2>
+                                <p>{proyecto.ubicacionTexto || proyecto.ubicacion}</p>
+                              </div>
+                              {proyecto.resumen ? <p className="proyecto-publico-card-summary">{proyecto.resumen}</p> : null}
+                              <dl>
+                                <div><dt>Precio desde</dt><dd>{proyecto.precioDesdeTexto}</dd></div>
+                                <div><dt>Superficie</dt><dd>{formatAreaRange(proyecto.superficieDesdeM2, proyecto.superficieHastaM2)}</dd></div>
+                                <div><dt>Unidades</dt><dd>{proyecto.totalUnidades || 'Por confirmar'}</dd></div>
+                              </dl>
+                              {proyecto.empresaNombre ? <small>Por {proyecto.empresaNombre}</small> : null}
+                              <Link to={`/proyectos-inmobiliarios/${proyecto.slug}`}>Ver proyecto</Link>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
-                </article>
+                </section>
               );
             })}
           </section>

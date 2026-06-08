@@ -4,6 +4,7 @@ import RichTextContent from '../components/common/RichTextContent';
 import ProyectoPlanoInteractivo from '../components/proyectos/ProyectoPlanoInteractivo';
 import { getWhatsAppPhone } from '../config/contacto';
 import { trackEvent } from '../lib/analytics';
+import { EVENTOS_CONVERSION, trackConversionEvent } from '../lib/conversionEvents';
 import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
 import { resolveApiAssetUrl } from '../services/apiClient';
 import {
@@ -55,6 +56,7 @@ export default function ProyectoInmobiliarioDetallePage() {
   const contactoRef = useRef(null);
   const unidadesRef = useRef(null);
   const planoRef = useRef(null);
+  const conversionViewTrackedRef = useRef('');
   const [proyecto, setProyecto] = useState(null);
   const [modelos, setModelos] = useState([]);
   const [unidades, setUnidades] = useState([]);
@@ -118,6 +120,30 @@ export default function ProyectoInmobiliarioDetallePage() {
     };
   }, [proyecto?.nombre]);
 
+
+  useEffect(() => {
+    if (!proyecto?.id) {
+      conversionViewTrackedRef.current = '';
+      return undefined;
+    }
+
+    const trackingKey = String(proyecto.id);
+    if (conversionViewTrackedRef.current === trackingKey) {
+      return undefined;
+    }
+
+    conversionViewTrackedRef.current = trackingKey;
+    trackConversionEvent({
+      tipoEvento: EVENTOS_CONVERSION.LANDING_VIEW,
+      entidadTipo: 'PROYECTO',
+      entidadId: proyecto.id,
+      slug,
+      origen: 'landing',
+      gaParams: { project_name: proyecto.nombre || '' },
+    });
+
+    return undefined;
+  }, [proyecto?.id, proyecto?.nombre, slug]);
   useEffect(() => {
     setUnidadesVisibles(UNIDADES_PAGE_SIZE);
   }, [filtrosUnidades]);
@@ -141,7 +167,13 @@ export default function ProyectoInmobiliarioDetallePage() {
     return resolveApiAssetUrl(principal);
   }, [imagenes, proyecto?.imagenPrincipalUrl]);
 
-  const logoUrl = useMemo(() => resolveApiAssetUrl(proyecto?.logoUrl) || CN_LOGO, [proyecto?.logoUrl]);
+  const logoUrl = useMemo(() => {
+    const logoHero = proyecto?.usarLogoEmpresa && proyecto?.logoEmpresaUrl
+      ? proyecto.logoEmpresaUrl
+      : proyecto?.logoProyectoUrl || proyecto?.logoUrl || '';
+
+    return resolveApiAssetUrl(logoHero) || CN_LOGO;
+  }, [proyecto?.logoEmpresaUrl, proyecto?.logoProyectoUrl, proyecto?.logoUrl, proyecto?.usarLogoEmpresa]);
 
   const galeria = useMemo(() => {
     const items = imagenes
@@ -213,6 +245,22 @@ export default function ProyectoInmobiliarioDetallePage() {
     [unidadesFiltradasOrdenadas, unidadesVisibles]
   );
 
+
+  const trackProyectoConversion = useCallback((tipoEvento, metadata = {}, gaParams = {}) => {
+    if (!proyecto?.id) {
+      return;
+    }
+
+    trackConversionEvent({
+      tipoEvento,
+      entidadTipo: 'PROYECTO',
+      entidadId: proyecto.id,
+      slug,
+      origen: 'landing',
+      metadata,
+      gaParams,
+    });
+  }, [proyecto?.id, slug]);
   const scrollTo = (ref) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -227,6 +275,11 @@ export default function ProyectoInmobiliarioDetallePage() {
 
   const seleccionarUnidadYContactar = (unidad) => {
     seleccionarUnidad(unidad);
+    trackProyectoConversion(EVENTOS_CONVERSION.ME_INTERESA_CLICK, {
+      boton: 'me_interesa_tabla',
+      unidadId: unidad?.id || unidad?.unidadId || null,
+      modeloId: unidad?.modeloId || null,
+    });
     trackEvent('click_me_interesa', {
       source: 'proyecto_inmobiliario_tabla',
       project_slug: slug,
@@ -312,6 +365,11 @@ export default function ProyectoInmobiliarioDetallePage() {
   };
 
   const seleccionarUnidadEnMapa = useCallback((unidad) => {
+    trackProyectoConversion(EVENTOS_CONVERSION.MAPA_INTERACTIVO, {
+      unidadId: unidad?.id || unidad?.unidadId || null,
+      svgElementId: unidad?.svgElementId || '',
+      estatus: unidad?.estatus || '',
+    });
     trackEvent('click_mapa_interactivo', {
       source: 'proyecto_inmobiliario_plano',
       project_slug: slug,
@@ -326,7 +384,7 @@ export default function ProyectoInmobiliarioDetallePage() {
       unidad: unidad?.codigo || '',
     });
     seleccionarUnidad(unidad);
-  }, [proyecto?.nombre, seleccionarUnidad, slug]);
+  }, [proyecto?.nombre, seleccionarUnidad, slug, trackProyectoConversion]);
 
   if (loading) {
     return (
@@ -353,6 +411,9 @@ export default function ProyectoInmobiliarioDetallePage() {
     : undefined;
 
   const irAPlano = () => {
+    trackProyectoConversion(EVENTOS_CONVERSION.MAPA_INTERACTIVO, {
+      boton: plano?.svgUrl ? 'ver_plano' : 'ver_unidades',
+    });
     trackEvent('click_mapa_interactivo', {
       source: plano?.svgUrl ? 'proyecto_inmobiliario_hero' : 'proyecto_inmobiliario_hero_unidades',
       project_slug: slug,
@@ -365,9 +426,12 @@ export default function ProyectoInmobiliarioDetallePage() {
     <main className="proyecto-publico-page">
       <section className={`proyecto-publico-hero ${imagenPrincipal ? '' : 'is-placeholder'}`} style={heroStyle}>
         <div className="proyecto-publico-hero-content">
-          <img src={logoUrl} alt={proyecto.nombre} />
+          <img className="proyecto-publico-hero-logo" src={logoUrl} alt={proyecto.empresaNombre || proyecto.nombre} />
           <p>Proyecto inmobiliario</p>
-          <h1>{proyecto.nombre}</h1>
+          <div className="proyecto-publico-hero-title-row">
+            <h1>{proyecto.nombre}</h1>
+            {proyecto.empresaNombre ? <span className="proyecto-publico-hero-company">{proyecto.empresaNombre}</span> : null}
+          </div>
           <span>{proyecto.ubicacionTexto || proyecto.ubicacion}</span>
           {proyecto.resumen ? <strong>{proyecto.resumen}</strong> : null}
           <dl>
@@ -379,7 +443,8 @@ export default function ProyectoInmobiliarioDetallePage() {
               <button
                 type="button"
                 onClick={() => {
-                  trackEvent('click_me_interesa', {
+                  trackProyectoConversion(EVENTOS_CONVERSION.ME_INTERESA_CLICK, { boton: 'me_interesa_contacto' });
+                trackEvent('click_me_interesa', {
                     source: 'proyecto_inmobiliario_hero',
                     project_slug: slug,
                     project_name: proyecto.nombre || '',
@@ -423,6 +488,7 @@ export default function ProyectoInmobiliarioDetallePage() {
             <button
               type="button"
               onClick={() => {
+                trackProyectoConversion(EVENTOS_CONVERSION.ME_INTERESA_CLICK, { boton: 'me_interesa_contacto' });
                 trackEvent('click_me_interesa', {
                   source: 'proyecto_inmobiliario_contacto',
                   project_slug: slug,
@@ -530,6 +596,10 @@ export default function ProyectoInmobiliarioDetallePage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={() => {
+                            trackProyectoConversion(EVENTOS_CONVERSION.TOUR360_OPEN, {
+                              tourId: modelo?.tour360Id || modelo?.tour360Url || null,
+                              modeloId: modelo?.id || null,
+                            });
                             trackEvent('click_tour_360', {
                               source: 'proyecto_inmobiliario_modelo',
                               project_slug: slug,
@@ -680,6 +750,11 @@ export default function ProyectoInmobiliarioDetallePage() {
                 <button
                   type="button"
                           onClick={() => {
+                            trackProyectoConversion(EVENTOS_CONVERSION.ME_INTERESA_CLICK, {
+                              boton: 'me_interesa_plano_unidad',
+                              unidadId: unidadSeleccionada?.id || unidadSeleccionada?.unidadId || null,
+                              modeloId: unidadSeleccionada?.modeloId || null,
+                            });
                             trackEvent('click_me_interesa', {
                               source: 'proyecto_inmobiliario_plano_unidad',
                               project_slug: slug,

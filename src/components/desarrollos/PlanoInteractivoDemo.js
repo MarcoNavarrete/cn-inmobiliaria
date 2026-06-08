@@ -103,6 +103,7 @@ const buildDemoSvg = () => `
 export default function PlanoInteractivoDemo({
   desarrolloId,
   onApartarUnidad,
+  onUnidadSelect,
   requireRealSvg = false,
   onUnavailable,
 }) {
@@ -323,6 +324,7 @@ export default function PlanoInteractivoDemo({
     if (!unidad) return;
     event.preventDefault();
     setUnidadSeleccionada(unidad);
+    onUnidadSelect?.(unidad);
   };
 
   const actualizarZoom = (delta, punto = null) => {
@@ -440,6 +442,7 @@ export default function PlanoInteractivoDemo({
 
     if (unidad) {
       setUnidadSeleccionada(unidad);
+      onUnidadSelect?.(unidad);
       setTooltip(null);
     }
 

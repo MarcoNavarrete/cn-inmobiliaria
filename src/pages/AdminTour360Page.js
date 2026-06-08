@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import Tour360Viewer from '../components/Tour360Viewer';
 import {
   actualizarEscena360,
@@ -43,6 +43,26 @@ const HOTSPOT_INICIAL = {
 };
 
 const toFormString = (value) => (value === null || value === undefined ? '' : String(value));
+const pickDependencyCount = (data, ...keys) => {
+  const source = data?.dependencias || data?.dependencies || data || {};
+  const value = keys
+    .map((key) => source[key] ?? source[key.charAt(0).toUpperCase() + key.slice(1)])
+    .find((item) => item !== undefined && item !== null);
+
+  if (Array.isArray(value)) {
+    return value.length;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const buildEscenaDependenciasMessage = (data = {}) => {
+  const hotspotsEnEscena = pickDependencyCount(data, 'hotspotsEnEscena', 'hotspotsAsociados', 'hotspots');
+  const referenciasComoDestino = pickDependencyCount(data, 'referenciasComoDestino', 'hotspotsDestino', 'referencias');
+
+  return `Esta escena tiene ${hotspotsEnEscena} hotspot(s) asociado(s) y aparece como destino en ${referenciasComoDestino} hotspot(s). Si continúas, se eliminarán los hotspots de esta escena y se limpiarán las referencias donde aparece como destino. Esta acción no se puede deshacer. ¿Deseas continuar?`;
+};
 
 const buildTourForm = (tour) => ({
   titulo: tour?.titulo || tour?.nombre || TOUR_INICIAL.titulo,
@@ -259,8 +279,51 @@ export default function AdminTour360Page() {
     );
   };
 
-  const eliminarEscena = (escena) => {
-    ejecutarAccion(() => eliminarEscena360(escena.id), 'Escena eliminada.');
+  const eliminarEscena = async (escena) => {
+    if (!escena?.id) {
+      return;
+    }
+
+    setGuardando(true);
+    setMensaje('');
+    setError('');
+
+    try {
+      await eliminarEscena360(escena.id);
+      setMensaje('Escena eliminada correctamente.');
+      setEscenaEditandoId('');
+      setHotspotEditandoId('');
+      setHotspotTemporal(null);
+      await cargarTour();
+    } catch (err) {
+      if (err.status === 409) {
+        const confirma = window.confirm(buildEscenaDependenciasMessage(err.data));
+
+        if (!confirma) {
+          return;
+        }
+
+        try {
+          await eliminarEscena360(escena.id, { confirmar: true });
+          setMensaje('Escena eliminada correctamente.');
+          setEscenaEditandoId('');
+          setHotspotEditandoId('');
+          setHotspotTemporal(null);
+          await cargarTour();
+        } catch (confirmErr) {
+          setError(
+            confirmErr.status === 404
+              ? 'Escena no encontrada.'
+              : 'No se pudo eliminar la escena.'
+          );
+        }
+        return;
+      }
+
+      setError(err.status === 404 ? 'Escena no encontrada.' : 'No se pudo eliminar la escena.');
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const marcarEscenaInicial = (escena) => {
@@ -310,8 +373,30 @@ export default function AdminTour360Page() {
     );
   };
 
-  const eliminarHotspot = (hotspot) => {
-    ejecutarAccion(() => eliminarHotspot360(hotspot.id), 'Hotspot eliminado.');
+  const eliminarHotspot = async (hotspot) => {
+    if (!hotspot?.id) {
+      return;
+    }
+
+    if (!window.confirm('¿Seguro que deseas eliminar este hotspot? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    setGuardando(true);
+    setMensaje('');
+    setError('');
+
+    try {
+      await eliminarHotspot360(hotspot.id);
+      setMensaje('Hotspot eliminado correctamente.');
+      setHotspotEditandoId('');
+      setHotspotTemporal(null);
+      await cargarTour();
+    } catch (err) {
+      setError('No se pudo eliminar el hotspot.');
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const activarModoAgregarHotspot = () => {
@@ -356,9 +441,16 @@ export default function AdminTour360Page() {
           <p className="admin-tour360-eyebrow">Administracion</p>
           <h1>Tour 360 del inmueble {inmuebleId}</h1>
         </div>
-        <button type="button" className="admin-tour360-secondary" onClick={cargarTour} disabled={cargando || guardando}>
-          Recargar
-        </button>
+        <div className="admin-tour360-actions">
+          {(tour?.inmuebleId || inmuebleId) ? (
+            <Link className="admin-tour360-secondary" to={`/admin/inmuebles/editar/${tour?.inmuebleId || inmuebleId}`}>
+              Regresar al inmueble
+            </Link>
+          ) : null}
+          <button type="button" className="admin-tour360-secondary" onClick={cargarTour} disabled={cargando || guardando}>
+            Recargar
+          </button>
+        </div>
       </section>
 
       {mensaje ? <p className="admin-tour360-alert admin-tour360-alert-ok">{mensaje}</p> : null}

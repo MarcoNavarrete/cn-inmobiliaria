@@ -109,11 +109,13 @@ export const normalizarPrecioInmobiliario = (precio = {}, index = 0) => {
     precioHeredado
   );
   const origenPrecio = normalizeText(pickFirst(precio.origenPrecio, precio.origen, precio.origenPrecioEtiqueta));
+  const disponible = pickFirst(precio.disponible, precio.estaDisponible, precio.disponibleUnidad, true) !== false;
   const esPersonalizado =
     precio.esPersonalizado === true ||
     origenPrecio === 'UNIDAD' ||
     origenPrecio === 'PERSONALIZADO' ||
-    (precioPersonalizado !== null && precioPersonalizado !== undefined && precioPersonalizado !== '');
+    (precioPersonalizado !== null && precioPersonalizado !== undefined && precioPersonalizado !== '') ||
+    disponible === false;
 
   return {
     id: String(pickFirst(precio.precioId, precio.id, precio.Id, `${tipoPrecioId || tipoPrecioCodigo}-${index}`) ?? '').trim(),
@@ -130,6 +132,7 @@ export const normalizarPrecioInmobiliario = (precio = {}, index = 0) => {
     precio: toNumberOrNull(precioValor),
     precioTexto: formatearMonedaMXN(precioValor),
     activo: precio.activo !== false,
+    disponible,
     tipoPrecioActivo: pickFirst(precio.tipoPrecioActivo, precio.catalogoActivo, precio.tipoActivo, precio.activoTipoPrecio, precio.tipoPrecio?.activo, true) !== false,
     esPrincipal: precio.esPrincipal === true || precio.principal === true,
     esPersonalizado,
@@ -149,7 +152,7 @@ export const ordenarPreciosInmobiliarios = (precios = []) =>
     String(a.tipoPrecioNombre || '').localeCompare(String(b.tipoPrecioNombre || ''), 'es-MX', { numeric: true })
   );
 
-export const filtrarPreciosActivos = (precios = []) => ordenarPreciosInmobiliarios(precios.filter((precio) => precio.activo !== false));
+export const filtrarPreciosActivos = (precios = []) => ordenarPreciosInmobiliarios(precios.filter((precio) => precio.activo !== false && precio.disponible !== false));
 
 export const obtenerPrecioContado = (precios = []) => {
   const preciosActivos = filtrarPreciosActivos(precios);

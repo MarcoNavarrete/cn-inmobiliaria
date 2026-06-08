@@ -230,9 +230,10 @@ export const actualizarEscena360 = async (escenaId, escena) =>
     body: buildEscenaPayload(escena),
   });
 
-export const eliminarEscena360 = async (escenaId) =>
+export const eliminarEscena360 = async (escenaId, options = {}) =>
   requestJson(`/api/tours360/escenas/${escenaId}`, {
     method: 'DELETE',
+    query: options.confirmar ? { confirmar: true } : undefined,
   });
 
 export const crearHotspot360 = async (escenaId, hotspot) =>

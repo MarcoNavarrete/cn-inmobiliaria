@@ -25,13 +25,14 @@
   max-width: 900px;
 }
 
-.proyecto-publico-hero-content img {
-  width: 110px;
-  max-height: 72px;
+.proyecto-publico-hero-logo {
+  width: clamp(180px, 18vw, 220px);
+  max-height: 132px;
   object-fit: contain;
-  border-radius: 10px;
-  padding: 0.45rem;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 36px rgba(7, 21, 33, 0.18);
 }
 
 .proyecto-publico-hero-content p,
@@ -47,6 +48,26 @@
   font-family: var(--fuente-titulos);
   font-size: clamp(2.6rem, 7vw, 5.6rem);
   line-height: 0.98;
+}
+.proyecto-publico-hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.proyecto-publico-hero-company {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--dorado-suave);
+  font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+  font-weight: 900;
+  line-height: 1.15;
 }
 
 .proyecto-publico-hero-content > span {
@@ -691,6 +712,17 @@
 
   .proyecto-publico-hero {
     min-height: 560px;
+  }
+  .proyecto-publico-hero-logo {
+    width: min(160px, 72vw);
+    max-height: 96px;
+    padding: 0.6rem;
+  }
+
+  .proyecto-publico-hero-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .proyecto-publico-hero-actions button,

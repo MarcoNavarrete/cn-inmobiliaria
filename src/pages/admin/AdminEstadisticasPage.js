@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAuthSession from '../../hooks/useAuthSession';
 import { obtenerDashboardAdmin } from '../../services/adminDashboardService';
+import { obtenerResumenEventosConversion } from '../../services/eventosConversionService';
 import './AdminEstadisticasPage.css';
 
 const DASHBOARD_INICIAL = {
@@ -26,7 +27,7 @@ const DASHBOARD_INICIAL = {
 };
 
 const getApiErrorMessage = (err) =>
-  err.data?.mensaje || err.data?.message || err.message || 'No fue posible cargar las estadisticas.';
+  err.data?.mensaje || err.data?.message || err.message || 'No fue posible cargar las estadísticas.';
 
 function Card({ label, value, hint, tone = 'default' }) {
   return (
@@ -59,6 +60,7 @@ export default function AdminEstadisticasPage() {
   const [dashboard, setDashboard] = useState(DASHBOARD_INICIAL);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [errorConversion, setErrorConversion] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -66,14 +68,34 @@ export default function AdminEstadisticasPage() {
     const cargar = async () => {
       setLoading(true);
       setError('');
+      setErrorConversion('');
 
       try {
-        const data = await obtenerDashboardAdmin({ signal: controller.signal });
+        const [data, eventosResumen] = await Promise.all([
+          obtenerDashboardAdmin({ signal: controller.signal }),
+          obtenerResumenEventosConversion({}, { signal: controller.signal }).catch((err) => {
+            if (err.name !== 'AbortError') {
+              setErrorConversion('No se pudieron cargar las métricas de interacción.');
+            }
+            return null;
+          }),
+        ]);
         setDashboard({
           ...DASHBOARD_INICIAL,
           ...data,
           resumen: { ...DASHBOARD_INICIAL.resumen, ...(data?.resumen || {}) },
-          analitica: { ...DASHBOARD_INICIAL.analitica, ...(data?.analitica || {}) },
+          analitica: {
+            ...DASHBOARD_INICIAL.analitica,
+            ...(data?.analitica || {}),
+            ...(eventosResumen ? {
+              vistasLanding: eventosResumen.vistasLanding,
+              clicsWhatsapp: eventosResumen.whatsapp,
+              clicsTour360: eventosResumen.tour360,
+              clicsMapaInteractivo: eventosResumen.mapaInteractivo,
+              clicsMeInteresa: eventosResumen.meInteresa,
+              clicsApartar: eventosResumen.apartar,
+            } : {}),
+          },
         });
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -91,19 +113,19 @@ export default function AdminEstadisticasPage() {
   }, []);
 
   const preparadoParaTracking = useMemo(() => [
-    { label: 'Vistas landing', value: dashboard.analitica.vistasLanding, hint: 'Pendiente de conectar a GA4' },
-    { label: 'WhatsApp', value: dashboard.analitica.clicsWhatsapp, hint: 'Pendiente de conectar a GA4' },
-    { label: 'Tour 360', value: dashboard.analitica.clicsTour360, hint: 'Pendiente de conectar a GA4' },
-    { label: 'Mapa interactivo', value: dashboard.analitica.clicsMapaInteractivo, hint: 'Pendiente de conectar a GA4' },
-    { label: 'Me interesa', value: dashboard.analitica.clicsMeInteresa, hint: 'Pendiente de conectar a GA4' },
-    { label: 'Apartar', value: dashboard.analitica.clicsApartar, hint: 'Pendiente de conectar a GA4' },
+    { label: 'Vistas landing', value: dashboard.analitica.vistasLanding, hint: 'Eventos registrados en CN' },
+    { label: 'WhatsApp', value: dashboard.analitica.clicsWhatsapp, hint: 'Eventos registrados en CN' },
+    { label: 'Tour 360', value: dashboard.analitica.clicsTour360, hint: 'Eventos registrados en CN' },
+    { label: 'Mapa interactivo', value: dashboard.analitica.clicsMapaInteractivo, hint: 'Eventos registrados en CN' },
+    { label: 'Me interesa', value: dashboard.analitica.clicsMeInteresa, hint: 'Eventos registrados en CN' },
+    { label: 'Apartar', value: dashboard.analitica.clicsApartar, hint: 'Eventos registrados en CN' },
   ], [dashboard.analitica]);
 
   if (!cargando && !esAdminCn) {
     return (
       <main className="admin-estadisticas">
         <section className="admin-estadisticas-empty">
-          <h1>No tienes permiso para acceder a esta seccion.</h1>
+          <h1>No tienes permiso para acceder a esta sección.</h1>
           <Link to="/admin/proyectos-inmobiliarios">Ir a proyectos inmobiliarios</Link>
         </section>
       </main>
@@ -122,9 +144,9 @@ export default function AdminEstadisticasPage() {
     <main className="admin-estadisticas">
       <section className="admin-estadisticas-hero">
         <div>
-          <p className="admin-estadisticas-eyebrow">Analitica</p>
-          <h1>Estadisticas</h1>
-          <p>Resumen comercial y espacio preparado para la medicion de interacciones.</p>
+          <p className="admin-estadisticas-eyebrow">Analítica</p>
+          <h1>Estadísticas</h1>
+          <p>Resumen comercial y espacio preparado para la medición de interacciones.</p>
         </div>
         <div className="admin-estadisticas-actions">
           <Link to="/admin/dashboard">Volver al dashboard</Link>
@@ -132,8 +154,9 @@ export default function AdminEstadisticasPage() {
         </div>
       </section>
 
-      {loading ? <p className="admin-estadisticas-feedback">Cargando estadisticas...</p> : null}
+      {loading ? <p className="admin-estadisticas-feedback">Cargando estadísticas...</p> : null}
       {error ? <p className="admin-estadisticas-feedback is-error">{error}</p> : null}
+      {errorConversion ? <p className="admin-estadisticas-feedback is-error">{errorConversion}</p> : null}
 
       {!loading && !error ? (
         <>
@@ -149,8 +172,8 @@ export default function AdminEstadisticasPage() {
           </Section>
 
           <Section
-            title="Interaccion y conversion"
-            note="Esta seccion esta preparada para page views, WhatsApp, Tour 360, mapa interactivo y apartados."
+            title="Interacción y conversión"
+            note="Eventos registrados en CN desde el sitio público."
           >
             {preparadoParaTracking.map((item) => (
               <Card key={item.label} label={item.label} value={item.value ?? 0} hint={item.hint} tone="accent" />

@@ -6,6 +6,7 @@ import PlanoInteractivoDemo from '../components/desarrollos/PlanoInteractivoDemo
 import ProspectoDesarrolloModal from '../components/desarrollos/ProspectoDesarrolloModal';
 import Tour360Viewer from '../components/tour360/Tour360Viewer';
 import { trackEvent } from '../lib/analytics';
+import { EVENTOS_CONVERSION, trackConversionEvent } from '../lib/conversionEvents';
 import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
 import { obtenerDesarrolloPorSlug } from '../services/desarrollosService';
 import { obtenerPlanoPublico } from '../services/adminDesarrolloPlanoService';
@@ -193,6 +194,15 @@ export default function DetalleDesarrolloPage() {
     }
 
     viewContentTrackedRef.current = trackingKey;
+    trackConversionEvent({
+      tipoEvento: EVENTOS_CONVERSION.LANDING_VIEW,
+      entidadTipo: 'DESARROLLO',
+      entidadId: desarrollo.id,
+      slug,
+      origen: 'landing',
+      gaParams: { desarrollo_name: desarrollo.nombre || '' },
+    });
+
     trackMetaEvent('ViewContent', {
       content_name: desarrollo.nombre || '',
       content_category: 'Desarrollo inmobiliario',
@@ -202,8 +212,24 @@ export default function DetalleDesarrolloPage() {
     });
 
     return undefined;
-  }, [desarrollo?.id, desarrollo?.nombre, desarrollo?.precioDesde]);
+  }, [desarrollo?.id, desarrollo?.nombre, desarrollo?.precioDesde, slug]);
 
+
+  const trackDesarrolloConversion = useCallback((tipoEvento, metadata = {}, gaParams = {}) => {
+    if (!desarrollo?.id) {
+      return;
+    }
+
+    trackConversionEvent({
+      tipoEvento,
+      entidadTipo: 'DESARROLLO',
+      entidadId: desarrollo.id,
+      slug,
+      origen: 'landing',
+      metadata,
+      gaParams,
+    });
+  }, [desarrollo?.id, slug]);
   // TODO: habilitar tour 360 general del desarrollo cuando existan escenas del desarrollo/amenidades.
 
   const ocultarPlanoInteractivo = useCallback(() => {
@@ -236,6 +262,7 @@ export default function DetalleDesarrolloPage() {
   const googleMapsUrl = desarrollo.urlGoogleMaps || '';
   const coordinatesMapsUrl = buildMapsUrl(desarrollo.latitud, desarrollo.longitud);
 
+
   const irAModelos = (event) => {
     event.preventDefault();
     document.getElementById('modelos-disponibles')?.scrollIntoView({
@@ -245,11 +272,20 @@ export default function DetalleDesarrolloPage() {
   };
 
   const abrirModalProspecto = (modelo = null, opciones = {}) => {
+    const origen = opciones.origen || (modelo ? 'MODELO' : 'DESARROLLO');
+
+    if (origen !== 'PLANO_UNIDAD') {
+      trackDesarrolloConversion(EVENTOS_CONVERSION.ME_INTERESA_CLICK, {
+        boton: opciones.boton || 'me_interesa',
+        modeloId: modelo?.id || null,
+      });
+    }
+
     setProspectoModal({
       isOpen: true,
       initialMessage: opciones.initialMessage || '',
       modelo,
-      origen: opciones.origen || (modelo ? 'MODELO' : 'DESARROLLO'),
+      origen,
       unidad: opciones.unidad || null,
     });
   };
@@ -262,6 +298,11 @@ export default function DetalleDesarrolloPage() {
   };
 
   const abrirWhatsapp = ({ desarrollo: desarrolloActual, mensaje, modelo }) => {
+    trackDesarrolloConversion(EVENTOS_CONVERSION.WHATSAPP_CLICK, {
+      boton: modelo ? 'whatsapp_modelo' : 'whatsapp_cta',
+      modeloId: modelo?.id || null,
+    });
+
     trackEvent('click_whatsapp', {
       source: 'detalle_desarrollo',
       desarrollo_slug: slug,
@@ -289,6 +330,13 @@ export default function DetalleDesarrolloPage() {
     if (!unidad) {
       return;
     }
+
+    trackDesarrolloConversion(EVENTOS_CONVERSION.APARTAR_CLICK, {
+      unidadId: unidad?.unidadId || unidad?.id || null,
+      modeloId: unidad?.modeloId || null,
+      manzana: unidad?.manzana || '',
+      lote: unidad?.lote || unidad?.codigoUnidad || '',
+    });
 
     trackEvent('click_apartar_unidad', {
       source: 'plano_interactivo_demo',
@@ -364,6 +412,11 @@ export default function DetalleDesarrolloPage() {
   };
 
   const abrirTourModelo = async (modelo) => {
+    trackDesarrolloConversion(EVENTOS_CONVERSION.TOUR360_OPEN, {
+      tourId: modelo?.tour360Id || null,
+      modeloId: modelo?.id || null,
+    });
+
     setTourModal({
       isOpen: true,
       title: `Tour 360 - ${modelo.nombre}`,
@@ -586,6 +639,11 @@ export default function DetalleDesarrolloPage() {
             <PlanoInteractivoDemo
               desarrolloId={desarrollo.id}
               onApartarUnidad={abrirApartadoUnidad}
+              onUnidadSelect={(unidad) => trackDesarrolloConversion(EVENTOS_CONVERSION.MAPA_INTERACTIVO, {
+                unidadId: unidad?.unidadId || unidad?.id || null,
+                svgElementId: unidad?.svgElementId || '',
+                estatus: unidad?.estatus || '',
+              })}
               requireRealSvg
               onUnavailable={ocultarPlanoInteractivo}
             />

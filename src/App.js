@@ -15,8 +15,10 @@ import DetallePropiedad from './pages/DetallePropiedad';
 import PropiedadesPage from './pages/PropiedadesPage';
 import DesarrollosPage from './pages/DesarrollosPage';
 import DetalleDesarrolloPage from './pages/DetalleDesarrolloPage';
+import DesarrolloPlanoPage from './pages/DesarrolloPlanoPage';
 import ProyectosInmobiliariosPage from './pages/ProyectosInmobiliariosPage';
 import ProyectoInmobiliarioDetallePage from './pages/ProyectoInmobiliarioDetallePage';
+import ProyectoInmobiliarioPlanoPage from './pages/ProyectoInmobiliarioPlanoPage';
 import FavoritosPage from './pages/FavoritosPage';
 import MiCuentaPage from './pages/MiCuentaPage';
 import MisSolicitudesPage from './pages/MisSolicitudesPage';
@@ -114,8 +116,10 @@ function App() {
         />
         <Route path="/propiedades" element={<PropiedadesPage />} />
         <Route path="/desarrollos" element={<DesarrollosPage />} />
+        <Route path="/desarrollos/:slug/plano" element={<DesarrolloPlanoPage />} />
         <Route path="/desarrollos/:id" element={<DetalleDesarrolloPage />} />
         <Route path="/proyectos-inmobiliarios" element={<ProyectosInmobiliariosPage />} />
+        <Route path="/proyectos-inmobiliarios/:slug/plano" element={<ProyectoInmobiliarioPlanoPage />} />
         <Route path="/proyectos-inmobiliarios/:slug" element={<ProyectoInmobiliarioDetallePage />} />
         <Route path="/favoritos" element={<FavoritosPage />} />
         <Route path="/mis-solicitudes" element={<MisSolicitudesPage />} />
