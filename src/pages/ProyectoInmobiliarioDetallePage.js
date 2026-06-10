@@ -51,6 +51,23 @@ const FORM_INICIAL = {
   mensaje: '',
 };
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const buildSolicitudWhatsappText = ({ form, proyecto, unidadSeleccionada }) => {
+  const lines = [
+    `Hola, me interesa el proyecto ${proyecto?.nombre || ''}. Acabo de enviar mi solicitud desde la página de CN Inmobiliaria.`,
+    unidadSeleccionada?.codigo ? `Unidad: ${unidadSeleccionada.codigo}` : '',
+    `Nombre: ${form.nombre.trim()}`,
+    `Teléfono: ${form.telefono.trim()}`,
+    form.correo.trim() ? `Correo: ${form.correo.trim()}` : '',
+    form.mensaje.trim() ? `Mensaje: ${form.mensaje.trim()}` : '',
+    '',
+    `Vengo desde: ${window.location.href}`,
+  ];
+
+  return lines.filter((line) => line !== '').join('\n');
+};
+
 export default function ProyectoInmobiliarioDetallePage() {
   const { slug } = useParams();
   const contactoRef = useRef(null);
@@ -330,16 +347,29 @@ export default function ProyectoInmobiliarioDetallePage() {
 
   const enviarProspecto = async (event) => {
     event.preventDefault();
+
+    if (enviando) return;
+
     setFormError('');
     setMensaje('');
 
-    if (!form.nombre.trim()) {
-      setFormError('Captura tu nombre.');
+    const nombre = form.nombre.trim();
+    const telefono = form.telefono.trim();
+    const correo = form.correo.trim();
+    const mensajeFormulario = form.mensaje.trim();
+
+    if (!nombre) {
+      setFormError('Ingresa tu nombre.');
       return;
     }
 
-    if (!form.telefono.trim() && !form.correo.trim()) {
-      setFormError('Captura telefono o correo para poder contactarte.');
+    if (!telefono) {
+      setFormError('Ingresa tu teléfono.');
+      return;
+    }
+
+    if (correo && !EMAIL_REGEX.test(correo)) {
+      setFormError('Ingresa un correo válido.');
       return;
     }
 
@@ -347,23 +377,43 @@ export default function ProyectoInmobiliarioDetallePage() {
 
     try {
       await crearProspectoPublico(slug, {
-        nombre: form.nombre.trim(),
-        telefono: form.telefono.trim() || null,
-        correo: form.correo.trim() || null,
-        mensaje: form.mensaje.trim() || `Me interesa recibir información del proyecto ${proyecto.nombre}.`,
+        nombre,
+        telefono,
+        correo: correo || null,
+        email: correo || null,
+        mensaje: mensajeFormulario || `Me interesa recibir información del proyecto ${proyecto.nombre}.`,
         unidadId: unidadSeleccionada?.id || unidadSeleccionada?.unidadId || null,
-        origen: 'WEB',
+        proyectoId: proyecto.id || proyecto.proyectoId || null,
+        slug: proyecto.slug || slug,
+        origen: 'landing',
       });
-      setMensaje('Gracias, recibimos tus datos. Un asesor se pondrá en contacto contigo.');
+
+      trackProyectoConversion(EVENTOS_CONVERSION.ME_INTERESA_CLICK, {
+        boton: 'formulario_contacto_enviado',
+        unidadId: unidadSeleccionada?.id || unidadSeleccionada?.unidadId || null,
+        modeloId: unidadSeleccionada?.modeloId || null,
+      });
+
+      setMensaje('Solicitud enviada correctamente. Un asesor se pondrá en contacto contigo.');
+
+      const telefonoDestino = getWhatsAppPhone(proyecto.telefonoContacto || proyecto.whatsappContacto);
+      if (telefonoDestino) {
+        const whatsappText = buildSolicitudWhatsappText({
+          form: { nombre, telefono, correo, mensaje: mensajeFormulario },
+          proyecto,
+          unidadSeleccionada,
+        });
+        window.open(`https://wa.me/${telefonoDestino}?text=${encodeURIComponent(whatsappText)}`, '_blank', 'noopener,noreferrer');
+      }
+
       setForm(FORM_INICIAL);
       setUnidadSeleccionada(null);
     } catch (err) {
-      setFormError(getApiErrorMessage(err));
+      setFormError(err.data?.mensaje || err.data?.message || 'No se pudo enviar la solicitud. Intenta nuevamente o contáctanos por WhatsApp.');
     } finally {
       setEnviando(false);
     }
   };
-
   const seleccionarUnidadEnMapa = useCallback((unidad) => {
     trackProyectoConversion(EVENTOS_CONVERSION.MAPA_INTERACTIVO, {
       unidadId: unidad?.id || unidad?.unidadId || null,
@@ -787,26 +837,26 @@ export default function ProyectoInmobiliarioDetallePage() {
               <span className="proyecto-publico-selected-pill">Unidad seleccionada: {unidadSeleccionada.codigo}</span>
             ) : null}
           </div>
-          <form onSubmit={enviarProspecto}>
+          <form onSubmit={enviarProspecto} noValidate>
             <label>
               <span>Nombre</span>
-              <input name="nombre" value={form.nombre} onChange={actualizarCampo} required />
+              <input name="nombre" value={form.nombre} onChange={actualizarCampo} required disabled={enviando} />
             </label>
             <label>
               <span>Teléfono</span>
-              <input name="telefono" value={form.telefono} onChange={actualizarCampo} />
+              <input name="telefono" type="tel" value={form.telefono} onChange={actualizarCampo} required disabled={enviando} />
             </label>
             <label>
               <span>Correo</span>
-              <input name="correo" type="email" value={form.correo} onChange={actualizarCampo} />
+              <input name="correo" type="email" value={form.correo} onChange={actualizarCampo} disabled={enviando} />
             </label>
             <label className="is-full">
               <span>Mensaje</span>
-              <textarea name="mensaje" value={form.mensaje} onChange={actualizarCampo} rows="4" />
+              <textarea name="mensaje" value={form.mensaje} onChange={actualizarCampo} rows="4" disabled={enviando} />
             </label>
             {formError ? <p className="proyecto-publico-form-error">{formError}</p> : null}
             {mensaje ? <p className="proyecto-publico-form-ok">{mensaje}</p> : null}
-            <button type="submit" disabled={enviando}>{enviando ? 'Enviando...' : 'Enviar solicitud'}</button>
+            <button type="submit" disabled={enviando}>{enviando ? 'Enviando...' : 'Enviar Solicitud'}</button>
           </form>
         </section>
       </section>
