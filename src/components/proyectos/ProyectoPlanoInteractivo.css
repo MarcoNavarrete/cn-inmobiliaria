@@ -96,17 +96,65 @@
 .proyecto-plano-stage {
   position: relative;
   min-height: 500px;
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid rgba(26, 61, 124, 0.1);
   border-radius: 12px;
   padding: 1rem;
   background:
     linear-gradient(135deg, rgba(26, 61, 124, 0.08), rgba(203, 161, 53, 0.08)),
     #edf3f7;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.proyecto-plano-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.proyecto-plano-controls {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 999px;
+  padding: 0.35rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(7, 21, 33, 0.14);
+}
+
+.proyecto-plano-controls button {
+  min-width: 34px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 0.65rem;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.proyecto-plano-controls button:hover,
+.proyecto-plano-controls button:focus-visible {
+  background: var(--azul-oscuro);
+  color: var(--blanco);
 }
 
 .proyecto-plano-svg-inline {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: calc(100% - 2rem);
   min-width: 780px;
+  transform-origin: 0 0;
+  will-change: transform;
 }
 
 .proyecto-plano-svg-inline svg {
@@ -160,5 +208,12 @@
 @media (max-width: 860px) {
   .proyecto-plano-stage {
     min-height: 360px;
+  }
+
+  .proyecto-plano-controls {
+    left: 0.75rem;
+    right: auto;
+    max-width: calc(100% - 1.5rem);
+    flex-wrap: wrap;
   }
 }

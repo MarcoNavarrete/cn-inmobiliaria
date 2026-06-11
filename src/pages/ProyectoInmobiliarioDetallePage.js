@@ -1,4 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  FaDirections,
+  FaFacebookF,
+  FaLink,
+  FaLinkedinIn,
+  FaMapMarkerAlt,
+  FaSearchPlus,
+  FaTimes,
+  FaTwitter,
+  FaWhatsapp,
+} from 'react-icons/fa';
 import { Link, useParams } from 'react-router-dom';
 import RichTextContent from '../components/common/RichTextContent';
 import ProyectoPlanoInteractivo from '../components/proyectos/ProyectoPlanoInteractivo';
@@ -38,6 +49,82 @@ const formatArea = (value) => {
 
 const getStatusClass = (status) =>
   `is-${String(status || '').trim().toLowerCase().replace(/\s+/g, '_')}`;
+
+const getImagenDescripcion = (imagen) =>
+  imagen?.descripcion || imagen?.titulo || imagen?.alt || imagen?.nombre || imagen?.texto || '';
+
+const getImagenAlt = (imagen, proyectoNombre) =>
+  imagen?.descripcion || imagen?.titulo || imagen?.alt || imagen?.nombre || imagen?.texto || proyectoNombre || 'Imagen del proyecto';
+
+const cleanLocationText = (value) => {
+  const text = String(value || '').trim();
+  if (!text || /^ubicaci[oó]n por confirmar$/i.test(text)) return '';
+  return text;
+};
+
+const hasCoordinate = (value) => {
+  const text = String(value ?? '').trim();
+  return text !== '' && !Number.isNaN(Number(text));
+};
+
+const buildGoogleMapsSearchUrl = (query) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+
+const buildProyectoMapsUrl = (proyecto) => {
+  const directUrl = cleanLocationText(proyecto?.googleMapsUrl || proyecto?.mapaUrl || proyecto?.ubicacionUrl);
+  if (directUrl) return directUrl;
+
+  if (hasCoordinate(proyecto?.latitud) && hasCoordinate(proyecto?.longitud)) {
+    return buildGoogleMapsSearchUrl(`${proyecto.latitud},${proyecto.longitud}`);
+  }
+
+  const locationParts = [
+    proyecto?.localidadNombre,
+    proyecto?.poblacionNombre || proyecto?.municipioNombre,
+    proyecto?.estadoNombre,
+    proyecto?.ubicacionTexto,
+    proyecto?.ubicacion,
+  ].map(cleanLocationText).filter(Boolean);
+
+  if (!locationParts.length) return '';
+
+  return buildGoogleMapsSearchUrl([proyecto?.nombre, ...locationParts].filter(Boolean).join(' '));
+};
+
+const buildProyectoMapsEmbedUrl = (proyecto) => {
+  if (!hasCoordinate(proyecto?.latitud) || !hasCoordinate(proyecto?.longitud)) return '';
+  return `https://www.google.com/maps?q=${encodeURIComponent(`${proyecto.latitud},${proyecto.longitud}`)}&output=embed`;
+};
+
+const buildProyectoShareUrl = (slug) => {
+  if (typeof window === 'undefined') {
+    return slug ? `https://cninmobiliaria.com.mx/#/proyectos-inmobiliarios/${slug}` : '';
+  }
+
+  if (!slug) {
+    return window.location.href;
+  }
+
+  return `${window.location.origin}${window.location.pathname}#/proyectos-inmobiliarios/${slug}`;
+};
+
+const copiarTexto = async (texto) => {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(texto);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = texto;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.top = '-9999px';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+};
 
 const buildUnidadMessage = (unidad, proyecto) =>
   `Me interesa la unidad ${unidad?.codigo || 'seleccionada'} del proyecto ${proyecto?.nombre || ''}. Quiero recibir mas información.`
@@ -82,6 +169,7 @@ export default function ProyectoInmobiliarioDetallePage() {
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [filtrosUnidades, setFiltrosUnidades] = useState(FILTROS_UNIDADES_INICIALES);
   const [unidadesVisibles, setUnidadesVisibles] = useState(UNIDADES_PAGE_SIZE);
+  const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
   const [modeloImagenModal, setModeloImagenModal] = useState(null);
   const [form, setForm] = useState(FORM_INICIAL);
   const [loading, setLoading] = useState(true);
@@ -89,6 +177,7 @@ export default function ProyectoInmobiliarioDetallePage() {
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [formError, setFormError] = useState('');
+  const [shareFeedback, setShareFeedback] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -166,18 +255,24 @@ export default function ProyectoInmobiliarioDetallePage() {
   }, [filtrosUnidades]);
 
   useEffect(() => {
-    if (!modeloImagenModal) return undefined;
+    if (!modeloImagenModal && !imagenSeleccionada) return undefined;
 
     const cerrarConEscape = (event) => {
       if (event.key === 'Escape') {
         setModeloImagenModal(null);
+        setImagenSeleccionada(null);
       }
     };
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', cerrarConEscape);
 
-    return () => window.removeEventListener('keydown', cerrarConEscape);
-  }, [modeloImagenModal]);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', cerrarConEscape);
+    };
+  }, [imagenSeleccionada, modeloImagenModal]);
 
   const imagenPrincipal = useMemo(() => {
     const principal = imagenes.find((imagen) => imagen.tipoImagen === 'PRINCIPAL')?.url || proyecto?.imagenPrincipalUrl;
@@ -206,6 +301,62 @@ export default function ProyectoInmobiliarioDetallePage() {
 
     return items;
   }, [imagenes, imagenPrincipal, proyecto?.nombre]);
+
+  const ubicacionProyecto = useMemo(() => {
+    const estado = cleanLocationText(proyecto?.estadoNombre);
+    const municipio = cleanLocationText(proyecto?.poblacionNombre || proyecto?.municipioNombre);
+    const localidad = cleanLocationText(proyecto?.localidadNombre);
+    const direccion = cleanLocationText(proyecto?.direccion);
+    const referencia = cleanLocationText(proyecto?.referencia);
+    const ubicacionTexto = cleanLocationText(proyecto?.ubicacionTexto);
+    const ubicacionGeneral = cleanLocationText(proyecto?.ubicacion);
+    const mapsUrl = buildProyectoMapsUrl(proyecto);
+    const embedUrl = buildProyectoMapsEmbedUrl(proyecto);
+    const resumen = [localidad, municipio, estado].filter(Boolean).join(', ') ||
+      ubicacionTexto ||
+      ubicacionGeneral ||
+      direccion ||
+      (embedUrl ? 'Ubicación por coordenadas' : '') ||
+      (mapsUrl ? 'Ubicación en Google Maps' : '');
+    const detalles = [
+      { label: 'Estado', value: estado },
+      { label: 'Municipio/Poblacion', value: municipio },
+      { label: 'Localidad', value: localidad },
+      { label: 'Direccion', value: direccion },
+      { label: 'Referencia', value: referencia },
+    ].filter((item) => item.value);
+
+    return {
+      resumen,
+      detalles,
+      mapsUrl,
+      embedUrl,
+      hasData: Boolean(resumen || detalles.length || mapsUrl || embedUrl),
+    };
+  }, [proyecto]);
+
+  const shareData = useMemo(() => {
+    if (!proyecto) return null;
+
+    const shareUrl = buildProyectoShareUrl(slug || proyecto.slug);
+    const ubicacion = cleanLocationText(proyecto.ubicacionTexto || proyecto.ubicacion);
+    let texto = `Conoce ${proyecto.nombre}, un proyecto inmobiliario disponible en CN Inmobiliaria.`;
+
+    if (ubicacion) {
+      texto = `Conoce ${proyecto.nombre} en ${ubicacion}, disponible en CN Inmobiliaria.`;
+    } else if (proyecto.empresaNombre) {
+      texto = `Conoce ${proyecto.nombre} de ${proyecto.empresaNombre}, disponible en CN Inmobiliaria.`;
+    }
+
+    return {
+      facebookUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      linkedinUrl: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+      shareText: texto,
+      shareUrl,
+      twitterUrl: `https://twitter.com/intent/tweet?text=${encodeURIComponent(texto)}&url=${encodeURIComponent(shareUrl)}`,
+      whatsappUrl: `https://wa.me/?text=${encodeURIComponent(`${texto} ${shareUrl}`)}`,
+    };
+  }, [proyecto, slug]);
 
   const modelosConUnidades = useMemo(() => {
     const ids = new Set(unidades.map((unidad) => String(unidad.modeloId || '')).filter(Boolean));
@@ -343,6 +494,19 @@ export default function ProyectoInmobiliarioDetallePage() {
       desarrollo: proyecto.nombre || '',
     });
     window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const copiarEnlaceProyecto = async () => {
+    if (!shareData?.shareUrl) return;
+
+    try {
+      await copiarTexto(shareData.shareUrl);
+      setShareFeedback('Enlace copiado al portapapeles.');
+    } catch (_) {
+      setShareFeedback('No se pudo copiar el enlace. Copia la URL desde la barra del navegador.');
+    }
+
+    window.setTimeout(() => setShareFeedback(''), 3600);
   };
 
   const enviarProspecto = async (event) => {
@@ -515,6 +679,65 @@ export default function ProyectoInmobiliarioDetallePage() {
             </button>
             <button type="button" onClick={abrirWhatsapp}>WhatsApp</button>
           </div>
+          {shareData ? (
+            <div className="proyecto-share-section" aria-label="Compartir proyecto">
+              <div className="proyecto-share-title">
+                <span>Compartir proyecto</span>
+                {shareFeedback ? <small role="status">{shareFeedback}</small> : <small>Ayuda a alguien más a conocer esta oportunidad.</small>}
+              </div>
+              <div className="proyecto-share-buttons">
+                <a
+                  className="proyecto-share-button whatsapp"
+                  href={shareData.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Compartir por WhatsApp"
+                >
+                  <FaWhatsapp aria-hidden="true" />
+                  <span>WhatsApp</span>
+                </a>
+                <a
+                  className="proyecto-share-button facebook"
+                  href={shareData.facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Compartir en Facebook"
+                >
+                  <FaFacebookF aria-hidden="true" />
+                  <span>Facebook</span>
+                </a>
+                <a
+                  className="proyecto-share-button twitter"
+                  href={shareData.twitterUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Compartir en X"
+                >
+                  <FaTwitter aria-hidden="true" />
+                  <span>X</span>
+                </a>
+                <a
+                  className="proyecto-share-button linkedin"
+                  href={shareData.linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Compartir en LinkedIn"
+                >
+                  <FaLinkedinIn aria-hidden="true" />
+                  <span>LinkedIn</span>
+                </a>
+                <button
+                  type="button"
+                  className="proyecto-share-button copy"
+                  onClick={copiarEnlaceProyecto}
+                  aria-label="Copiar enlace del proyecto"
+                >
+                  <FaLink aria-hidden="true" />
+                  <span>Copiar enlace</span>
+                </button>
+              </div>
+            </div>
+          ) : null}
           <small>Publicado en CN Inmobiliaria</small>
         </div>
       </section>
@@ -565,12 +788,82 @@ export default function ProyectoInmobiliarioDetallePage() {
               <h2>Imágenes del proyecto</h2>
             </div>
             <div className="proyecto-publico-gallery">
-              {galeria.map((imagen, index) => (
-                <figure key={`${imagen.id || imagen.urlResolved}-${index}`}>
-                  <img src={imagen.urlResolved} alt={imagen.titulo || proyecto.nombre} />
-                  <figcaption>{imagen.titulo || imagen.tipoImagen}</figcaption>
-                </figure>
-              ))}
+              {galeria.map((imagen, index) => {
+                const descripcionImagen = getImagenDescripcion(imagen);
+                const altImagen = getImagenAlt(imagen, proyecto.nombre);
+
+                return (
+                  <figure key={`${imagen.id || imagen.urlResolved}-${index}`}>
+                    <button
+                      type="button"
+                      className="proyecto-gallery-item"
+                      onClick={() => setImagenSeleccionada({ ...imagen, descripcionModal: descripcionImagen, alt: altImagen })}
+                      aria-label={`Ampliar ${altImagen}`}
+                    >
+                      <img className="proyecto-gallery-image" src={imagen.urlResolved} alt={altImagen} />
+                      <span className="proyecto-gallery-overlay" aria-hidden="true">
+                        <span className="proyecto-gallery-zoom-icon">
+                          <FaSearchPlus />
+                        </span>
+                      </span>
+                    </button>
+                    <figcaption>{descripcionImagen || imagen.tipoImagen}</figcaption>
+                  </figure>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        {ubicacionProyecto.hasData ? (
+          <section className="proyecto-publico-section proyecto-publico-location">
+            <div className="proyecto-publico-section-head">
+              <p className="proyecto-publico-eyebrow">Ubicación</p>
+              <h2>Ubicación del proyecto</h2>
+              <span>Conoce la zona donde se encuentra {proyecto.nombre}.</span>
+            </div>
+            <div className="proyecto-publico-location-layout">
+              <div className="proyecto-publico-location-info">
+                <div className="proyecto-publico-location-summary">
+                  <FaMapMarkerAlt aria-hidden="true" />
+                  <strong>{ubicacionProyecto.resumen}</strong>
+                </div>
+                {ubicacionProyecto.detalles.length ? (
+                  <dl className="proyecto-publico-location-details">
+                    {ubicacionProyecto.detalles.map((item) => (
+                      <div key={item.label}>
+                        <dt>{item.label}</dt>
+                        <dd>{item.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : null}
+                {ubicacionProyecto.mapsUrl ? (
+                  <a
+                    className="proyecto-publico-location-action"
+                    href={ubicacionProyecto.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <FaDirections aria-hidden="true" />
+                    Cómo llegar
+                  </a>
+                ) : null}
+              </div>
+              <div className="proyecto-publico-location-map">
+                {ubicacionProyecto.embedUrl ? (
+                  <iframe
+                    title={`Ubicación de ${proyecto.nombre}`}
+                    src={ubicacionProyecto.embedUrl}
+                    loading="lazy"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="proyecto-publico-location-placeholder" aria-hidden="true">
+                    <FaMapMarkerAlt />
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         ) : null}
@@ -861,10 +1154,32 @@ export default function ProyectoInmobiliarioDetallePage() {
         </section>
       </section>
 
+      {imagenSeleccionada ? (
+        <div className="proyecto-publico-lightbox" role="presentation" onMouseDown={() => setImagenSeleccionada(null)}>
+          <section
+            className="proyecto-publico-lightbox-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={imagenSeleccionada.alt || proyecto.nombre}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button type="button" onClick={() => setImagenSeleccionada(null)} aria-label="Cerrar imagen">
+              <FaTimes aria-hidden="true" />
+            </button>
+            <img src={imagenSeleccionada.urlResolved} alt={imagenSeleccionada.alt || proyecto.nombre} />
+            {imagenSeleccionada.descripcionModal ? (
+              <p className="proyecto-publico-lightbox-description">{imagenSeleccionada.descripcionModal}</p>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
+
       {modeloImagenModal ? (
         <div className="proyecto-publico-lightbox" role="presentation" onMouseDown={() => setModeloImagenModal(null)}>
           <section className="proyecto-publico-lightbox-dialog" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
-            <button type="button" onClick={() => setModeloImagenModal(null)} aria-label="Cerrar imagen">x</button>
+            <button type="button" onClick={() => setModeloImagenModal(null)} aria-label="Cerrar imagen">
+              <FaTimes aria-hidden="true" />
+            </button>
             <img src={modeloImagenModal.src} alt={modeloImagenModal.title} />
             <strong>{modeloImagenModal.title}</strong>
           </section>
@@ -873,5 +1188,3 @@ export default function ProyectoInmobiliarioDetallePage() {
     </main>
   );
 }
-
-
