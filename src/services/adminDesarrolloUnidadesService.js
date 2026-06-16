@@ -1,4 +1,4 @@
-import { getJson, requestFormData, requestJson } from './apiClient';
+import { API_BASE_URL, getJson, requestFormData, requestJson } from './apiClient';
 import {
   determinarOrigenPrecio,
   obtenerResumenPrecios,
@@ -32,6 +32,30 @@ const formatCurrency = (amount) => {
     currency: 'MXN',
     maximumFractionDigits: 0,
   }).format(Number(amount));
+};
+
+const AUTH_TOKEN_KEY = 'cn_inmobiliaria_auth_token';
+
+const getCsvFilename = (contentDisposition, fallback) => {
+  const header = String(contentDisposition || '');
+  const utf8Match = header.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1].replace(/"/g, ''));
+  }
+
+  const match = header.match(/filename="?([^";]+)"?/i);
+  return match?.[1] || fallback;
+};
+
+const descargarBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 };
 
 export const ESTATUS_UNIDAD = [
@@ -126,4 +150,21 @@ export const importarUnidadesCsv = (desarrolloId, file) => {
     method: 'POST',
     body,
   });
+};
+
+export const descargarPlantillaUnidadesCsv = async (desarrolloId) => {
+  const response = await fetch(`${API_BASE_URL}/api/admin/desarrollos/${desarrolloId}/unidades/plantilla-csv`, {
+    method: 'GET',
+    headers: {
+      ...(localStorage.getItem(AUTH_TOKEN_KEY) ? { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`No fue posible descargar la plantilla CSV (${response.status}).`);
+  }
+
+  const blob = await response.blob();
+  const filename = getCsvFilename(response.headers.get('Content-Disposition'), `desarrollo-${desarrolloId}-unidades.csv`);
+  descargarBlob(blob, filename);
 };

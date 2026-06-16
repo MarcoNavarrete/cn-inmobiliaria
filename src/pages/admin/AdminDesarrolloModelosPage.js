@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   actualizarDesarrolloModelo,
@@ -31,7 +31,40 @@ const FORM_INICIAL = {
   activo: true,
 };
 
+const IMAGEN_TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
+const IMAGEN_EXTENSIONES_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp'];
+const IMAGEN_MAX_SIZE = 10 * 1024 * 1024;
+
 const getApiErrorMessage = (err) => err.data?.mensaje || err.data?.message || err.message || 'No fue posible procesar modelos.';
+
+const getFileExtension = (fileName = '') => {
+  const parts = String(fileName).split('.');
+  return parts.length > 1 ? parts.pop().toLowerCase() : '';
+};
+
+const revokePreviewUrl = (value) => {
+  if (value?.startsWith('blob:')) {
+    URL.revokeObjectURL(value);
+  }
+};
+
+const validarImagenPrincipal = (file) => {
+  if (!file) return '';
+
+  const extension = getFileExtension(file.name);
+  const tipoValido = IMAGEN_TIPOS_PERMITIDOS.includes(file.type);
+  const extensionValida = IMAGEN_EXTENSIONES_PERMITIDAS.includes(extension);
+
+  if (!tipoValido || !extensionValida) {
+    return 'La imagen principal debe ser JPG, PNG o WEBP.';
+  }
+
+  if (file.size > IMAGEN_MAX_SIZE) {
+    return 'La imagen principal no debe pesar mas de 10 MB.';
+  }
+
+  return '';
+};
 
 const getTipoPrecioKeys = (item = {}) => [
   item.tipoPrecioId,
@@ -84,6 +117,12 @@ export default function AdminDesarrolloModelosPage() {
   const { desarrolloId } = useParams();
   const [modelos, setModelos] = useState([]);
   const [form, setForm] = useState(FORM_INICIAL);
+  const [imagenPrincipalFile, setImagenPrincipalFile] = useState(null);
+  const [imagenPrincipalPreview, setImagenPrincipalPreview] = useState('');
+  const [imagenPrincipalInputKey, setImagenPrincipalInputKey] = useState(0);
+  const [modeloImagenFiles, setModeloImagenFiles] = useState({});
+  const [modeloImagenPreviews, setModeloImagenPreviews] = useState({});
+  const [modeloImagenInputKeys, setModeloImagenInputKeys] = useState({});
   const [tiposPrecio, setTiposPrecio] = useState([]);
   const [preciosModelo, setPreciosModelo] = useState([]);
   const [modeloPreciosAbiertoId, setModeloPreciosAbiertoId] = useState('');
@@ -95,6 +134,8 @@ export default function AdminDesarrolloModelosPage() {
   const [errorPrecios, setErrorPrecios] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [mensajePrecios, setMensajePrecios] = useState('');
+  const imagenPrincipalPreviewRef = useRef('');
+  const modeloImagenPreviewsRef = useRef({});
 
   const cargar = useCallback(async (options = {}) => {
     setCargando(true);
@@ -195,8 +236,91 @@ export default function AdminDesarrolloModelosPage() {
     cargarTiposPrecio();
   }, [cargarTiposPrecio]);
 
+  useEffect(() => {
+    imagenPrincipalPreviewRef.current = imagenPrincipalPreview;
+  }, [imagenPrincipalPreview]);
+
+  useEffect(() => {
+    modeloImagenPreviewsRef.current = modeloImagenPreviews;
+  }, [modeloImagenPreviews]);
+
+  useEffect(() => () => {
+    revokePreviewUrl(imagenPrincipalPreviewRef.current);
+    Object.values(modeloImagenPreviewsRef.current).forEach(revokePreviewUrl);
+  }, []);
+
   const actualizarLocal = (modeloId, cambios) => {
     setModelos((actuales) => actuales.map((item) => item.id === modeloId ? { ...item, ...cambios } : item));
+  };
+
+  const limpiarImagenNueva = () => {
+    revokePreviewUrl(imagenPrincipalPreviewRef.current);
+    setImagenPrincipalPreview('');
+    setImagenPrincipalFile(null);
+    setImagenPrincipalInputKey((actual) => actual + 1);
+  };
+
+  const seleccionarImagenNueva = (event) => {
+    const file = event.target.files?.[0] || null;
+    setError('');
+
+    if (!file) {
+      limpiarImagenNueva();
+      return;
+    }
+
+    const validacion = validarImagenPrincipal(file);
+    if (validacion) {
+      limpiarImagenNueva();
+      event.target.value = '';
+      setError(validacion);
+      return;
+    }
+
+    revokePreviewUrl(imagenPrincipalPreviewRef.current);
+    const previewUrl = URL.createObjectURL(file);
+    setImagenPrincipalFile(file);
+    setImagenPrincipalPreview(previewUrl);
+  };
+
+  const limpiarImagenModelo = (modeloId) => {
+    const previewActual = modeloImagenPreviewsRef.current[modeloId];
+    revokePreviewUrl(previewActual);
+    setModeloImagenFiles((actuales) => {
+      const siguientes = { ...actuales };
+      delete siguientes[modeloId];
+      return siguientes;
+    });
+    setModeloImagenPreviews((actuales) => {
+      const siguientes = { ...actuales };
+      delete siguientes[modeloId];
+      return siguientes;
+    });
+    setModeloImagenInputKeys((actuales) => ({ ...actuales, [modeloId]: (actuales[modeloId] || 0) + 1 }));
+  };
+
+  const seleccionarImagenModelo = (modeloId, event) => {
+    const file = event.target.files?.[0] || null;
+    setError('');
+
+    if (!file) {
+      limpiarImagenModelo(modeloId);
+      return;
+    }
+
+    const validacion = validarImagenPrincipal(file);
+    if (validacion) {
+      limpiarImagenModelo(modeloId);
+      event.target.value = '';
+      setError(validacion);
+      return;
+    }
+
+    const previewActual = modeloImagenPreviewsRef.current[modeloId];
+    revokePreviewUrl(previewActual);
+    const previewUrl = URL.createObjectURL(file);
+    setModeloImagenFiles((actuales) => ({ ...actuales, [modeloId]: file }));
+    setModeloImagenPreviews((actuales) => ({ ...actuales, [modeloId]: previewUrl }));
   };
 
   const agregar = async (event) => {
@@ -204,8 +328,9 @@ export default function AdminDesarrolloModelosPage() {
     setError('');
     setMensaje('');
     try {
-      await crearDesarrolloModelo(desarrolloId, form);
+      await crearDesarrolloModelo(desarrolloId, form, { imagenPrincipalFile });
       setForm(FORM_INICIAL);
+      limpiarImagenNueva();
       setMensaje('Modelo agregado.');
       await cargar();
     } catch (err) {
@@ -311,7 +436,9 @@ export default function AdminDesarrolloModelosPage() {
     setError('');
     setMensaje('');
     try {
-      await actualizarDesarrolloModelo(desarrolloId, modelo.id, modelo);
+      const imagenModeloFile = modeloImagenFiles[modelo.id] || null;
+      await actualizarDesarrolloModelo(desarrolloId, modelo.id, modelo, { imagenPrincipalFile: imagenModeloFile });
+      limpiarImagenModelo(modelo.id);
       setMensaje('Modelo actualizado.');
       await cargar();
     } catch (err) {
@@ -328,6 +455,7 @@ export default function AdminDesarrolloModelosPage() {
     setMensaje('');
     try {
       await eliminarDesarrolloModelo(desarrolloId, modelo.id);
+      limpiarImagenModelo(modelo.id);
       setMensaje('Modelo eliminado.');
       await cargar();
     } catch (err) {
@@ -337,7 +465,13 @@ export default function AdminDesarrolloModelosPage() {
     }
   };
 
-  const renderCamposModelo = (modelo, onChange, prefix = '') => (
+  const renderCamposModelo = (modelo, onChange, options = {}) => {
+    const prefix = options.prefix || '';
+    const previewUrl = options.previewUrl || modelo.imagenPrincipal || '';
+    const tieneNuevaImagen = Boolean(options.imagenFile);
+    const previewLabel = tieneNuevaImagen ? 'Nueva imagen seleccionada' : 'Imagen actual';
+
+    return (
     <>
       <label className="admin-desarrollos-field"><span>Nombre</span><input name={`${prefix}nombre`} value={modelo.nombre} onChange={(event) => onChange({ nombre: event.target.value })} required /></label>
       <label className="admin-desarrollos-field is-full"><span>Descripción</span><textarea value={modelo.descripcion} onChange={(event) => onChange({ descripcion: event.target.value })} rows="3" /></label>
@@ -347,11 +481,29 @@ export default function AdminDesarrolloModelosPage() {
       <label className="admin-desarrollos-field"><span>Estacionamientos</span><input type="number" value={modelo.estacionamientos} onChange={(event) => onChange({ estacionamientos: event.target.value })} /></label>
       <label className="admin-desarrollos-field"><span>Construcción m2</span><input type="number" value={modelo.construccionM2} onChange={(event) => onChange({ construccionM2: event.target.value })} /></label>
       <label className="admin-desarrollos-field"><span>Terreno m2</span><input type="number" value={modelo.terrenoM2} onChange={(event) => onChange({ terrenoM2: event.target.value })} /></label>
-      <label className="admin-desarrollos-field is-full"><span>Imagen principal URL</span><input value={modelo.imagenPrincipalUrl} onChange={(event) => onChange({ imagenPrincipalUrl: event.target.value })} /></label>
+      <section className="admin-desarrollos-modelo-media is-full">
+        <div className="admin-desarrollos-modelo-media-head">
+          <span>Imagen principal</span>
+          <p>Portada del modelo en el desarrollo.</p>
+        </div>
+        <div className="admin-desarrollos-modelo-media-body">
+          <div className="admin-desarrollos-modelo-preview">
+            {previewUrl ? <img src={previewUrl} alt={modelo.nombre ? `Imagen principal de ${modelo.nombre}` : 'Imagen principal del modelo'} /> : <span>Sin imagen</span>}
+          </div>
+          <label className="admin-desarrollos-modelo-file">
+            <span>Seleccionar imagen</span>
+            <input key={options.inputKey || 0} type="file" accept="image/jpeg,image/png,image/webp" onChange={options.onImagenChange} />
+            <small>Formatos permitidos: JPG, PNG o WEBP. Tamano maximo: 10 MB.</small>
+          </label>
+        </div>
+        {previewUrl ? <p className="admin-desarrollos-modelo-media-note">{previewLabel}</p> : null}
+        {options.imagenFile ? <p className="admin-desarrollos-modelo-media-note">Archivo seleccionado: {options.imagenFile.name}</p> : null}
+      </section>
       <label className="admin-desarrollos-check"><input type="checkbox" checked={modelo.disponible} onChange={(event) => onChange({ disponible: event.target.checked })} /><span>Disponible</span></label>
       <label className="admin-desarrollos-check"><input type="checkbox" checked={modelo.activo} onChange={(event) => onChange({ activo: event.target.checked })} /><span>Activo</span></label>
     </>
-  );
+    );
+  };
 
   return (
     <main className="admin-desarrollos">
@@ -369,7 +521,12 @@ export default function AdminDesarrolloModelosPage() {
       <form className="admin-desarrollos-form-card" onSubmit={agregar}>
         <h2>Nuevo modelo</h2>
         <div className="admin-desarrollos-inline-grid">
-          {renderCamposModelo(form, (cambios) => setForm((actual) => ({ ...actual, ...cambios })))}
+          {renderCamposModelo(form, (cambios) => setForm((actual) => ({ ...actual, ...cambios })), {
+            imagenFile: imagenPrincipalFile,
+            inputKey: imagenPrincipalInputKey,
+            onImagenChange: seleccionarImagenNueva,
+            previewUrl: imagenPrincipalPreview,
+          })}
           <div className="admin-desarrollos-form-actions"><button type="submit">Agregar modelo</button></div>
         </div>
       </form>
@@ -382,7 +539,12 @@ export default function AdminDesarrolloModelosPage() {
             <article key={modelo.id} className="admin-desarrollos-item">
               {modelo.imagenPrincipal ? <img className="admin-desarrollos-preview" src={modelo.imagenPrincipal} alt="" /> : <span className="admin-desarrollos-placeholder">Sin imagen</span>}
               <div className="admin-desarrollos-inline-grid">
-                {renderCamposModelo(modelo, (cambios) => actualizarLocal(modelo.id, cambios))}
+                {renderCamposModelo(modelo, (cambios) => actualizarLocal(modelo.id, cambios), {
+                  imagenFile: modeloImagenFiles[modelo.id] || null,
+                  inputKey: modeloImagenInputKeys[modelo.id] || 0,
+                  onImagenChange: (event) => seleccionarImagenModelo(modelo.id, event),
+                  previewUrl: modeloImagenPreviews[modelo.id] || modelo.imagenPrincipal,
+                })}
                 <div className="admin-desarrollos-actions">
                   <button type="button" onClick={() => guardar(modelo)} disabled={accionandoId === modelo.id}>Guardar</button>
                   <button type="button" onClick={() => abrirPreciosModelo(modelo)}>

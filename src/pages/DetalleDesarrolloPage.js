@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ImageLightbox from '../components/common/ImageLightbox';
-import MarkdownContent from '../components/common/MarkdownContent';
+import RichTextContent from '../components/common/RichTextContent';
 import PlanoInteractivoDemo from '../components/desarrollos/PlanoInteractivoDemo';
 import ProspectoDesarrolloModal from '../components/desarrollos/ProspectoDesarrolloModal';
 import Tour360Viewer from '../components/tour360/Tour360Viewer';
@@ -496,10 +496,7 @@ export default function DetalleDesarrolloPage() {
           <div>
             <p className="detalle-desarrollo-eyebrow">Concepto</p>
             <h2>Un proyecto pensado para vivir e invertir</h2>
-            <MarkdownContent
-              content={desarrollo.descripcion}
-              fallback="Conoce disponibilidad, amenidades y modelos de este desarrollo."
-            />
+            <RichTextContent content={desarrollo.descripcion || 'Conoce disponibilidad, amenidades y modelos de este desarrollo.'} />
           </div>
           <aside>
             <span>Precio desde</span>
@@ -729,10 +726,7 @@ export default function DetalleDesarrolloPage() {
                         {preciosModelo.length > 0 ? <span className="modelo-card-price-note">Precio de contado</span> : null}
                         {modelo.tieneMasDeUnPrecioActivo ? <span className="modelo-card-price-note">Otros esquemas de financiamiento disponibles</span> : null}
                       </div>
-                      <MarkdownContent
-                        content={modelo.descripcion}
-                        fallback="Modelo disponible dentro del desarrollo."
-                      />
+                      <RichTextContent content={modelo.descripcion || 'Modelo disponible dentro del desarrollo.'} />
                       {preciosModelo.length > 0 ? (
                         <section className="modelo-card-prices" aria-label={`Opciones de compra de ${modelo.nombre}`}>
                           <h4>Opciones de compra</h4>

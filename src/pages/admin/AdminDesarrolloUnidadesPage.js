@@ -4,6 +4,7 @@ import {
   ESTATUS_UNIDAD,
   actualizarUnidadAdmin,
   crearUnidadAdmin,
+  descargarPlantillaUnidadesCsv,
   eliminarUnidadAdmin,
   importarUnidadesCsv,
   listarUnidadesAdmin,
@@ -46,6 +47,29 @@ const MAX_SVG_SIZE = 5 * 1024 * 1024;
 const SVG_ELEMENT_SELECTOR = 'path[id], polygon[id], rect[id], polyline[id], circle[id], ellipse[id], g[id]';
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 const MAX_CSV_SIZE = 10 * 1024 * 1024;
+const CSV_PLANTILLA_SVG_COLUMNS = [
+  'svgElementId',
+  'codigoSugerido',
+  'manzanaSugerida',
+  'loteSugerido',
+  'yaExisteEnCN',
+  'unidadId',
+  'codigoCN',
+  'codigo',
+  'manzana',
+  'lote',
+  'modelo',
+  'modeloId',
+  'estatus',
+  'precio',
+  'superficieM2',
+  'terrenoM2',
+  'construccionM2',
+  'frenteM',
+  'fondoM',
+  'descripcion',
+  'activo',
+];
 
 const normalizarSvgId = (value) => String(value || '').trim();
 const normalizarBusqueda = (value) => String(value || '').trim().toLowerCase();
@@ -68,19 +92,31 @@ const sugerirDesdeSvgElementId = (svgElementId) => {
 
 const adaptImportResumen = (response = {}) => {
   const data = response?.data || response;
-  const errores = data.errores || data.errors || data.detallesErrores || [];
+  const errores = data.errores || data.errors || data.detallesErrores || data.detalles || [];
 
   return {
     totalFilas: data.totalFilas ?? data.totalRows ?? data.total ?? 0,
     creadas: data.creadas ?? data.created ?? data.insertadas ?? 0,
     actualizadas: data.actualizadas ?? data.updated ?? 0,
     omitidas: data.omitidas ?? data.skipped ?? data.ignoradas ?? 0,
-    errores: Array.isArray(errores) ? errores.map((error, index) => ({
-      fila: error.fila ?? error.row ?? error.linea ?? index + 1,
-      codigo: error.codigo ?? error.codigoUnidad ?? error.code ?? '',
-      svgElementId: error.svgElementId ?? error.svgId ?? '',
-      error: error.error ?? error.mensaje ?? error.message ?? String(error || ''),
-    })) : [],
+    errores: Array.isArray(errores) ? errores.map((error, index) => {
+      if (typeof error === 'string') {
+        return {
+          fila: index + 1,
+          codigo: '',
+          svgElementId: '',
+          error,
+        };
+      }
+
+      return {
+        fila: error.fila ?? error.row ?? error.linea ?? index + 1,
+        codigo: error.codigo ?? error.codigoUnidad ?? error.code ?? '',
+        svgElementId: error.svgElementId ?? error.svgId ?? '',
+        error: error.error ?? error.mensaje ?? error.message ?? String(error || ''),
+      };
+    }) : [],
+    mensaje: data.mensaje || data.message || '',
   };
 };
 
@@ -153,6 +189,7 @@ export default function AdminDesarrolloUnidadesPage() {
   const [csvArchivo, setCsvArchivo] = useState(null);
   const [subiendoSvg, setSubiendoSvg] = useState(false);
   const [importandoCsv, setImportandoCsv] = useState(false);
+  const [descargandoPlantillaCsv, setDescargandoPlantillaCsv] = useState(false);
   const [mensajeSvg, setMensajeSvg] = useState('');
   const [mensajeCsv, setMensajeCsv] = useState('');
   const [resumenImportacion, setResumenImportacion] = useState(null);
@@ -641,37 +678,62 @@ export default function AdminDesarrolloUnidadesPage() {
     const rows = diagnosticoSvg.idsUnidadSvg.map((svgElementId) => {
       const unidad = unidadesPorSvg.get(svgElementId);
       const sugerencia = sugerirDesdeSvgElementId(svgElementId);
+      const codigoCN = unidad?.codigoUnidad || '';
 
-      return [
+      return {
         svgElementId,
-        sugerencia.codigoSugerido,
-        sugerencia.manzanaSugerida,
-        sugerencia.loteSugerido,
-        unidad ? 'true' : 'false',
-        unidad?.unidadId || unidad?.id || '',
-        unidad?.codigoUnidad || '',
-      ];
+        codigoSugerido: sugerencia.codigoSugerido,
+        manzanaSugerida: sugerencia.manzanaSugerida,
+        loteSugerido: sugerencia.loteSugerido,
+        yaExisteEnCN: unidad ? 'true' : 'false',
+        unidadId: unidad?.unidadId || unidad?.id || '',
+        codigoCN,
+        codigo: codigoCN || sugerencia.codigoSugerido,
+        manzana: sugerencia.manzanaSugerida,
+        lote: sugerencia.loteSugerido,
+        modelo: '',
+        modeloId: '',
+        estatus: 'DISPONIBLE',
+        precio: '',
+        superficieM2: '',
+        terrenoM2: '',
+        construccionM2: '',
+        frenteM: '',
+        fondoM: '',
+        descripcion: '',
+        activo: 'true',
+      };
     });
 
-    const headers = [
-      'svgElementId',
-      'codigoSugerido',
-      'manzanaSugerida',
-      'loteSugerido',
-      'yaExisteEnCN',
-      'unidadId',
-      'codigoCN',
-    ];
-    const csv = [headers, ...rows].map((row) => row.map(escaparCsv).join(',')).join('\r\n');
+    const csv = [
+      CSV_PLANTILLA_SVG_COLUMNS,
+      ...rows.map((row) => CSV_PLANTILLA_SVG_COLUMNS.map((column) => row[column])),
+    ].map((row) => row.map(escaparCsv).join(',')).join('\r\n');
     const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `desarrollo-${desarrolloId}-ids-unidad-svg.csv`;
+    link.download = `desarrollo-${desarrolloId}-plantilla-unidades-svg.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    setMensajeSvg('Plantilla CSV generada desde los IDs unidad del SVG.');
+  };
+
+  const descargarPlantillaCsv = async () => {
+    setError('');
+    setMensajeCsv('');
+    setDescargandoPlantillaCsv(true);
+
+    try {
+      await descargarPlantillaUnidadesCsv(desarrolloId);
+      setMensajeCsv('Plantilla CSV descargada.');
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setDescargandoPlantillaCsv(false);
+    }
   };
 
   const validarSvgArchivo = (file) => {
@@ -861,7 +923,7 @@ export default function AdminDesarrolloUnidadesPage() {
       const response = await importarUnidadesCsv(desarrolloId, csvArchivo);
       const resumen = adaptImportResumen(response);
       setResumenImportacion(resumen);
-      setMensajeCsv('Importacion completada correctamente.');
+      setMensajeCsv(resumen.mensaje || 'Importacion completada correctamente.');
       setMensaje('Unidades importadas correctamente.');
       await cargar();
     } catch (err) {
@@ -975,10 +1037,13 @@ export default function AdminDesarrolloUnidadesPage() {
                 onClick={exportarIdsUnidadCsv}
                 disabled={diagnosticoSvg.idsUnidadSvg.length === 0}
               >
-                Exportar IDs unidad a CSV
+                Exportar plantilla desde SVG
               </button>
             </div>
           </div>
+          <p className="admin-unidades-help">
+            Descarga esta plantilla, completa modelo o modeloId, precios, medidas y estatus, y luego importala desde la seccion de unidades. El campo svgElementId conserva la relacion con el plano.
+          </p>
 
           {!planoForm.svgUrl ? (
             <p className="admin-unidades-empty">Carga o captura un svgUrl para revisar el mapeo.</p>
@@ -1034,8 +1099,11 @@ export default function AdminDesarrolloUnidadesPage() {
           <div className="admin-unidades-import-head">
             <div>
               <h3>Importar unidades desde CSV</h3>
-              <p>Usa el CSV exportado desde el diagnostico, completa los datos y cargalo para crear o actualizar unidades masivamente.</p>
+              <p>Usa la plantilla vacia del API o el CSV exportado desde el diagnostico SVG. Completa los datos y cargalo para crear o actualizar unidades masivamente.</p>
             </div>
+            <button type="button" onClick={descargarPlantillaCsv} disabled={descargandoPlantillaCsv || importandoCsv}>
+              {descargandoPlantillaCsv ? 'Descargando...' : 'Descargar plantilla CSV'}
+            </button>
           </div>
           <div className="admin-unidades-upload is-full">
             <label className="admin-unidades-field">

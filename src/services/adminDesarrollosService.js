@@ -78,6 +78,29 @@ export const normalizeDesarrolloPayload = (payload = {}) => ({
   activo: payload.activo !== false,
 });
 
+const appendFormValue = (body, key, value) => {
+  if (value === undefined || value === null) {
+    return;
+  }
+
+  body.append(key, value);
+};
+
+const buildDesarrolloFormData = (payload = {}, imagenPrincipalFile = null) => {
+  const data = normalizeDesarrolloPayload(payload);
+  const body = new FormData();
+
+  Object.entries(data).forEach(([key, value]) => {
+    appendFormValue(body, key, value);
+  });
+
+  if (imagenPrincipalFile) {
+    body.append('imagenPrincipal', imagenPrincipalFile);
+  }
+
+  return body;
+};
+
 export const normalizeModeloPayload = (payload = {}) => ({
   nombre: toText(payload.nombre),
   descripcion: toText(payload.descripcion),
@@ -91,6 +114,21 @@ export const normalizeModeloPayload = (payload = {}) => ({
   imagenPrincipalUrl: toText(payload.imagenPrincipalUrl) || null,
   activo: payload.activo !== false,
 });
+
+const buildModeloFormData = (payload = {}, imagenPrincipalFile = null) => {
+  const data = normalizeModeloPayload(payload);
+  const body = new FormData();
+
+  Object.entries(data).forEach(([key, value]) => {
+    appendFormValue(body, key, value);
+  });
+
+  if (imagenPrincipalFile) {
+    body.append('imagenPrincipal', imagenPrincipalFile);
+  }
+
+  return body;
+};
 
 const normalizeModeloImagenPayload = (payload = {}) => ({
   url: toText(pickFirst(payload.url, payload.urlImagen, payload.imagenUrl)),
@@ -170,11 +208,27 @@ export const listarAdminDesarrollos = async (options = {}) =>
 export const obtenerAdminDesarrollo = async (desarrolloId, options = {}) =>
   adaptDesarrolloAdmin(await getJson(`/api/admin/desarrollos/${desarrolloId}`, options));
 
-export const crearAdminDesarrollo = (payload) =>
-  requestJson('/api/admin/desarrollos', { method: 'POST', body: normalizeDesarrolloPayload(payload) });
+export const crearAdminDesarrollo = (payload, options = {}) => {
+  if (options.imagenPrincipalFile) {
+    return requestFormData('/api/admin/desarrollos', {
+      method: 'POST',
+      body: buildDesarrolloFormData(payload, options.imagenPrincipalFile),
+    });
+  }
 
-export const actualizarAdminDesarrollo = (desarrolloId, payload) =>
-  requestJson(`/api/admin/desarrollos/${desarrolloId}`, { method: 'PUT', body: normalizeDesarrolloPayload(payload) });
+  return requestJson('/api/admin/desarrollos', { method: 'POST', body: normalizeDesarrolloPayload(payload) });
+};
+
+export const actualizarAdminDesarrollo = (desarrolloId, payload, options = {}) => {
+  if (options.imagenPrincipalFile) {
+    return requestFormData(`/api/admin/desarrollos/${desarrolloId}`, {
+      method: 'PUT',
+      body: buildDesarrolloFormData(payload, options.imagenPrincipalFile),
+    });
+  }
+
+  return requestJson(`/api/admin/desarrollos/${desarrolloId}`, { method: 'PUT', body: normalizeDesarrolloPayload(payload) });
+};
 
 export const eliminarAdminDesarrollo = (desarrolloId) =>
   requestJson(`/api/admin/desarrollos/${desarrolloId}`, { method: 'DELETE' });
@@ -219,11 +273,27 @@ export const listarDesarrolloModelos = async (desarrolloId, options = {}) =>
 export const obtenerDesarrolloModelo = async (desarrolloId, modeloId, options = {}) =>
   adaptModelo(await getJson(`/api/admin/desarrollos/${desarrolloId}/modelos/${modeloId}`, options));
 
-export const crearDesarrolloModelo = (desarrolloId, payload) =>
-  requestJson(`/api/admin/desarrollos/${desarrolloId}/modelos`, { method: 'POST', body: normalizeModeloPayload(payload) });
+export const crearDesarrolloModelo = (desarrolloId, payload, options = {}) => {
+  if (options.imagenPrincipalFile) {
+    return requestFormData(`/api/admin/desarrollos/${desarrolloId}/modelos`, {
+      method: 'POST',
+      body: buildModeloFormData(payload, options.imagenPrincipalFile),
+    });
+  }
 
-export const actualizarDesarrolloModelo = (desarrolloId, modeloId, payload) =>
-  requestJson(`/api/admin/desarrollos/${desarrolloId}/modelos/${modeloId}`, { method: 'PUT', body: normalizeModeloPayload(payload) });
+  return requestJson(`/api/admin/desarrollos/${desarrolloId}/modelos`, { method: 'POST', body: normalizeModeloPayload(payload) });
+};
+
+export const actualizarDesarrolloModelo = (desarrolloId, modeloId, payload, options = {}) => {
+  if (options.imagenPrincipalFile) {
+    return requestFormData(`/api/admin/desarrollos/${desarrolloId}/modelos/${modeloId}`, {
+      method: 'PUT',
+      body: buildModeloFormData(payload, options.imagenPrincipalFile),
+    });
+  }
+
+  return requestJson(`/api/admin/desarrollos/${desarrolloId}/modelos/${modeloId}`, { method: 'PUT', body: normalizeModeloPayload(payload) });
+};
 
 export const eliminarDesarrolloModelo = (desarrolloId, modeloId) =>
   requestJson(`/api/admin/desarrollos/${desarrolloId}/modelos/${modeloId}`, { method: 'DELETE' });

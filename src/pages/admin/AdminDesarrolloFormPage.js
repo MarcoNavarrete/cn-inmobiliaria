@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import RichTextEditor from '../../components/common/RichTextEditor';
+import { resolveApiAssetUrl } from '../../services/apiClient';
 import {
   actualizarAdminDesarrollo,
   crearAdminDesarrollo,
@@ -32,6 +34,9 @@ const FORM_INICIAL = {
   activo: true,
 };
 
+const EXTENSIONES_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 const slugify = (value) =>
   String(value || '')
     .normalize('NFD')
@@ -42,6 +47,29 @@ const slugify = (value) =>
 
 const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No fue posible guardar el desarrollo.';
+
+const getExtension = (file) => String(file?.name || '').split('.').pop().toLowerCase();
+
+const revokePreviewUrl = (value) => {
+  if (typeof value === 'string' && value.startsWith('blob:')) {
+    URL.revokeObjectURL(value);
+  }
+};
+
+const validarArchivoImagen = (file) => {
+  if (!file) return '';
+
+  const extension = getExtension(file);
+  if (!EXTENSIONES_PERMITIDAS.includes(extension)) {
+    return 'La imagen principal debe ser JPG, JPEG, PNG o WEBP.';
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return 'La imagen principal no debe pesar mas de 10MB.';
+  }
+
+  return '';
+};
 
 function Field({ children, className = '', label }) {
   return (
@@ -61,10 +89,13 @@ export default function AdminDesarrolloFormPage() {
   const [estados, setEstados] = useState([]);
   const [poblaciones, setPoblaciones] = useState([]);
   const [localidades, setLocalidades] = useState([]);
+  const [imagenPrincipalFile, setImagenPrincipalFile] = useState(null);
+  const [imagenPrincipalPreview, setImagenPrincipalPreview] = useState('');
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const imagenPrincipalPreviewUrl = imagenPrincipalPreview || resolveApiAssetUrl(form.imagenPrincipalUrl);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -72,6 +103,11 @@ export default function AdminDesarrolloFormPage() {
     const cargar = async () => {
       setCargando(true);
       setError('');
+      setImagenPrincipalFile(null);
+      setImagenPrincipalPreview((actual) => {
+        revokePreviewUrl(actual);
+        return '';
+      });
 
       try {
         const estadosData = await obtenerEstados({ signal: controller.signal });
@@ -119,6 +155,10 @@ export default function AdminDesarrolloFormPage() {
     cargar();
     return () => controller.abort();
   }, [desarrolloId, esEdicion]);
+
+  useEffect(() => () => {
+    revokePreviewUrl(imagenPrincipalPreview);
+  }, [imagenPrincipalPreview]);
 
   useEffect(() => {
     if (!form.estadoId) {
@@ -185,6 +225,30 @@ export default function AdminDesarrolloFormPage() {
     });
   };
 
+  const seleccionarImagenPrincipal = (event) => {
+    const file = event.target.files?.[0] || null;
+    event.target.value = '';
+
+    revokePreviewUrl(imagenPrincipalPreview);
+    setImagenPrincipalPreview('');
+
+    if (!file) {
+      setImagenPrincipalFile(null);
+      return;
+    }
+
+    const errorArchivo = validarArchivoImagen(file);
+    if (errorArchivo) {
+      setImagenPrincipalFile(null);
+      setError(errorArchivo);
+      return;
+    }
+
+    setError('');
+    setImagenPrincipalFile(file);
+    setImagenPrincipalPreview(URL.createObjectURL(file));
+  };
+
   const guardar = async (event) => {
     event.preventDefault();
     const latitud = String(form.latitud || '').trim();
@@ -208,10 +272,11 @@ export default function AdminDesarrolloFormPage() {
 
     try {
       const response = esEdicion
-        ? await actualizarAdminDesarrollo(desarrolloId, form)
-        : await crearAdminDesarrollo(form);
+        ? await actualizarAdminDesarrollo(desarrolloId, form, { imagenPrincipalFile })
+        : await crearAdminDesarrollo(form, { imagenPrincipalFile });
 
       setMensaje(esEdicion ? 'Desarrollo actualizado correctamente.' : 'Desarrollo creado correctamente.');
+      setImagenPrincipalFile(null);
 
       if (!esEdicion) {
         const nuevoId = response?.desarrolloId || response?.id;
@@ -236,7 +301,7 @@ export default function AdminDesarrolloFormPage() {
     <main className="admin-desarrollos">
       <section className="admin-desarrollos-hero">
         <div>
-          <p className="admin-desarrollos-eyebrow">Administración</p>
+          <p className="admin-desarrollos-eyebrow">Administracion</p>
           <h1>{esEdicion ? 'Editar desarrollo' : 'Nuevo desarrollo'}</h1>
         </div>
         <Link className="admin-desarrollos-primary" to="/admin/desarrollos">Volver al listado</Link>
@@ -253,11 +318,20 @@ export default function AdminDesarrolloFormPage() {
           <Field label="Slug">
             <input name="slug" value={form.slug} onChange={actualizarCampo} required />
           </Field>
-          <Field className="is-full" label="Descripción">
-            <textarea name="descripcion" value={form.descripcion} onChange={actualizarCampo} rows="5" />
-          </Field>
+          <div className="admin-desarrollos-richtext is-full">
+            <span>Descripcion</span>
+            <RichTextEditor
+              value={form.descripcion || ''}
+              onChange={(html) => setForm((actual) => ({ ...actual, descripcion: html }))}
+              placeholder="Describe el desarrollo, amenidades, ubicacion y propuesta de valor..."
+              disabled={guardando}
+            />
+            <p className="admin-desarrollos-field-help">
+              Puedes usar subtitulos, negritas, vinetas y alineacion para mejorar la presentacion publica del desarrollo.
+            </p>
+          </div>
           <div className="admin-desarrollos-form-section is-full">
-            <h2>Ubicación del desarrollo</h2>
+            <h2>Ubicacion del desarrollo</h2>
             <p>Puedes copiar las coordenadas desde Google Maps haciendo clic derecho sobre el punto exacto del desarrollo.</p>
           </div>
           <Field label="Estado">
@@ -266,9 +340,9 @@ export default function AdminDesarrolloFormPage() {
               {estados.map((estado) => <option key={estado.id} value={estado.id}>{estado.nombre}</option>)}
             </select>
           </Field>
-          <Field label="Población / municipio">
+          <Field label="Poblacion / municipio">
             <select name="poblacionId" value={form.poblacionId} onChange={actualizarCampo} disabled={!form.estadoId}>
-              <option value="">Selecciona población</option>
+              <option value="">Selecciona poblacion</option>
               {poblaciones.map((poblacion) => <option key={poblacion.id} value={poblacion.id}>{poblacion.nombre}</option>)}
             </select>
           </Field>
@@ -281,7 +355,7 @@ export default function AdminDesarrolloFormPage() {
           <Field label="Zona">
             <input name="zona" value={form.zona} onChange={actualizarCampo} />
           </Field>
-          <Field className="is-full" label="Dirección">
+          <Field className="is-full" label="Direccion">
             <input name="direccion" value={form.direccion} onChange={actualizarCampo} />
           </Field>
           <Field label="Latitud">
@@ -305,10 +379,38 @@ export default function AdminDesarrolloFormPage() {
           <Field label="Precio desde">
             <input name="precioDesde" type="number" min="0" step="0.01" value={form.precioDesde} onChange={actualizarCampo} />
           </Field>
-          <Field label="Imagen principal URL">
-            <input name="imagenPrincipalUrl" value={form.imagenPrincipalUrl} onChange={actualizarCampo} />
-          </Field>
-          <Field label="Teléfono de contacto">
+          <section className="admin-desarrollos-media-card is-full">
+            <div className="admin-desarrollos-media-head">
+              <div>
+                <span>Imagen principal</span>
+                <p>Portada publica del desarrollo en listados y landing.</p>
+              </div>
+            </div>
+            <div className="admin-desarrollos-media-preview">
+              {imagenPrincipalPreviewUrl ? (
+                <img src={imagenPrincipalPreviewUrl} alt="Vista previa de imagen principal del desarrollo" />
+              ) : (
+                <span>Sin imagen principal</span>
+              )}
+            </div>
+            <label className="admin-desarrollos-file">
+              <span>Seleccionar imagen</span>
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp,image/*"
+                onChange={seleccionarImagenPrincipal}
+                disabled={guardando}
+              />
+              <small>JPG, JPEG, PNG o WEBP. Tamano maximo 10MB.</small>
+            </label>
+            {form.imagenPrincipalUrl ? (
+              <p className="admin-desarrollos-media-current">Imagen actual: {form.imagenPrincipalUrl}</p>
+            ) : null}
+            {imagenPrincipalFile ? (
+              <p className="admin-desarrollos-media-current">Archivo seleccionado: {imagenPrincipalFile.name}</p>
+            ) : null}
+          </section>
+          <Field label="Telefono de contacto">
             <input
               name="telefonoContacto"
               value={form.telefonoContacto}
@@ -340,7 +442,7 @@ export default function AdminDesarrolloFormPage() {
             <button type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar desarrollo'}</button>
             {esEdicion ? (
               <>
-                <Link to={`/admin/desarrollos/${desarrolloId}/imagenes`}>Imágenes</Link>
+                <Link to={`/admin/desarrollos/${desarrolloId}/imagenes`}>Imagenes</Link>
                 <Link to={`/admin/desarrollos/${desarrolloId}/amenidades`}>Amenidades</Link>
                 <Link to={`/admin/desarrollos/${desarrolloId}/modelos`}>Modelos</Link>
                 <Link to={`/admin/desarrollos/${desarrolloId}/unidades`}>Administrar unidades</Link>
@@ -352,3 +454,4 @@ export default function AdminDesarrolloFormPage() {
     </main>
   );
 }
+
