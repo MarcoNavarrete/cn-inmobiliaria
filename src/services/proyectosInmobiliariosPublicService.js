@@ -202,3 +202,10 @@ export const listarImagenesPublicas = (slug, options = {}) =>
 export const crearProspectoPublico = (slug, data) =>
   requestJson(`${BASE_URL}/${slug}/prospectos`, { method: 'POST', body: data });
 
+export const obtenerAsesorPorReferencia = (codigoAsesor, options = {}) =>
+  getJson(`/api/asesores/ref/${encodeURIComponent(codigoAsesor)}`, options).then((data = {}) => ({
+    codigoAsesor: toText(pickFirst(data.codigoAsesor, data.codigo, codigoAsesor)),
+    nombre: toText(data.nombre),
+    telefono: toText(data.telefono),
+  }));
+

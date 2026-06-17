@@ -48,6 +48,15 @@ const adaptRol = (rol) => ({
   nombre: rol?.nombre ?? rol?.nomRol ?? rol?.rol ?? '',
 });
 
+const adaptCodigoNumeroPais = (pais) => ({
+  id: toStringId(pais?.codigoNumeroPaisId ?? pais?.id),
+  codigoNumeroPaisId: toStringId(pais?.codigoNumeroPaisId ?? pais?.id),
+  iso2: String(pais?.iso2 || '').toUpperCase(),
+  nombrePais: pais?.nombrePais ?? pais?.nombre ?? '',
+  codigoMarcacion: pais?.codigoMarcacion ?? pais?.lada ?? '',
+  emojiBandera: pais?.emojiBandera ?? pais?.bandera ?? '',
+});
+
 export const listarEstados = (options = {}) =>
   getJson('/api/catalogos/estados', options)
     .then((data) => normalizeList(data).map(adaptEstado).filter((item) => item.id));
@@ -78,6 +87,10 @@ export const obtenerTiposInmueble = (options = {}) =>
 export const obtenerRoles = (options = {}) =>
   getJson('/api/catalogos/roles', options)
     .then((data) => normalizeList(data).map(adaptRol).filter((item) => item.id));
+
+export const getCodigosNumeroPaises = (options = {}) =>
+  getJson('/api/catalogos/codigos-numero-paises', options)
+    .then((data) => normalizeList(data).map(adaptCodigoNumeroPais).filter((item) => item.id));
 
 export const obtenerEstados = listarEstados;
 export const obtenerPoblaciones = listarPoblacionesPorEstado;

@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import ImageLightbox from '../components/common/ImageLightbox';
 import RichTextContent from '../components/common/RichTextContent';
 import PlanoInteractivoDemo from '../components/desarrollos/PlanoInteractivoDemo';
 import ProspectoDesarrolloModal from '../components/desarrollos/ProspectoDesarrolloModal';
 import Tour360Viewer from '../components/tour360/Tour360Viewer';
+import useAuthSession from '../hooks/useAuthSession';
 import { trackEvent } from '../lib/analytics';
 import { EVENTOS_CONVERSION, trackConversionEvent } from '../lib/conversionEvents';
 import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
+import { obtenerAsesorPorReferencia } from '../services/asesoresService';
 import { obtenerDesarrolloPorSlug } from '../services/desarrollosService';
 import { obtenerPlanoPublico } from '../services/adminDesarrolloPlanoService';
 import {
@@ -34,13 +36,13 @@ const isInternalSvgUrl = (value) => {
   return /^\/uploads\/.+\.svg($|\?)/i.test(url) || /^\.?\/assets\/.+\.svg($|\?)/i.test(url);
 };
 
-const whatsappHref = (desarrollo, modelo) => {
-  const telefono = getWhatsAppPhone(desarrollo?.telefonoContacto);
+const whatsappHref = (desarrollo, modelo, telefonoDestino, shareUrl = '') => {
+  const telefono = telefonoDestino || getWhatsAppPhone(desarrollo?.telefonoContacto);
   const texto = modelo
     ? `Me interesa el modelo ${modelo.nombre} del desarrollo ${desarrollo.nombre}. Quiero mas información.`
     : `Me interesa el desarrollo ${desarrollo.nombre}. Quiero mas información.`;
 
-  return `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`;
+  return `https://wa.me/${telefono}?text=${encodeURIComponent(shareUrl ? `${texto} ${shareUrl}` : texto)}`;
 };
 
 const cleanText = (value) => String(value || '').trim();
@@ -72,8 +74,68 @@ const buildMapsUrl = (latitud, longitud) => {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
 };
 
+const getDesarrolloRefStorageKey = (slug) => `cn_desarrollo_ref_${slug}`;
+const getDesarrolloRefDataStorageKey = (slug) => `cn_desarrollo_ref_data_${slug}`;
+
+const readStorageValue = (key) => {
+  try {
+    return window.localStorage.getItem(key) || '';
+  } catch (_) {
+    return '';
+  }
+};
+
+const writeStorageValue = (key, value) => {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (_) {
+    // Storage can be unavailable in private contexts; state attribution still works.
+  }
+};
+
+const readStorageJson = (key) => {
+  try {
+    return JSON.parse(window.localStorage.getItem(key) || 'null');
+  } catch (_) {
+    return null;
+  }
+};
+
+const buildDesarrolloShareUrl = (slug, codigoAsesor = '') => {
+  if (typeof window === 'undefined') {
+    const base = slug ? `https://cninmobiliaria.com.mx/#/desarrollos/${slug}` : '';
+    return codigoAsesor && base ? `${base}?ref=${encodeURIComponent(codigoAsesor)}` : base;
+  }
+
+  if (!slug) {
+    return window.location.href;
+  }
+
+  const base = `${window.location.origin}${window.location.pathname}#/desarrollos/${slug}`;
+  return codigoAsesor ? `${base}?ref=${encodeURIComponent(codigoAsesor)}` : base;
+};
+
+const copiarTexto = async (texto) => {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(texto);
+    return;
+  }
+
+  const textArea = document.createElement('textarea');
+  textArea.value = texto;
+  textArea.setAttribute('readonly', '');
+  textArea.style.position = 'fixed';
+  textArea.style.opacity = '0';
+  document.body.appendChild(textArea);
+  textArea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textArea);
+};
+
 export default function DetalleDesarrolloPage() {
   const { id: slug } = useParams();
+  const location = useLocation();
+  const { usuario } = useAuthSession();
   const [desarrollo, setDesarrollo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -101,6 +163,8 @@ export default function DetalleDesarrolloPage() {
     unidad: null,
   });
   const [mostrarPlanoInteractivo, setMostrarPlanoInteractivo] = useState(false);
+  const [asesorReferido, setAsesorReferido] = useState(null);
+  const [shareFeedback, setShareFeedback] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -132,6 +196,47 @@ export default function DetalleDesarrolloPage() {
 
     return () => controller.abort();
   }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return undefined;
+
+    const params = new URLSearchParams(location.search || '');
+    const refFromUrl = String(params.get('ref') || '').trim();
+    const storageKey = getDesarrolloRefStorageKey(slug);
+    const storageDataKey = getDesarrolloRefDataStorageKey(slug);
+    const ref = refFromUrl || readStorageValue(storageKey).trim();
+
+    if (!ref) {
+      setAsesorReferido(null);
+      return undefined;
+    }
+
+    writeStorageValue(storageKey, ref);
+
+    const cachedAsesor = readStorageJson(storageDataKey);
+    if (cachedAsesor?.codigoAsesor === ref) {
+      setAsesorReferido(cachedAsesor);
+    }
+
+    const controller = new AbortController();
+    obtenerAsesorPorReferencia(ref, { signal: controller.signal })
+      .then((asesor) => {
+        if (!asesor?.codigoAsesor) {
+          setAsesorReferido(null);
+          return;
+        }
+
+        setAsesorReferido(asesor);
+        writeStorageValue(storageDataKey, JSON.stringify(asesor));
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          setAsesorReferido(null);
+        }
+      });
+
+    return () => controller.abort();
+  }, [location.search, slug]);
 
   useEffect(() => {
     if (!desarrollo?.id) {
@@ -236,6 +341,32 @@ export default function DetalleDesarrolloPage() {
     setMostrarPlanoInteractivo(false);
   }, []);
 
+  const codigoAsesorParaCompartir = useMemo(
+    () => String(usuario?.codigoAsesor || asesorReferido?.codigoAsesor || '').trim(),
+    [asesorReferido?.codigoAsesor, usuario?.codigoAsesor]
+  );
+
+  const telefonoWhatsappDesarrollo = useMemo(
+    () => getWhatsAppPhone(asesorReferido?.telefono || desarrollo?.telefonoContacto),
+    [asesorReferido?.telefono, desarrollo?.telefonoContacto]
+  );
+
+  const shareData = useMemo(() => {
+    if (!desarrollo) return null;
+
+    const shareUrl = buildDesarrolloShareUrl(slug || desarrollo.slug, codigoAsesorParaCompartir);
+    const texto = `Conoce ${desarrollo.nombre}, un desarrollo inmobiliario disponible en CN Inmobiliaria.`;
+
+    return {
+      shareUrl,
+      texto,
+      whatsappUrl: `https://wa.me/?text=${encodeURIComponent(`${texto} ${shareUrl}`)}`,
+      facebookUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      twitterUrl: `https://twitter.com/intent/tweet?text=${encodeURIComponent(texto)}&url=${encodeURIComponent(shareUrl)}`,
+      linkedinUrl: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+    };
+  }, [codigoAsesorParaCompartir, desarrollo, slug]);
+
   if (loading) {
     return (
       <main className="detalle-desarrollo-page">
@@ -297,6 +428,17 @@ export default function DetalleDesarrolloPage() {
     }));
   };
 
+  const copiarShareUrl = async () => {
+    if (!shareData?.shareUrl) return;
+
+    try {
+      await copiarTexto(shareData.shareUrl);
+      setShareFeedback(codigoAsesorParaCompartir ? 'Link con asesor copiado.' : 'Enlace copiado.');
+    } catch (_) {
+      setShareFeedback('No se pudo copiar el enlace. Copia la URL desde la barra del navegador.');
+    }
+  };
+
   const abrirWhatsapp = ({ desarrollo: desarrolloActual, mensaje, modelo }) => {
     trackDesarrolloConversion(EVENTOS_CONVERSION.WHATSAPP_CLICK, {
       boton: modelo ? 'whatsapp_modelo' : 'whatsapp_cta',
@@ -318,12 +460,14 @@ export default function DetalleDesarrolloPage() {
     });
 
     if (mensaje) {
-      const telefono = getWhatsAppPhone(desarrolloActual?.telefonoContacto);
-      window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
+      const telefono = telefonoWhatsappDesarrollo;
+      if (!telefono) return;
+      const mensajeWhatsapp = shareData?.shareUrl ? `${mensaje} ${shareData.shareUrl}` : mensaje;
+      window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensajeWhatsapp)}`, '_blank', 'noopener,noreferrer');
       return;
     }
 
-    window.open(whatsappHref(desarrolloActual, modelo), '_blank', 'noopener,noreferrer');
+    window.open(whatsappHref(desarrolloActual, modelo, telefonoWhatsappDesarrollo, shareData?.shareUrl || ''), '_blank', 'noopener,noreferrer');
   };
 
   const abrirApartadoUnidad = (unidad) => {
@@ -492,6 +636,32 @@ export default function DetalleDesarrolloPage() {
       </section>
 
       <section className="detalle-desarrollo-shell">
+        {shareData ? (
+          <section className="detalle-desarrollo-share" aria-label="Compartir desarrollo">
+            <div>
+              <p className="detalle-desarrollo-eyebrow">Compartir desarrollo</p>
+              <span>{shareFeedback || 'Comparte este desarrollo con alguien que pueda estar interesado.'}</span>
+            </div>
+            <div className="detalle-desarrollo-share-buttons">
+              <a href={shareData.whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label="Compartir por WhatsApp">
+                WhatsApp
+              </a>
+              <a href={shareData.facebookUrl} target="_blank" rel="noopener noreferrer" aria-label="Compartir en Facebook">
+                Facebook
+              </a>
+              <a href={shareData.twitterUrl} target="_blank" rel="noopener noreferrer" aria-label="Compartir en X">
+                X
+              </a>
+              <a href={shareData.linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="Compartir en LinkedIn">
+                LinkedIn
+              </a>
+              <button type="button" onClick={copiarShareUrl} aria-label="Copiar enlace del desarrollo">
+                Copiar enlace
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         <div className="detalle-desarrollo-intro">
           <div>
             <p className="detalle-desarrollo-eyebrow">Concepto</p>
@@ -810,6 +980,7 @@ export default function DetalleDesarrolloPage() {
       </section>
 
       <ProspectoDesarrolloModal
+        codigoAsesor={asesorReferido?.codigoAsesor || null}
         desarrollo={desarrollo}
         initialMessage={prospectoModal.initialMessage}
         isOpen={prospectoModal.isOpen}

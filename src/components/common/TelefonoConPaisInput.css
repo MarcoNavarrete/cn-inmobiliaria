@@ -1,0 +1,16 @@
+.telefono-pais-input {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(160px, 1fr);
+  gap: 0.5rem;
+}
+
+.telefono-pais-input select,
+.telefono-pais-input input {
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .telefono-pais-input {
+    grid-template-columns: 1fr;
+  }
+}

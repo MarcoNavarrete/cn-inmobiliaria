@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import ProyectoPlanoInteractivo from '../components/proyectos/ProyectoPlanoInteractivo';
 import { getWhatsAppPhone } from '../config/contacto';
 import { resolveApiAssetUrl } from '../services/apiClient';
 import {
   listarUnidadesPublicas,
+  obtenerAsesorPorReferencia,
   obtenerPlanoPublico,
   obtenerProyectoPublico,
 } from '../services/proyectosInmobiliariosPublicService';
@@ -36,8 +37,36 @@ const getLogoProyecto = (proyecto) => {
 const isProyectoValido = (proyecto) =>
   Boolean(proyecto && (proyecto.id || proyecto.proyectoId || proyecto.slug || proyecto.nombre));
 
+const getProyectoRefStorageKey = (slug) => `cn_proyecto_ref_${slug}`;
+const getProyectoRefDataStorageKey = (slug) => `cn_asesor_ref_data_${slug}`;
+
+const readStorageValue = (key) => {
+  try {
+    return window.localStorage.getItem(key) || '';
+  } catch (_) {
+    return '';
+  }
+};
+
+const writeStorageValue = (key, value) => {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (_) {
+    // Ignore storage failures; state attribution still works.
+  }
+};
+
+const readStorageJson = (key) => {
+  try {
+    return JSON.parse(window.localStorage.getItem(key) || 'null');
+  } catch (_) {
+    return null;
+  }
+};
+
 export default function ProyectoInmobiliarioPlanoPage() {
   const { slug } = useParams();
+  const location = useLocation();
   const [proyecto, setProyecto] = useState(null);
   const [plano, setPlano] = useState(null);
   const [unidades, setUnidades] = useState([]);
@@ -45,6 +74,8 @@ export default function ProyectoInmobiliarioPlanoPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState('');
+  const [codigoAsesorReferido, setCodigoAsesorReferido] = useState('');
+  const [asesorReferido, setAsesorReferido] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -101,6 +132,49 @@ export default function ProyectoInmobiliarioPlanoPage() {
   }, [slug]);
 
   useEffect(() => {
+    if (!slug) return undefined;
+
+    const params = new URLSearchParams(location.search || '');
+    const refFromUrl = String(params.get('ref') || '').trim();
+    const storageKey = getProyectoRefStorageKey(slug);
+    const storageDataKey = getProyectoRefDataStorageKey(slug);
+    const ref = refFromUrl || readStorageValue(storageKey).trim();
+
+    if (!ref) {
+      setCodigoAsesorReferido('');
+      setAsesorReferido(null);
+      return undefined;
+    }
+
+    setCodigoAsesorReferido(ref);
+    writeStorageValue(storageKey, ref);
+
+    const cachedAsesor = readStorageJson(storageDataKey);
+    if (cachedAsesor?.codigoAsesor === ref) {
+      setAsesorReferido(cachedAsesor);
+    }
+
+    const controller = new AbortController();
+    obtenerAsesorPorReferencia(ref, { signal: controller.signal })
+      .then((asesor) => {
+        if (!asesor?.codigoAsesor) {
+          setAsesorReferido(null);
+          return;
+        }
+
+        setAsesorReferido(asesor);
+        writeStorageValue(storageDataKey, JSON.stringify(asesor));
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          setAsesorReferido(null);
+        }
+      });
+
+    return () => controller.abort();
+  }, [location.search, slug]);
+
+  useEffect(() => {
     const previousTitle = document.title;
     document.title = proyecto?.nombre
       ? `Plano interactivo de ${proyecto.nombre} | CN Inmobiliaria`
@@ -113,6 +187,13 @@ export default function ProyectoInmobiliarioPlanoPage() {
 
   const logoUrl = useMemo(() => resolveApiAssetUrl(getLogoProyecto(proyecto)) || CN_LOGO, [proyecto]);
   const detalleUrl = proyecto?.slug || slug;
+  const detalleUrlConRef = codigoAsesorReferido
+    ? `/proyectos-inmobiliarios/${detalleUrl}?ref=${encodeURIComponent(codigoAsesorReferido)}`
+    : `/proyectos-inmobiliarios/${detalleUrl}`;
+  const telefonoWhatsappProyecto = useMemo(
+    () => getWhatsAppPhone(asesorReferido?.telefono || proyecto?.telefonoContacto || proyecto?.whatsappContacto),
+    [asesorReferido?.telefono, proyecto?.telefonoContacto, proyecto?.whatsappContacto]
+  );
 
   const seleccionarUnidad = useCallback((unidad) => {
     setUnidadSeleccionada(unidad);
@@ -121,7 +202,7 @@ export default function ProyectoInmobiliarioPlanoPage() {
   const abrirWhatsapp = () => {
     if (!proyecto) return;
 
-    const telefono = getWhatsAppPhone(proyecto.telefonoContacto || proyecto.whatsappContacto);
+    const telefono = telefonoWhatsappProyecto;
     if (!telefono) return;
 
     const unidadTexto = unidadSeleccionada
@@ -175,7 +256,7 @@ export default function ProyectoInmobiliarioPlanoPage() {
           </div>
         </div>
         <div className="proyecto-plano-page-actions">
-          <Link to={`/proyectos-inmobiliarios/${detalleUrl}`}>Ver información completa</Link>
+          <Link to={detalleUrlConRef}>Ver información completa</Link>
           <button type="button" onClick={abrirWhatsapp}>WhatsApp</button>
         </div>
       </section>

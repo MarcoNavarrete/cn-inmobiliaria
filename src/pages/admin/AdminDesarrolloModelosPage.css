@@ -110,6 +110,64 @@
   background: rgba(143, 45, 36, 0.06);
 }
 
+.admin-desarrollos-modelo-csv-help {
+  margin: 0.35rem 0 0;
+  color: var(--gris-elegante);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.admin-desarrollos-modelo-hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.admin-desarrollos-modelo-id {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid rgba(26, 61, 124, 0.12);
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  background: rgba(26, 61, 124, 0.045);
+}
+
+.admin-desarrollos-modelo-id div {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.admin-desarrollos-modelo-id span {
+  color: rgba(26, 61, 124, 0.72);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-desarrollos-modelo-id strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0.18rem 0.65rem;
+  background: rgba(26, 61, 124, 0.1);
+  color: var(--azul-oscuro);
+  font-weight: 900;
+}
+
+.admin-desarrollos-modelo-id button {
+  min-height: 34px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.86rem;
+}
+
 .admin-desarrollos-modelo-media {
   display: grid;
   gap: 0.75rem;

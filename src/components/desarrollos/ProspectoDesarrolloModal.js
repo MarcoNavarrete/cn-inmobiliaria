@@ -16,6 +16,7 @@ export default function ProspectoDesarrolloModal({
   desarrollo,
   initialMessage = '',
   isOpen,
+  codigoAsesor = null,
   modelo = null,
   onClose,
   onSuccess,
@@ -94,6 +95,7 @@ export default function ProspectoDesarrolloModal({
         email,
         mensaje,
         origen,
+        codigoAsesor,
       });
 
       abrirWhatsapp();

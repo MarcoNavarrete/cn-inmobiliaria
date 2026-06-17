@@ -1,11 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import TelefonoConPaisInput, {
+  getPaisTelefonoDefaultId,
+  ordenarPaisesTelefono,
+} from '../components/common/TelefonoConPaisInput';
 import { guardarToken, register } from '../services/authService';
+import { getCodigosNumeroPaises } from '../services/catalogosService';
 import './LoginPage.css';
 
 const FORM_INICIAL = {
   nombre: '',
   email: '',
+  telefono: '',
+  codigoNumeroPaisId: '',
   password: '',
   confirmarPassword: '',
 };
@@ -28,8 +35,34 @@ export default function RegisterPage() {
   const destino = from ? `${from.pathname || '/'}${from.search || ''}` : '/';
   const [form, setForm] = useState(FORM_INICIAL);
   const [cargando, setCargando] = useState(false);
+  const [paisesTelefono, setPaisesTelefono] = useState([]);
+  const [cargandoPaises, setCargandoPaises] = useState(false);
+  const [catalogoError, setCatalogoError] = useState('');
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setCargandoPaises(true);
+
+    getCodigosNumeroPaises({ signal: controller.signal })
+      .then((paises) => {
+        const ordenados = ordenarPaisesTelefono(paises);
+        setPaisesTelefono(ordenados);
+        setForm((actual) => ({
+          ...actual,
+          codigoNumeroPaisId: actual.codigoNumeroPaisId || getPaisTelefonoDefaultId(ordenados),
+        }));
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          setCatalogoError('No se pudo cargar el catalogo de paises. Puedes registrar la cuenta sin lada por ahora.');
+        }
+      })
+      .finally(() => setCargandoPaises(false));
+
+    return () => controller.abort();
+  }, []);
 
   const actualizarCampo = (event) => {
     const { name, value } = event.target;
@@ -49,10 +82,26 @@ export default function RegisterPage() {
       return;
     }
 
+    if (form.telefono.trim().length > 20) {
+      setError('El telefono no debe exceder 20 caracteres.');
+      return;
+    }
+
+    if (form.telefono.trim() && paisesTelefono.length > 0 && !form.codigoNumeroPaisId) {
+      setError('Selecciona el pais/lada del telefono.');
+      return;
+    }
+
     setCargando(true);
 
     try {
-      const data = await register(form.nombre.trim(), form.email.trim(), form.password);
+      const data = await register({
+        nombre: form.nombre.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        telefono: form.telefono.trim(),
+        codigoNumeroPaisId: form.codigoNumeroPaisId || null,
+      });
       const token = extractToken(data);
 
       if (token) {
@@ -100,6 +149,18 @@ export default function RegisterPage() {
               disabled={cargando}
             />
           </label>
+          <label>
+            <span>Telefono</span>
+            <TelefonoConPaisInput
+              paises={paisesTelefono}
+              codigoNumeroPaisId={form.codigoNumeroPaisId}
+              telefono={form.telefono}
+              onChangePais={actualizarCampo}
+              onChangeTelefono={actualizarCampo}
+              disabled={cargando || cargandoPaises}
+            />
+          </label>
+          {catalogoError ? <p className="login-help">{catalogoError}</p> : null}
           <label>
             <span>Password</span>
             <input

@@ -170,6 +170,7 @@ export const crearProspectoDesarrollo = (desarrolloId, payload) =>
       email: toText(payload.email) || null,
       mensaje: toText(payload.mensaje),
       origen: toText(payload.origen),
+      codigoAsesor: toText(payload.codigoAsesor) || null,
       unidadId: payload.unidadId || payload.desarrolloUnidadId || null,
       desarrolloUnidadId: payload.desarrolloUnidadId || payload.unidadId || null,
     },

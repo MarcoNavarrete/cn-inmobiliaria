@@ -68,6 +68,15 @@ const normalizeSesion = (data = {}, fallback = {}) => {
     usuarioId: String(data.usuarioId || fallback.usuarioId || fallback.id || ''),
     email: String(data.email || fallback.email || ''),
     nombre: String(data.nombre || fallback.nombre || fallback.name || fallback.unique_name || ''),
+    apellidos: String(data.apellidos || fallback.apellidos || ''),
+    telefono: String(data.telefono || fallback.telefono || ''),
+    telefonoLocal: String(data.telefonoLocal || fallback.telefonoLocal || ''),
+    codigoNumeroPaisId: String(data.codigoNumeroPaisId || fallback.codigoNumeroPaisId || ''),
+    codigoMarcacion: String(data.codigoMarcacion || fallback.codigoMarcacion || ''),
+    iso2PaisTelefono: String(data.iso2PaisTelefono || fallback.iso2PaisTelefono || ''),
+    emojiBanderaTelefono: String(data.emojiBanderaTelefono || fallback.emojiBanderaTelefono || ''),
+    direccion: String(data.direccion || fallback.direccion || ''),
+    codigoAsesor: String(data.codigoAsesor || fallback.codigoAsesor || ''),
     maxPublicaciones: Number.isFinite(Number(data.maxPublicaciones))
       ? Number(data.maxPublicaciones)
       : Number.isFinite(Number(fallback.maxPublicaciones))
@@ -168,6 +177,15 @@ export const obtenerUsuarioDesdeToken = () => {
       usuarioId: data.usuarioId || data.nameid || data.sub || '',
       email: data.email || '',
       nombre: data.nombre || data.name || data.unique_name || '',
+      apellidos: data.apellidos || '',
+      telefono: data.telefono || '',
+      telefonoLocal: data.telefonoLocal || '',
+      codigoNumeroPaisId: data.codigoNumeroPaisId || '',
+      codigoMarcacion: data.codigoMarcacion || '',
+      iso2PaisTelefono: data.iso2PaisTelefono || '',
+      emojiBanderaTelefono: data.emojiBanderaTelefono || '',
+      direccion: data.direccion || '',
+      codigoAsesor: data.codigoAsesor || '',
       rolGlobal: data.rol || data.role || '',
       rol: data.rol || data.role || '',
       esAdminCn: ['ADMIN', 'SUPERADMIN'].includes(String(data.rol || data.role || '').toUpperCase()),
@@ -270,6 +288,31 @@ export const register = async (nombreOrPayload, email, password) => {
     method: 'POST',
     body: payload,
   });
+};
+
+export const actualizarPerfil = async ({ nombre, apellidos, telefono, codigoNumeroPaisId, direccion }) => {
+  const data = await requestJson('/api/auth/me', {
+    method: 'PUT',
+    body: {
+      nombre,
+      apellidos,
+      telefono,
+      codigoNumeroPaisId,
+      direccion,
+    },
+  });
+  const fallback = obtenerSesionGuardada() || obtenerUsuarioDesdeToken() || {};
+  const sesion = guardarSesionActual({
+    ...fallback,
+    nombre,
+    apellidos,
+    telefono,
+    codigoNumeroPaisId,
+    direccion,
+    ...data,
+  });
+
+  return sesion;
 };
 
 export const cambiarPassword = ({ passwordActual, passwordNueva, confirmarPasswordNueva }) =>

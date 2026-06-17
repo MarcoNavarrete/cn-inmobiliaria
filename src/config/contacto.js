@@ -8,6 +8,10 @@ export function normalizePhoneForWhatsApp(phone) {
     return '';
   }
 
+  if (digits.length >= 12 && digits.startsWith('52')) {
+    return digits;
+  }
+
   if (digits.length === 10) {
     return `52${digits}`;
   }

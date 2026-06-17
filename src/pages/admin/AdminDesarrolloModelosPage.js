@@ -34,8 +34,29 @@ const FORM_INICIAL = {
 const IMAGEN_TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
 const IMAGEN_EXTENSIONES_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp'];
 const IMAGEN_MAX_SIZE = 10 * 1024 * 1024;
+const CSV_MODELOS_COLUMNS = [
+  'modeloId',
+  'modelo',
+  'precio',
+  'recamaras',
+  'banos',
+  'estacionamientos',
+  'construccionM2',
+  'terrenoM2',
+  'disponible',
+  'activo',
+];
 
 const getApiErrorMessage = (err) => err.data?.mensaje || err.data?.message || err.message || 'No fue posible procesar modelos.';
+
+const escapeCsvValue = (value) => {
+  if (value === null || value === undefined) return '';
+  const stringValue = String(value);
+  if (/[",\n\r]/.test(stringValue)) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+  return stringValue;
+};
 
 const getFileExtension = (fileName = '') => {
   const parts = String(fileName).split('.');
@@ -251,6 +272,54 @@ export default function AdminDesarrolloModelosPage() {
 
   const actualizarLocal = (modeloId, cambios) => {
     setModelos((actuales) => actuales.map((item) => item.id === modeloId ? { ...item, ...cambios } : item));
+  };
+
+  const copiarModeloId = async (modeloId) => {
+    if (!modeloId) return;
+
+    try {
+      await navigator.clipboard.writeText(String(modeloId));
+      setMensaje(`ID de modelo copiado: ${modeloId}`);
+    } catch (_) {
+      setMensaje(`ID modelo: ${modeloId}`);
+    }
+  };
+
+  const descargarReferenciaModelosCsv = () => {
+    if (modelos.length === 0) {
+      setMensaje('');
+      setError('Primero registra al menos un modelo para descargar la referencia.');
+      return;
+    }
+
+    const rows = modelos.map((modelo) => ({
+      modeloId: modelo.id,
+      modelo: modelo.nombre || '',
+      precio: modelo.precio ?? '',
+      recamaras: modelo.recamaras ?? '',
+      banos: modelo.banos ?? '',
+      estacionamientos: modelo.estacionamientos ?? '',
+      construccionM2: modelo.construccionM2 ?? '',
+      terrenoM2: modelo.terrenoM2 ?? '',
+      disponible: modelo.disponible !== false ? 'true' : 'false',
+      activo: modelo.activo !== false ? 'true' : 'false',
+    }));
+
+    const csv = [
+      CSV_MODELOS_COLUMNS,
+      ...rows.map((row) => CSV_MODELOS_COLUMNS.map((column) => row[column])),
+    ].map((row) => row.map(escapeCsvValue).join(',')).join('\r\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `modelos-desarrollo-${desarrolloId}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setError('');
+    setMensaje('Referencia CSV de modelos descargada.');
   };
 
   const limpiarImagenNueva = () => {
@@ -473,6 +542,17 @@ export default function AdminDesarrolloModelosPage() {
 
     return (
     <>
+      {options.modeloId ? (
+        <section className="admin-desarrollos-modelo-id is-full" aria-label="ID del modelo">
+          <div>
+            <span>ID modelo</span>
+            <strong>{options.modeloId}</strong>
+          </div>
+          <button type="button" onClick={() => copiarModeloId(options.modeloId)}>
+            Copiar ID
+          </button>
+        </section>
+      ) : null}
       <label className="admin-desarrollos-field"><span>Nombre</span><input name={`${prefix}nombre`} value={modelo.nombre} onChange={(event) => onChange({ nombre: event.target.value })} required /></label>
       <label className="admin-desarrollos-field is-full"><span>Descripción</span><textarea value={modelo.descripcion} onChange={(event) => onChange({ descripcion: event.target.value })} rows="3" /></label>
       <label className="admin-desarrollos-field"><span>Precio base / fallback</span><input type="number" min="0" step="0.01" value={modelo.precio} onChange={(event) => onChange({ precio: event.target.value })} /></label>
@@ -511,9 +591,27 @@ export default function AdminDesarrolloModelosPage() {
         <div>
           <p className="admin-desarrollos-eyebrow">Administración</p>
           <h1>Modelos del desarrollo</h1>
+          <p className="admin-desarrollos-modelo-csv-help">
+            En la plantilla de unidades puedes llenar la columna modeloId con el ID de esta referencia, o la columna modelo con el nombre exacto del modelo.
+          </p>
         </div>
-        <Link className="admin-desarrollos-primary" to={`/admin/desarrollos/${desarrolloId}/editar`}>Editar desarrollo</Link>
+        <div className="admin-desarrollos-modelo-hero-actions">
+          <button
+            type="button"
+            onClick={descargarReferenciaModelosCsv}
+            disabled={cargando || modelos.length === 0}
+          >
+            Descargar referencia CSV de modelos
+          </button>
+          <Link className="admin-desarrollos-primary" to={`/admin/desarrollos/${desarrolloId}/editar`}>Editar desarrollo</Link>
+        </div>
       </section>
+
+      {modelos.length === 0 ? (
+        <p className="admin-desarrollos-modelo-csv-help">Primero registra al menos un modelo para descargar la referencia.</p>
+      ) : (
+        <p className="admin-desarrollos-modelo-csv-help">Usa este archivo como referencia para copiar el modeloId o el nombre del modelo en la plantilla CSV de unidades.</p>
+      )}
 
       {mensaje ? <p className="admin-desarrollos-feedback is-ok">{mensaje}</p> : null}
       {error ? <p className="admin-desarrollos-feedback is-error">{error}</p> : null}
@@ -542,6 +640,7 @@ export default function AdminDesarrolloModelosPage() {
                 {renderCamposModelo(modelo, (cambios) => actualizarLocal(modelo.id, cambios), {
                   imagenFile: modeloImagenFiles[modelo.id] || null,
                   inputKey: modeloImagenInputKeys[modelo.id] || 0,
+                  modeloId: modelo.id,
                   onImagenChange: (event) => seleccionarImagenModelo(modelo.id, event),
                   previewUrl: modeloImagenPreviews[modelo.id] || modelo.imagenPrincipal,
                 })}

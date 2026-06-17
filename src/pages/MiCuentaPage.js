@@ -1,16 +1,54 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { cambiarPassword, cerrarSesion, obtenerToken } from '../services/authService';
+import TelefonoConPaisInput, {
+  getPaisTelefonoDefaultId,
+  ordenarPaisesTelefono,
+} from '../components/common/TelefonoConPaisInput';
+import { actualizarPerfil, cambiarPassword, cerrarSesion, obtenerToken } from '../services/authService';
+import { getCodigosNumeroPaises } from '../services/catalogosService';
 import useAuthSession from '../hooks/useAuthSession';
 import './MiCuentaPage.css';
+
+const PERFIL_INICIAL = {
+  nombre: '',
+  apellidos: '',
+  telefono: '',
+  codigoNumeroPaisId: '',
+  direccion: '',
+};
+
+const getTelefonoLocalFallback = (usuario) => {
+  const telefonoLocal = String(usuario?.telefonoLocal || '').trim();
+  if (telefonoLocal) return telefonoLocal;
+
+  const telefono = String(usuario?.telefono || '').trim();
+  const marcacion = String(usuario?.codigoMarcacion || '').replace(/\D/g, '');
+  const digits = telefono.replace(/\D/g, '');
+
+  if (digits && marcacion && digits.startsWith(marcacion) && digits.length > marcacion.length) {
+    return digits.slice(marcacion.length);
+  }
+
+  if (digits.length === 12 && digits.startsWith('52')) {
+    return digits.slice(2);
+  }
+
+  return telefono;
+};
 
 export default function MiCuentaPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const token = obtenerToken();
-  const { usuario, esAdminCn, tieneAccesoEmpresarial, rolGlobal, cargando } = useAuthSession();
+  const { usuario, esAdminCn, tieneAccesoEmpresarial, rolGlobal, cargando, recargarSesion } = useAuthSession();
   const puedeVerPanel = esAdminCn || tieneAccesoEmpresarial;
   const esPanelEmpresa = String(rolGlobal || '').toUpperCase() === 'USUARIO' && tieneAccesoEmpresarial;
+  const [formPerfil, setFormPerfil] = useState(PERFIL_INICIAL);
+  const [paisesTelefono, setPaisesTelefono] = useState([]);
+  const [cargandoPaises, setCargandoPaises] = useState(false);
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
+  const [perfilError, setPerfilError] = useState('');
+  const [perfilMensaje, setPerfilMensaje] = useState('');
   const [formPassword, setFormPassword] = useState({
     passwordActual: '',
     passwordNueva: '',
@@ -19,6 +57,41 @@ export default function MiCuentaPage() {
   const [cambiandoPassword, setCambiandoPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [passwordMensaje, setPasswordMensaje] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setCargandoPaises(true);
+
+    getCodigosNumeroPaises({ signal: controller.signal })
+      .then((paises) => {
+        const ordenados = ordenarPaisesTelefono(paises);
+        setPaisesTelefono(ordenados);
+        setFormPerfil((actual) => ({
+          ...actual,
+          codigoNumeroPaisId: actual.codigoNumeroPaisId || getPaisTelefonoDefaultId(ordenados),
+        }));
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          setPerfilError('No se pudo cargar el catalogo de paises. Puedes seguir editando el resto de tus datos.');
+        }
+      })
+      .finally(() => setCargandoPaises(false));
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!usuario) return;
+
+    setFormPerfil({
+      nombre: usuario.nombre || '',
+      apellidos: usuario.apellidos || '',
+      telefono: getTelefonoLocalFallback(usuario),
+      codigoNumeroPaisId: String(usuario.codigoNumeroPaisId || '') || getPaisTelefonoDefaultId(paisesTelefono),
+      direccion: usuario.direccion || '',
+    });
+  }, [paisesTelefono, usuario]);
 
   if (!token) {
     return <Navigate to="/login" replace state={{ from: location }} />;
@@ -45,6 +118,55 @@ export default function MiCuentaPage() {
       ...actual,
       [name]: value,
     }));
+  };
+
+  const actualizarCampoPerfil = (event) => {
+    const { name, value } = event.target;
+    setFormPerfil((actual) => ({
+      ...actual,
+      [name]: value,
+    }));
+  };
+
+  const validarPerfil = () => {
+    if (!formPerfil.nombre.trim()) return 'El nombre es requerido.';
+    if (formPerfil.nombre.trim().length > 100) return 'El nombre no debe exceder 100 caracteres.';
+    if (formPerfil.apellidos.trim().length > 150) return 'Los apellidos no deben exceder 150 caracteres.';
+    if (formPerfil.telefono.trim().length > 20) return 'El telefono no debe exceder 20 caracteres.';
+    if (formPerfil.telefono.trim() && paisesTelefono.length > 0 && !formPerfil.codigoNumeroPaisId) return 'Selecciona el pais/lada del telefono.';
+    if (formPerfil.direccion.trim().length > 300) return 'La direccion no debe exceder 300 caracteres.';
+    return '';
+  };
+
+  const guardarPerfil = async (event) => {
+    event.preventDefault();
+    setPerfilError('');
+    setPerfilMensaje('');
+
+    const validacion = validarPerfil();
+    if (validacion) {
+      setPerfilError(validacion);
+      return;
+    }
+
+    setGuardandoPerfil(true);
+
+    try {
+      await actualizarPerfil({
+        nombre: formPerfil.nombre.trim(),
+        apellidos: formPerfil.apellidos.trim(),
+        telefono: formPerfil.telefono.trim(),
+        codigoNumeroPaisId: formPerfil.codigoNumeroPaisId || null,
+        direccion: formPerfil.direccion.trim(),
+      });
+      await recargarSesion({ forceRefresh: true });
+      setPerfilMensaje('Perfil actualizado correctamente.');
+    } catch (err) {
+      const mensaje = err.data?.mensaje || err.data?.message || err.message || 'No fue posible actualizar el perfil.';
+      setPerfilError(mensaje);
+    } finally {
+      setGuardandoPerfil(false);
+    }
   };
 
   const validarPassword = () => {
@@ -106,6 +228,80 @@ export default function MiCuentaPage() {
           {usuario.email ? <p>{usuario.email}</p> : null}
           {usuario.rol ? <span>{usuario.rol}</span> : null}
         </div>
+      </section>
+
+      <section className="mi-cuenta-password-card" id="datos-personales">
+        <div className="mi-cuenta-password-head">
+          <div>
+            <p>Datos personales</p>
+            <h2>Actualiza tu informacion</h2>
+          </div>
+        </div>
+
+        {perfilMensaje ? <p className="mi-cuenta-feedback is-ok">{perfilMensaje}</p> : null}
+        {perfilError ? <p className="mi-cuenta-feedback is-error">{perfilError}</p> : null}
+
+        <form className="mi-cuenta-password-form mi-cuenta-profile-form" onSubmit={guardarPerfil}>
+          <label>
+            <span>Nombre</span>
+            <input
+              type="text"
+              name="nombre"
+              value={formPerfil.nombre}
+              onChange={actualizarCampoPerfil}
+              maxLength={100}
+              required
+              disabled={guardandoPerfil}
+            />
+          </label>
+          <label>
+            <span>Apellidos</span>
+            <input
+              type="text"
+              name="apellidos"
+              value={formPerfil.apellidos}
+              onChange={actualizarCampoPerfil}
+              maxLength={150}
+              disabled={guardandoPerfil}
+            />
+          </label>
+          <label>
+            <span>Email</span>
+            <input
+              type="email"
+              value={usuario.email || ''}
+              readOnly
+              disabled
+            />
+          </label>
+          <label>
+            <span>Telefono</span>
+            <TelefonoConPaisInput
+              paises={paisesTelefono}
+              codigoNumeroPaisId={formPerfil.codigoNumeroPaisId}
+              telefono={formPerfil.telefono}
+              onChangePais={actualizarCampoPerfil}
+              onChangeTelefono={actualizarCampoPerfil}
+              disabled={guardandoPerfil || cargandoPaises}
+            />
+          </label>
+          <label className="is-full">
+            <span>Direccion</span>
+            <textarea
+              name="direccion"
+              value={formPerfil.direccion}
+              onChange={actualizarCampoPerfil}
+              maxLength={300}
+              rows="3"
+              disabled={guardandoPerfil}
+            />
+          </label>
+          <div className="mi-cuenta-password-actions is-full">
+            <button type="submit" disabled={guardandoPerfil}>
+              {guardandoPerfil ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </div>
+        </form>
       </section>
 
       <section className="mi-cuenta-grid" aria-label="Accesos rapidos">

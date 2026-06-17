@@ -152,6 +152,14 @@
   gap: 1rem;
 }
 
+.mi-cuenta-profile-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mi-cuenta-profile-form .is-full {
+  grid-column: 1 / -1;
+}
+
 .mi-cuenta-password-form label {
   display: grid;
   gap: 0.35rem;
@@ -162,13 +170,27 @@
   font-weight: 700;
 }
 
-.mi-cuenta-password-form input {
+.mi-cuenta-password-form input,
+.mi-cuenta-password-form select,
+.mi-cuenta-password-form textarea {
   width: 100%;
   padding: 0.68rem 0.75rem;
   border: 1px solid rgba(26, 61, 124, 0.16);
   border-radius: 8px;
   color: var(--azul-oscuro);
   font: inherit;
+  background: #fff;
+}
+
+.mi-cuenta-password-form textarea {
+  resize: vertical;
+}
+
+.mi-cuenta-password-form input:disabled,
+.mi-cuenta-password-form select:disabled,
+.mi-cuenta-password-form textarea:disabled {
+  background: rgba(26, 61, 124, 0.04);
+  cursor: not-allowed;
 }
 
 .mi-cuenta-password-actions {
@@ -197,5 +219,9 @@
   .mi-cuenta-card {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .mi-cuenta-profile-form {
+    grid-template-columns: 1fr;
   }
 }

@@ -10,10 +10,11 @@ import {
   FaTwitter,
   FaWhatsapp,
 } from 'react-icons/fa';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import RichTextContent from '../components/common/RichTextContent';
 import ProyectoPlanoInteractivo from '../components/proyectos/ProyectoPlanoInteractivo';
 import { getWhatsAppPhone } from '../config/contacto';
+import useAuthSession from '../hooks/useAuthSession';
 import { trackEvent } from '../lib/analytics';
 import { EVENTOS_CONVERSION, trackConversionEvent } from '../lib/conversionEvents';
 import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
@@ -23,6 +24,7 @@ import {
   listarImagenesPublicas,
   listarModelosPublicos,
   listarUnidadesPublicas,
+  obtenerAsesorPorReferencia,
   obtenerPlanoPublico,
   obtenerProyectoPublico,
 } from '../services/proyectosInmobiliariosPublicService';
@@ -96,16 +98,45 @@ const buildProyectoMapsEmbedUrl = (proyecto) => {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${proyecto.latitud},${proyecto.longitud}`)}&output=embed`;
 };
 
-const buildProyectoShareUrl = (slug) => {
+const getProyectoRefStorageKey = (slug) => `cn_proyecto_ref_${slug}`;
+const getProyectoRefDataStorageKey = (slug) => `cn_asesor_ref_data_${slug}`;
+
+const readStorageValue = (key) => {
+  try {
+    return window.localStorage.getItem(key) || '';
+  } catch (_) {
+    return '';
+  }
+};
+
+const writeStorageValue = (key, value) => {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (_) {
+    // Storage can be unavailable in private contexts; attribution still works in state.
+  }
+};
+
+const readStorageJson = (key) => {
+  try {
+    return JSON.parse(window.localStorage.getItem(key) || 'null');
+  } catch (_) {
+    return null;
+  }
+};
+
+const buildProyectoShareUrl = (slug, codigoAsesor = '') => {
   if (typeof window === 'undefined') {
-    return slug ? `https://cninmobiliaria.com.mx/#/proyectos-inmobiliarios/${slug}` : '';
+    const base = slug ? `https://cninmobiliaria.com.mx/#/proyectos-inmobiliarios/${slug}` : '';
+    return codigoAsesor && base ? `${base}?ref=${encodeURIComponent(codigoAsesor)}` : base;
   }
 
   if (!slug) {
     return window.location.href;
   }
 
-  return `${window.location.origin}${window.location.pathname}#/proyectos-inmobiliarios/${slug}`;
+  const base = `${window.location.origin}${window.location.pathname}#/proyectos-inmobiliarios/${slug}`;
+  return codigoAsesor ? `${base}?ref=${encodeURIComponent(codigoAsesor)}` : base;
 };
 
 const copiarTexto = async (texto) => {
@@ -157,6 +188,8 @@ const buildSolicitudWhatsappText = ({ form, proyecto, unidadSeleccionada }) => {
 
 export default function ProyectoInmobiliarioDetallePage() {
   const { slug } = useParams();
+  const location = useLocation();
+  const { usuario } = useAuthSession();
   const contactoRef = useRef(null);
   const unidadesRef = useRef(null);
   const planoRef = useRef(null);
@@ -178,6 +211,7 @@ export default function ProyectoInmobiliarioDetallePage() {
   const [mensaje, setMensaje] = useState('');
   const [formError, setFormError] = useState('');
   const [shareFeedback, setShareFeedback] = useState('');
+  const [asesorReferido, setAsesorReferido] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -216,6 +250,47 @@ export default function ProyectoInmobiliarioDetallePage() {
 
     return () => controller.abort();
   }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return undefined;
+
+    const params = new URLSearchParams(location.search || '');
+    const refFromUrl = String(params.get('ref') || '').trim();
+    const storageKey = getProyectoRefStorageKey(slug);
+    const storageDataKey = getProyectoRefDataStorageKey(slug);
+    const ref = refFromUrl || readStorageValue(storageKey).trim();
+
+    if (!ref) {
+      setAsesorReferido(null);
+      return undefined;
+    }
+
+    writeStorageValue(storageKey, ref);
+
+    const cachedAsesor = readStorageJson(storageDataKey);
+    if (cachedAsesor?.codigoAsesor === ref) {
+      setAsesorReferido(cachedAsesor);
+    }
+
+    const controller = new AbortController();
+    obtenerAsesorPorReferencia(ref, { signal: controller.signal })
+      .then((asesor) => {
+        if (!asesor?.codigoAsesor) {
+          setAsesorReferido(null);
+          return;
+        }
+
+        setAsesorReferido(asesor);
+        writeStorageValue(storageDataKey, JSON.stringify(asesor));
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          setAsesorReferido(null);
+        }
+      });
+
+    return () => controller.abort();
+  }, [location.search, slug]);
 
   useEffect(() => {
     if (!proyecto?.nombre) return undefined;
@@ -335,10 +410,20 @@ export default function ProyectoInmobiliarioDetallePage() {
     };
   }, [proyecto]);
 
+  const codigoAsesorParaCompartir = useMemo(
+    () => String(usuario?.codigoAsesor || asesorReferido?.codigoAsesor || '').trim(),
+    [asesorReferido?.codigoAsesor, usuario?.codigoAsesor]
+  );
+
+  const telefonoWhatsappProyecto = useMemo(
+    () => getWhatsAppPhone(asesorReferido?.telefono || proyecto?.telefonoContacto || proyecto?.whatsappContacto),
+    [asesorReferido?.telefono, proyecto?.telefonoContacto, proyecto?.whatsappContacto]
+  );
+
   const shareData = useMemo(() => {
     if (!proyecto) return null;
 
-    const shareUrl = buildProyectoShareUrl(slug || proyecto.slug);
+    const shareUrl = buildProyectoShareUrl(slug || proyecto.slug, codigoAsesorParaCompartir);
     const ubicacion = cleanLocationText(proyecto.ubicacionTexto || proyecto.ubicacion);
     let texto = `Conoce ${proyecto.nombre}, un proyecto inmobiliario disponible en CN Inmobiliaria.`;
 
@@ -356,7 +441,7 @@ export default function ProyectoInmobiliarioDetallePage() {
       twitterUrl: `https://twitter.com/intent/tweet?text=${encodeURIComponent(texto)}&url=${encodeURIComponent(shareUrl)}`,
       whatsappUrl: `https://wa.me/?text=${encodeURIComponent(`${texto} ${shareUrl}`)}`,
     };
-  }, [proyecto, slug]);
+  }, [codigoAsesorParaCompartir, proyecto, slug]);
 
   const modelosConUnidades = useMemo(() => {
     const ids = new Set(unidades.map((unidad) => String(unidad.modeloId || '')).filter(Boolean));
@@ -480,8 +565,9 @@ export default function ProyectoInmobiliarioDetallePage() {
 
   const abrirWhatsapp = () => {
     if (!proyecto) return;
-    const telefono = getWhatsAppPhone(proyecto.telefonoContacto || proyecto.whatsappContacto);
-    const text = `Hola, me interesa el proyecto ${proyecto.nombre}. Me gustaria recibir mas información.`;
+    const telefono = telefonoWhatsappProyecto;
+    if (!telefono) return;
+    const text = `Hola, me interesa el proyecto ${proyecto.nombre}. Me gustaria recibir mas informacion. ${shareData?.shareUrl || ''}`.trim();
     trackEvent('click_whatsapp', {
       source: 'proyecto_inmobiliario_detalle',
       project_slug: slug,
@@ -547,6 +633,7 @@ export default function ProyectoInmobiliarioDetallePage() {
         email: correo || null,
         mensaje: mensajeFormulario || `Me interesa recibir información del proyecto ${proyecto.nombre}.`,
         unidadId: unidadSeleccionada?.id || unidadSeleccionada?.unidadId || null,
+        codigoAsesor: asesorReferido?.codigoAsesor || null,
         proyectoId: proyecto.id || proyecto.proyectoId || null,
         slug: proyecto.slug || slug,
         origen: 'landing',
@@ -560,7 +647,7 @@ export default function ProyectoInmobiliarioDetallePage() {
 
       setMensaje('Solicitud enviada correctamente. Un asesor se pondrá en contacto contigo.');
 
-      const telefonoDestino = getWhatsAppPhone(proyecto.telefonoContacto || proyecto.whatsappContacto);
+      const telefonoDestino = telefonoWhatsappProyecto;
       if (telefonoDestino) {
         const whatsappText = buildSolicitudWhatsappText({
           form: { nombre, telefono, correo, mensaje: mensajeFormulario },
@@ -1188,3 +1275,4 @@ export default function ProyectoInmobiliarioDetallePage() {
     </main>
   );
 }
+

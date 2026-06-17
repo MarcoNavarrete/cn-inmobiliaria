@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import PlanoInteractivoDemo from '../components/desarrollos/PlanoInteractivoDemo';
 import { getWhatsAppPhone } from '../config/contacto';
+import { obtenerAsesorPorReferencia } from '../services/asesoresService';
 import { obtenerPlanoPublico } from '../services/adminDesarrolloPlanoService';
 import { obtenerDesarrolloPorSlug } from '../services/desarrollosService';
 import { formatearMonedaMXN } from '../utils/preciosInmobiliarios';
@@ -21,6 +22,47 @@ const cleanText = (value) => String(value || '').trim();
 
 const isDesarrolloValido = (desarrollo) =>
   Boolean(desarrollo && (desarrollo.id || desarrollo.slug || desarrollo.nombre));
+
+const getDesarrolloRefStorageKey = (slug) => `cn_desarrollo_ref_${slug}`;
+const getDesarrolloRefDataStorageKey = (slug) => `cn_desarrollo_ref_data_${slug}`;
+
+const readStorageValue = (key) => {
+  try {
+    return window.localStorage.getItem(key) || '';
+  } catch (_) {
+    return '';
+  }
+};
+
+const writeStorageValue = (key, value) => {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (_) {
+    // Ignore storage failures; state attribution still works.
+  }
+};
+
+const readStorageJson = (key) => {
+  try {
+    return JSON.parse(window.localStorage.getItem(key) || 'null');
+  } catch (_) {
+    return null;
+  }
+};
+
+const buildDesarrolloShareUrl = (slug, codigoAsesor = '') => {
+  if (typeof window === 'undefined') {
+    const base = slug ? `https://cninmobiliaria.com.mx/#/desarrollos/${slug}` : '';
+    return codigoAsesor && base ? `${base}?ref=${encodeURIComponent(codigoAsesor)}` : base;
+  }
+
+  if (!slug) {
+    return window.location.href;
+  }
+
+  const base = `${window.location.origin}${window.location.pathname}#/desarrollos/${slug}`;
+  return codigoAsesor ? `${base}?ref=${encodeURIComponent(codigoAsesor)}` : base;
+};
 
 const getImagenDesarrollo = (desarrollo) => {
   if (!desarrollo) return '';
@@ -47,12 +89,15 @@ const buildUnidadMessage = (unit, desarrollo) => {
 
 export default function DesarrolloPlanoPage() {
   const { slug } = useParams();
+  const location = useLocation();
   const [desarrollo, setDesarrollo] = useState(null);
   const [planoDisponible, setPlanoDisponible] = useState(false);
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState('');
+  const [codigoAsesorReferido, setCodigoAsesorReferido] = useState('');
+  const [asesorReferido, setAsesorReferido] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -112,6 +157,49 @@ export default function DesarrolloPlanoPage() {
   }, [slug]);
 
   useEffect(() => {
+    if (!slug) return undefined;
+
+    const params = new URLSearchParams(location.search || '');
+    const refFromUrl = String(params.get('ref') || '').trim();
+    const storageKey = getDesarrolloRefStorageKey(slug);
+    const storageDataKey = getDesarrolloRefDataStorageKey(slug);
+    const ref = refFromUrl || readStorageValue(storageKey).trim();
+
+    if (!ref) {
+      setCodigoAsesorReferido('');
+      setAsesorReferido(null);
+      return undefined;
+    }
+
+    setCodigoAsesorReferido(ref);
+    writeStorageValue(storageKey, ref);
+
+    const cachedAsesor = readStorageJson(storageDataKey);
+    if (cachedAsesor?.codigoAsesor === ref) {
+      setAsesorReferido(cachedAsesor);
+    }
+
+    const controller = new AbortController();
+    obtenerAsesorPorReferencia(ref, { signal: controller.signal })
+      .then((asesor) => {
+        if (!asesor?.codigoAsesor) {
+          setAsesorReferido(null);
+          return;
+        }
+
+        setAsesorReferido(asesor);
+        writeStorageValue(storageDataKey, JSON.stringify(asesor));
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          setAsesorReferido(null);
+        }
+      });
+
+    return () => controller.abort();
+  }, [location.search, slug]);
+
+  useEffect(() => {
     const previousTitle = document.title;
     document.title = desarrollo?.nombre
       ? `Plano interactivo de ${desarrollo.nombre} | CN Inmobiliaria`
@@ -124,18 +212,30 @@ export default function DesarrolloPlanoPage() {
 
   const imagenUrl = useMemo(() => getImagenDesarrollo(desarrollo) || CN_LOGO, [desarrollo]);
   const detalleUrl = desarrollo?.slug || slug;
+  const detalleUrlConRef = codigoAsesorReferido
+    ? `/desarrollos/${detalleUrl}?ref=${encodeURIComponent(codigoAsesorReferido)}`
+    : `/desarrollos/${detalleUrl}`;
+  const telefonoWhatsappDesarrollo = useMemo(
+    () => getWhatsAppPhone(asesorReferido?.telefono || desarrollo?.telefonoContacto),
+    [asesorReferido?.telefono, desarrollo?.telefonoContacto]
+  );
+  const shareUrl = useMemo(
+    () => buildDesarrolloShareUrl(detalleUrl, codigoAsesorReferido),
+    [codigoAsesorReferido, detalleUrl]
+  );
 
   const abrirWhatsapp = (unidad = unidadSeleccionada) => {
     if (!desarrollo) return;
 
-    const telefono = getWhatsAppPhone(desarrollo.telefonoContacto);
+    const telefono = telefonoWhatsappDesarrollo;
     if (!telefono) return;
 
     const text = unidad
       ? buildUnidadMessage(unidad, desarrollo)
       : `Me interesa el desarrollo ${desarrollo.nombre}. Quiero más información.`;
 
-    window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+    const mensaje = shareUrl ? `${text} ${shareUrl}` : text;
+    window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
   };
 
   if (loading) {
@@ -183,7 +283,7 @@ export default function DesarrolloPlanoPage() {
           </div>
         </div>
         <div className="desarrollo-plano-page-actions">
-          <Link to={`/desarrollos/${detalleUrl}`}>Ver información completa</Link>
+          <Link to={detalleUrlConRef}>Ver información completa</Link>
           <button type="button" onClick={() => abrirWhatsapp()}>WhatsApp</button>
         </div>
       </section>
