@@ -4,6 +4,7 @@ import TelefonoConPaisInput, {
   getPaisTelefonoDefaultId,
   ordenarPaisesTelefono,
 } from '../components/common/TelefonoConPaisInput';
+import PasswordInput from '../components/common/PasswordInput';
 import { actualizarPerfil, cambiarPassword, cerrarSesion, obtenerToken } from '../services/authService';
 import { getCodigosNumeroPaises } from '../services/catalogosService';
 import useAuthSession from '../hooks/useAuthSession';
@@ -351,8 +352,7 @@ export default function MiCuentaPage() {
         <form className="mi-cuenta-password-form" onSubmit={guardarPassword}>
           <label>
             <span>Contraseña actual</span>
-            <input
-              type="password"
+            <PasswordInput
               name="passwordActual"
               value={formPassword.passwordActual}
               onChange={actualizarCampoPassword}
@@ -362,8 +362,7 @@ export default function MiCuentaPage() {
           </label>
           <label>
             <span>Nueva contraseña</span>
-            <input
-              type="password"
+            <PasswordInput
               name="passwordNueva"
               value={formPassword.passwordNueva}
               onChange={actualizarCampoPassword}
@@ -373,8 +372,7 @@ export default function MiCuentaPage() {
           </label>
           <label>
             <span>Confirmar nueva contraseña</span>
-            <input
-              type="password"
+            <PasswordInput
               name="confirmarPasswordNueva"
               value={formPassword.confirmarPasswordNueva}
               onChange={actualizarCampoPassword}

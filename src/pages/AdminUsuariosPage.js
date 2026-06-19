@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import PasswordInput from '../components/common/PasswordInput';
 import {
   activarUsuario,
   actualizarUsuario,
@@ -537,9 +538,8 @@ export default function AdminUsuariosPage() {
               {!esEdicion ? (
                 <label>
                   <span>Password temporal</span>
-                  <input
+                  <PasswordInput
                     name="passwordTemporal"
-                    type="password"
                     value={form.passwordTemporal}
                     onChange={actualizarCampo}
                     required
@@ -650,9 +650,8 @@ export default function AdminUsuariosPage() {
               </p>
               <label>
                 <span>Nueva contraseña temporal</span>
-                <input
+                <PasswordInput
                   name="nuevaPassword"
-                  type="password"
                   value={resetPasswordForm.nuevaPassword}
                   onChange={actualizarResetPasswordCampo}
                   autoComplete="new-password"
@@ -662,9 +661,8 @@ export default function AdminUsuariosPage() {
               </label>
               <label>
                 <span>Confirmar contraseña temporal</span>
-                <input
+                <PasswordInput
                   name="confirmarPassword"
-                  type="password"
                   value={resetPasswordForm.confirmarPassword}
                   onChange={actualizarResetPasswordCampo}
                   autoComplete="new-password"

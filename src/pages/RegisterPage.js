@@ -4,6 +4,7 @@ import TelefonoConPaisInput, {
   getPaisTelefonoDefaultId,
   ordenarPaisesTelefono,
 } from '../components/common/TelefonoConPaisInput';
+import PasswordInput from '../components/common/PasswordInput';
 import { guardarToken, register } from '../services/authService';
 import { getCodigosNumeroPaises } from '../services/catalogosService';
 import './LoginPage.css';
@@ -163,8 +164,7 @@ export default function RegisterPage() {
           {catalogoError ? <p className="login-help">{catalogoError}</p> : null}
           <label>
             <span>Password</span>
-            <input
-              type="password"
+            <PasswordInput
               name="password"
               value={form.password}
               onChange={actualizarCampo}
@@ -175,8 +175,7 @@ export default function RegisterPage() {
           </label>
           <label>
             <span>Confirmar password</span>
-            <input
-              type="password"
+            <PasswordInput
               name="confirmarPassword"
               value={form.confirmarPassword}
               onChange={actualizarCampo}

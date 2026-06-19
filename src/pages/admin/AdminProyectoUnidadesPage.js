@@ -250,11 +250,26 @@ export default function AdminProyectoUnidadesPage() {
   const [guardandoPrecios, setGuardandoPrecios] = useState(false);
   const [errorPrecios, setErrorPrecios] = useState('');
   const [mensajePrecios, setMensajePrecios] = useState('');
+  const [mensajeCompartirPlano, setMensajeCompartirPlano] = useState('');
 
   const modeloPorId = useMemo(
     () => Object.fromEntries(modelos.map((modelo) => [String(modelo.id), modelo])),
     [modelos]
   );
+
+  const publicPlanoUrl = useMemo(() => {
+    const slug = String(proyecto?.slug || '').trim();
+    if (!slug || typeof window === 'undefined') return '';
+
+    return `${window.location.origin}${window.location.pathname}#/proyectos-inmobiliarios/${encodeURIComponent(slug)}/plano`;
+  }, [proyecto?.slug]);
+
+  useEffect(() => {
+    if (!mensajeCompartirPlano) return undefined;
+
+    const timeoutId = window.setTimeout(() => setMensajeCompartirPlano(''), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [mensajeCompartirPlano]);
 
   const cargarDatos = useCallback(async (options = {}) => {
     setCargando(true);
@@ -307,6 +322,47 @@ export default function AdminProyectoUnidadesPage() {
   const limpiarFiltros = () => {
     setFiltros(FILTROS_INICIALES);
     setFiltrosAplicados(FILTROS_INICIALES);
+  };
+
+  const copiarPlanoPublico = async () => {
+    if (!publicPlanoUrl) return;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(publicPlanoUrl);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = publicPlanoUrl;
+        textArea.setAttribute('readonly', '');
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+
+      setMensajeCompartirPlano('Enlace copiado.');
+    } catch (_) {
+      setMensajeCompartirPlano('No se pudo copiar el enlace.');
+    }
+  };
+
+  const compartirPlanoWhatsapp = () => {
+    if (!publicPlanoUrl) return;
+
+    const nombreProyecto = proyecto?.nombre || 'este proyecto';
+    const whatsappText = `Hola, te comparto el plano interactivo del proyecto ${nombreProyecto}: ${publicPlanoUrl}`;
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(whatsappText)}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+  };
+
+  const abrirPlanoPublico = () => {
+    if (!publicPlanoUrl) return;
+    window.open(publicPlanoUrl, '_blank', 'noopener,noreferrer');
   };
 
   const abrirNuevaUnidad = () => {
@@ -834,6 +890,41 @@ export default function AdminProyectoUnidadesPage() {
         </div>
       </section>
       ) : null}
+
+      <section className="admin-proyecto-unidades-share-card">
+        <div className="admin-proyecto-unidades-share-head">
+          <div>
+            <p className="admin-proyecto-unidades-eyebrow">Plano público</p>
+            <h2>Compartir plano del proyecto</h2>
+          </div>
+          {mensajeCompartirPlano ? (
+            <span className="admin-proyecto-unidades-share-feedback" role="status">
+              {mensajeCompartirPlano}
+            </span>
+          ) : null}
+        </div>
+
+        {publicPlanoUrl ? (
+          <div className="admin-proyecto-unidades-share-content">
+            <input
+              type="text"
+              value={publicPlanoUrl}
+              readOnly
+              aria-label="URL pública del plano"
+              onFocus={(event) => event.target.select()}
+            />
+            <div className="admin-proyecto-unidades-share-actions">
+              <button type="button" onClick={copiarPlanoPublico}>Copiar enlace</button>
+              <button type="button" onClick={compartirPlanoWhatsapp}>WhatsApp</button>
+              <button type="button" onClick={abrirPlanoPublico}>Ver plano</button>
+            </div>
+          </div>
+        ) : (
+          <p className="admin-proyecto-unidades-share-warning">
+            Este proyecto aún no tiene slug público configurado.
+          </p>
+        )}
+      </section>
 
       <form className="admin-proyecto-unidades-filtros" onSubmit={aplicarFiltros}>
         <label>

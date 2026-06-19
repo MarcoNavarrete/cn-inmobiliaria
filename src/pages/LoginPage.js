@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import PasswordInput from '../components/common/PasswordInput';
 import { login, obtenerToken } from '../services/authService';
 import './LoginPage.css';
 
@@ -71,8 +72,7 @@ export default function LoginPage() {
           </label>
           <label>
             <span>Password</span>
-            <input
-              type="password"
+            <PasswordInput
               name="password"
               value={form.password}
               onChange={actualizarCampo}
