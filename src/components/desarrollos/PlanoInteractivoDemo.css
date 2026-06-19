@@ -184,6 +184,8 @@
 }
 
 .plano-demo-unit {
+  --plano-unit-fill-opacity: 0.45;
+  --plano-unit-stroke-width: 0.35;
   filter: url(#plano-shadow);
   stroke: rgba(7, 21, 33, 0.35);
   stroke-width: 2;
@@ -191,12 +193,27 @@
   transition: opacity 0.16s ease, stroke-width 0.16s ease, transform 0.16s ease;
 }
 
+.plano-demo-unit-shape {
+  transition:
+    fill-opacity 0.16s ease,
+    stroke 0.16s ease,
+    stroke-width 0.16s ease;
+}
+
 .plano-demo-unit:hover,
 .plano-demo-unit-group:hover .plano-demo-unit,
 .plano-demo-unit.is-selected {
+  --plano-unit-fill-opacity: 0.68;
+  --plano-unit-stroke: var(--azul-oscuro);
+  --plano-unit-stroke-width: 0.7;
   opacity: 0.9;
   stroke: var(--azul-oscuro);
   stroke-width: 4;
+}
+
+.plano-demo-unit.is-selected {
+  --plano-unit-fill-opacity: 0.76;
+  --plano-unit-stroke-width: 0.9;
 }
 
 .plano-demo-unit.is-unmapped {

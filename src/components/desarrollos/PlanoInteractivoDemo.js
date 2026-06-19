@@ -27,6 +27,95 @@ const getStatusLabel = (status) => {
   return ESTATUS_LABELS[normalized] || String(status || 'Sin estatus');
 };
 
+const ESTATUS_COLORS = {
+  DISPONIBLE: '#22c55e',
+  APARTADO: '#facc15',
+  VENDIDO: '#ef4444',
+  CONSTRUCCION: '#ffffff',
+  BLOQUEADO: '#9ca3af',
+};
+
+const PAINTABLE_SELECTOR = 'rect,path,polygon,polyline,circle,ellipse,line';
+const AREA_TAGS = new Set(['rect', 'path', 'polygon', 'circle', 'ellipse']);
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+
+const getStatusColor = (status) =>
+  ESTATUS_COLORS[normalizeStatus(status)] || ESTATUS_COLORS.BLOQUEADO;
+
+const getPaintableElements = (element) => {
+  const tagName = element?.tagName?.toLowerCase();
+  if (!tagName) return [];
+
+  if (tagName === 'g') {
+    return Array.from(element.querySelectorAll(PAINTABLE_SELECTOR));
+  }
+
+  if (element.matches?.(PAINTABLE_SELECTOR)) {
+    return [element];
+  }
+
+  return Array.from(element.querySelectorAll?.(PAINTABLE_SELECTOR) || []);
+};
+
+const applyUnitPaint = (element, unidad, selected) => {
+  const color = getStatusColor(unidad.estatus);
+  const paintableElements = getPaintableElements(element);
+  const elementsToInspect = [element, ...paintableElements];
+  const hadFillNone = elementsToInspect.some((candidate) => {
+    const originalFill = candidate.getAttribute('fill');
+    const originalStyle = candidate.getAttribute('style') || '';
+    return (
+      String(originalFill || '').trim().toLowerCase() === 'none' ||
+      /(?:^|;)\s*fill\s*:\s*none(?:\s*!important)?\s*(?:;|$)/i.test(originalStyle)
+    );
+  });
+
+  element.classList.add('plano-demo-unit', getStatusClass(unidad.estatus));
+  element.style.setProperty('--plano-unit-status-color', color);
+  if (selected) {
+    element.classList.add('is-selected');
+  }
+
+  paintableElements.forEach((shape) => {
+    const tagName = shape.tagName.toLowerCase();
+    const hasArea = AREA_TAGS.has(tagName);
+
+    shape.classList.add('plano-demo-unit-shape');
+    shape.removeAttribute('fill');
+    shape.style.setProperty('fill', hasArea ? color : 'none', 'important');
+    shape.style.setProperty('fill-opacity', 'var(--plano-unit-fill-opacity, 0.45)', 'important');
+    shape.style.setProperty(
+      'stroke',
+      'var(--plano-unit-stroke, var(--plano-unit-status-color, #071521))',
+      'important'
+    );
+    shape.style.setProperty('stroke-opacity', '1', 'important');
+    shape.style.setProperty('stroke-width', 'var(--plano-unit-stroke-width, 0.35)', 'important');
+    shape.style.setProperty('pointer-events', 'all', 'important');
+    shape.style.setProperty('cursor', 'pointer', 'important');
+
+    if (IS_DEVELOPMENT && !hasArea) {
+      console.warn('[PlanoInteractivoDemo] Unidad sin area rellenable', {
+        svgElementId: unidad.svgElementId,
+        tagName,
+      });
+    }
+  });
+
+  if (IS_DEVELOPMENT) {
+    console.debug('[PlanoInteractivoDemo] Pintado de unidad SVG', {
+      svgElementId: unidad.svgElementId,
+      existe: true,
+      tagName: element.tagName.toLowerCase(),
+      estatus: unidad.estatus,
+      color,
+      teniaFillNone: hadFillNone,
+      esGrupo: element.tagName.toLowerCase() === 'g',
+      hijosPintables: paintableElements.length,
+    });
+  }
+};
+
 const ZOOM_MIN = 0.4;
 const ZOOM_MAX = 3;
 const ZOOM_STEP = 0.2;
@@ -249,17 +338,26 @@ export default function PlanoInteractivoDemo({
 
     unidades.forEach((unidad) => {
       const element = svg.querySelector(`#${CSS.escape(unidad.svgElementId)}`);
-      if (!element) return;
+      if (!element) {
+        if (IS_DEVELOPMENT) {
+          console.warn('[PlanoInteractivoDemo] No se encontro svgElementId', {
+            svgElementId: unidad.svgElementId,
+            estatus: unidad.estatus,
+          });
+        }
+        return;
+      }
 
-      element.classList.add('plano-demo-unit', getStatusClass(unidad.estatus));
       element.setAttribute('data-svg-element-id', unidad.svgElementId);
       element.setAttribute('data-unidad-id', unidad.unidadId || unidad.id || unidad.codigoUnidad || unidad.svgElementId);
       element.setAttribute('role', 'button');
       element.setAttribute('tabindex', '0');
 
-      if (unidadSeleccionada?.svgElementId === unidad.svgElementId) {
-        element.classList.add('is-selected');
-      }
+      applyUnitPaint(
+        element,
+        unidad,
+        unidadSeleccionada?.svgElementId === unidad.svgElementId
+      );
     });
 
     return sanitizeSvg(svg.outerHTML);
