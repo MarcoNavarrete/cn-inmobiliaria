@@ -165,10 +165,23 @@
 
 .proyecto-plano-svg-inline .proyecto-plano-unit:hover,
 .proyecto-plano-svg-inline .proyecto-plano-unit.is-selected {
+  --proyecto-unit-current-opacity: var(--proyecto-unit-hover-opacity);
+  --proyecto-unit-current-stroke: var(--azul-oscuro);
+  --proyecto-unit-stroke-width: 4;
   opacity: 0.92;
-  stroke: var(--azul-oscuro) !important;
-  stroke-width: 4 !important;
   filter: drop-shadow(0 10px 14px rgba(7, 21, 33, 0.18));
+}
+
+.proyecto-plano-svg-inline .proyecto-plano-unit.is-selected {
+  --proyecto-unit-current-opacity: var(--proyecto-unit-selected-opacity);
+  --proyecto-unit-stroke-width: 5;
+}
+
+.proyecto-plano-unit-shape {
+  transition:
+    fill-opacity 0.16s ease,
+    stroke 0.16s ease,
+    stroke-width 0.16s ease;
 }
 
 .proyecto-plano-tooltip {

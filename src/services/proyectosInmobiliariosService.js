@@ -8,6 +8,7 @@ import {
   toBool,
   toText,
 } from './proyectosInmobiliariosUtils';
+import { normalizeProyectoColorConfig } from '../utils/proyectoColoresEstatus';
 
 const BASE_URL = '/api/admin/proyectos-inmobiliarios';
 
@@ -116,6 +117,27 @@ export const setProyectoPublicacion = (proyectoId, { estatusPublicacion, mostrar
   requestJson(`${BASE_URL}/${proyectoId}/publicacion`, {
     method: 'PATCH',
     body: { estatusPublicacion, mostrarEnPublico },
+  });
+
+export const obtenerColoresEstatusProyecto = async (proyectoId, options = {}) => {
+  const data = await getJson(`${BASE_URL}/${proyectoId}/colores-estatus`, options);
+  const colores = Array.isArray(data)
+    ? data
+    : data?.colores ||
+      data?.coloresEstatus ||
+      data?.data?.colores ||
+      data?.data?.coloresEstatus ||
+      data?.data ||
+      [];
+  return (Array.isArray(colores) ? colores : []).map(normalizeProyectoColorConfig);
+};
+
+export const guardarColoresEstatusProyecto = (proyectoId, colores) =>
+  requestJson(`${BASE_URL}/${proyectoId}/colores-estatus`, {
+    method: 'PUT',
+    body: {
+      colores: colores.map(normalizeProyectoColorConfig),
+    },
   });
 
 const subirArchivoProyecto = (proyectoId, ruta, file) => {

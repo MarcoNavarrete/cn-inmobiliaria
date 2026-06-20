@@ -12,10 +12,18 @@ import { listarEmpresas } from '../../services/empresasInmobiliariasService';
 import {
   actualizarProyecto,
   crearProyecto,
+  guardarColoresEstatusProyecto,
+  obtenerColoresEstatusProyecto,
   obtenerProyecto,
   subirImagenPrincipal,
   subirLogoProyecto,
 } from '../../services/proyectosInmobiliariosService';
+import {
+  buildDefaultProyectoColores,
+  getDefaultProyectoColorConfig,
+  getProyectoStatusConfigKey,
+  PROYECTO_ESTATUS_LABELS,
+} from '../../utils/proyectoColoresEstatus';
 import './AdminProyectoInmobiliarioFormPage.css';
 
 const FORM_INICIAL = {
@@ -66,6 +74,7 @@ const ESTATUS_PUBLICACION = [
 
 const EXTENSIONES_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const HEX_COLOR_REGEX = /^#[0-9A-F]{6}$/i;
 
 const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No fue posible guardar el proyecto.';
@@ -213,6 +222,12 @@ export default function AdminProyectoInmobiliarioFormPage() {
   const [error, setError] = useState('');
   const [errorUbicación, setErrorUbicación] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [coloresEstatus, setColoresEstatus] = useState(buildDefaultProyectoColores);
+  const [coloresPersonalizados, setColoresPersonalizados] = useState(false);
+  const [cargandoColores, setCargandoColores] = useState(false);
+  const [guardandoColores, setGuardandoColores] = useState(false);
+  const [errorColores, setErrorColores] = useState('');
+  const [mensajeColores, setMensajeColores] = useState('');
   const [permisoDenegado, setPermisoDenegado] = useState('');
   const poblacionesRequestRef = useRef(0);
   const localidadesRequestRef = useRef(0);
@@ -506,6 +521,54 @@ export default function AdminProyectoInmobiliarioFormPage() {
   ]);
 
   useEffect(() => {
+    if (!esEdicion || cargandoSesion || !puedeEditarProyecto) {
+      setColoresEstatus(buildDefaultProyectoColores());
+      setColoresPersonalizados(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setCargandoColores(true);
+    setErrorColores('');
+    setMensajeColores('');
+
+    obtenerColoresEstatusProyecto(proyectoId, { signal: controller.signal })
+      .then((colores) => {
+        if (controller.signal.aborted) return;
+
+        if (!colores.length) {
+          setColoresEstatus(buildDefaultProyectoColores());
+          setColoresPersonalizados(false);
+          return;
+        }
+
+        setColoresEstatus(
+          buildDefaultProyectoColores().map((defaultConfig) => {
+            const custom = colores.find(
+              (item) => getProyectoStatusConfigKey(item.estatus) === defaultConfig.estatus
+            );
+            return custom ? { ...custom, estatus: defaultConfig.estatus } : defaultConfig;
+          })
+        );
+        setColoresPersonalizados(true);
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          setErrorColores(err.data?.mensaje || err.data?.message || 'No fue posible cargar los colores del plano.');
+          setColoresEstatus(buildDefaultProyectoColores());
+          setColoresPersonalizados(false);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setCargandoColores(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [cargandoSesion, esEdicion, puedeEditarProyecto, proyectoId]);
+
+  useEffect(() => {
     const state = location.state || {};
 
     if (state.mensaje) {
@@ -606,6 +669,73 @@ export default function AdminProyectoInmobiliarioFormPage() {
       ...actual,
       slug: generarSlug(actual.nombre),
     }));
+  };
+
+  const actualizarColorEstatus = (estatus, field, value) => {
+    setColoresEstatus((actuales) =>
+      actuales.map((item) => (
+        item.estatus === estatus
+          ? {
+            ...item,
+            [field]: field === 'opacity' ? value : String(value).toUpperCase(),
+          }
+          : item
+      ))
+    );
+    setErrorColores('');
+    setMensajeColores('');
+  };
+
+  const restablecerColorEstatus = (estatus) => {
+    const defaultConfig = getDefaultProyectoColorConfig(estatus);
+    setColoresEstatus((actuales) =>
+      actuales.map((item) => (item.estatus === estatus ? defaultConfig : item))
+    );
+    setMensajeColores('');
+  };
+
+  const restablecerTodosLosColores = () => {
+    setColoresEstatus(buildDefaultProyectoColores());
+    setMensajeColores('');
+    setErrorColores('');
+  };
+
+  const validarColoresEstatus = () => {
+    for (const item of coloresEstatus) {
+      if (!HEX_COLOR_REGEX.test(item.colorHex)) {
+        return `El color de ${PROYECTO_ESTATUS_LABELS[item.estatus] || item.estatus} debe usar formato #RRGGBB.`;
+      }
+      if (!HEX_COLOR_REGEX.test(item.colorTextoHex)) {
+        return `El color de texto de ${PROYECTO_ESTATUS_LABELS[item.estatus] || item.estatus} debe usar formato #RRGGBB.`;
+      }
+      const opacity = Number(item.opacity);
+      if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1) {
+        return `La opacidad de ${PROYECTO_ESTATUS_LABELS[item.estatus] || item.estatus} debe estar entre 0 y 1.`;
+      }
+    }
+    return '';
+  };
+
+  const guardarColores = async () => {
+    const validacion = validarColoresEstatus();
+    if (validacion) {
+      setErrorColores(validacion);
+      return;
+    }
+
+    setGuardandoColores(true);
+    setErrorColores('');
+    setMensajeColores('');
+
+    try {
+      await guardarColoresEstatusProyecto(proyectoId, coloresEstatus);
+      setColoresPersonalizados(true);
+      setMensajeColores('Configuración de colores guardada correctamente.');
+    } catch (err) {
+      setErrorColores(err.data?.mensaje || err.data?.message || 'No fue posible guardar los colores del plano.');
+    } finally {
+      setGuardandoColores(false);
+    }
   };
 
   const subirArchivosSiExisten = async (proyectoGuardadoId) => {
@@ -981,6 +1111,117 @@ export default function AdminProyectoInmobiliarioFormPage() {
             <label><span>Correo contacto</span><input name="correoContacto" type="email" value={form.correoContacto} onChange={actualizarCampo} /></label>
           </div>
         </section>
+
+        {esEdicion ? (
+          <section className="admin-proyecto-form-card">
+            <div className="admin-proyecto-colores-head">
+              <div>
+                <h2>Colores del plano</h2>
+                <p>
+                  Configura los colores que se mostrarán en las unidades y la leyenda del plano público.
+                </p>
+              </div>
+              <button type="button" onClick={restablecerTodosLosColores} disabled={cargandoColores || guardandoColores}>
+                Restablecer todos
+              </button>
+            </div>
+
+            {!coloresPersonalizados && !cargandoColores ? (
+              <p className="admin-proyecto-colores-default-note">Usando colores predeterminados del sistema.</p>
+            ) : null}
+            {cargandoColores ? <p className="admin-proyecto-form-feedback">Cargando colores del plano...</p> : null}
+            {errorColores ? <p className="admin-proyecto-form-feedback is-error">{errorColores}</p> : null}
+            {mensajeColores ? <p className="admin-proyecto-form-feedback is-ok">{mensajeColores}</p> : null}
+
+            {!cargandoColores ? (
+              <div className="admin-proyecto-colores-table-wrap">
+                <table className="admin-proyecto-colores-table">
+                  <thead>
+                    <tr>
+                      <th>Estatus</th>
+                      <th>Color</th>
+                      <th>Hexadecimal</th>
+                      <th>Color de texto</th>
+                      <th>Opacidad</th>
+                      <th>Vista previa</th>
+                      <th>Restablecer</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {coloresEstatus.map((item) => (
+                      <tr key={item.estatus}>
+                        <td><strong>{PROYECTO_ESTATUS_LABELS[item.estatus] || item.estatus}</strong></td>
+                        <td>
+                          <input
+                            type="color"
+                            value={HEX_COLOR_REGEX.test(item.colorHex) ? item.colorHex : '#6B7280'}
+                            onChange={(event) => actualizarColorEstatus(item.estatus, 'colorHex', event.target.value)}
+                            aria-label={`Color de ${PROYECTO_ESTATUS_LABELS[item.estatus] || item.estatus}`}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            value={item.colorHex}
+                            onChange={(event) => actualizarColorEstatus(item.estatus, 'colorHex', event.target.value)}
+                            maxLength={7}
+                          />
+                        </td>
+                        <td>
+                          <div className="admin-proyecto-colores-text-input">
+                            <input
+                              type="color"
+                              value={HEX_COLOR_REGEX.test(item.colorTextoHex) ? item.colorTextoHex : '#1F2937'}
+                              onChange={(event) => actualizarColorEstatus(item.estatus, 'colorTextoHex', event.target.value)}
+                              aria-label={`Color de texto de ${PROYECTO_ESTATUS_LABELS[item.estatus] || item.estatus}`}
+                            />
+                            <input
+                              value={item.colorTextoHex}
+                              onChange={(event) => actualizarColorEstatus(item.estatus, 'colorTextoHex', event.target.value)}
+                              maxLength={7}
+                            />
+                          </div>
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value={item.opacity}
+                            onChange={(event) => actualizarColorEstatus(item.estatus, 'opacity', event.target.value)}
+                          />
+                        </td>
+                        <td>
+                          <span
+                            className="admin-proyecto-colores-preview"
+                            style={{
+                              backgroundColor: item.colorHex,
+                              color: item.colorTextoHex,
+                              opacity: Number(item.opacity),
+                            }}
+                          >
+                            {PROYECTO_ESTATUS_LABELS[item.estatus] || item.estatus}
+                          </span>
+                        </td>
+                        <td>
+                          <button type="button" onClick={() => restablecerColorEstatus(item.estatus)}>
+                            Restablecer
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+
+            <div className="admin-proyecto-colores-actions">
+              <button type="button" onClick={guardarColores} disabled={cargandoColores || guardandoColores}>
+                {guardandoColores ? 'Guardando colores...' : 'Guardar configuración de colores'}
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         <section className="admin-proyecto-form-card">
           <h2>Publicacion</h2>

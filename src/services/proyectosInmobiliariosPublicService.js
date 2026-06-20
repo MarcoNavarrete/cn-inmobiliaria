@@ -12,6 +12,7 @@ import {
   obtenerResumenPrecios,
   normalizarPreciosInmobiliarios,
 } from '../utils/preciosInmobiliarios';
+import { normalizeProyectoColorConfig } from '../utils/proyectoColoresEstatus';
 
 const BASE_URL = '/api/proyectos-inmobiliarios';
 
@@ -31,6 +32,9 @@ const buildUbicacion = (item = {}) =>
     item.poblacionNombre,
     item.estadoNombre,
   ].filter(Boolean).join(', ') || toText(pickFirst(item.ubicacionTexto, item.ubicacion), 'Ubicacion por confirmar');
+
+const normalizeColoresEstatus = (value) =>
+  normalizeList(value).map(normalizeProyectoColorConfig);
 
 export const adaptProyectoPublico = (item = {}) => {
   const id = toText(pickFirst(item.proyectoId, item.id, item.Id));
@@ -78,6 +82,7 @@ export const adaptProyectoPublico = (item = {}) => {
     telefonoContacto: toText(item.telefonoContacto),
     whatsappContacto: toText(item.whatsappContacto),
     correoContacto: toText(pickFirst(item.correoContacto, item.emailContacto)),
+    coloresEstatus: normalizeColoresEstatus(item.coloresEstatus),
     fechaCreacion: formatDate(pickFirst(item.fechaCreacion, item.createdAt, item.fechaAlta)),
   };
 };
@@ -157,6 +162,7 @@ export const adaptPlanoPublico = (item = {}) => {
     imagenFondoUrl: toText(pickFirst(item.imagenFondoUrl, item.backgroundUrl)),
     descripcion: toText(item.descripcion),
     activo: item.activo !== false,
+    coloresEstatus: normalizeColoresEstatus(item.coloresEstatus),
   };
 };
 

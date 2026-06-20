@@ -1,40 +1,65 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { resolveApiAssetUrl } from '../../services/apiClient';
+import {
+  getColorConfigByStatus,
+  hexToRgba,
+  normalizeProyectoStatus,
+  PROYECTO_ESTATUS_LABELS,
+} from '../../utils/proyectoColoresEstatus';
 import './ProyectoPlanoInteractivo.css';
 
-const ESTATUS_LABELS = {
-  DISPONIBLE: 'Disponible',
-  APARTADO: 'Apartado',
-  EN_PROCESO: 'En proceso',
-  VENDIDO: 'Vendido',
-  LIQUIDADO: 'Liquidado',
-  BLOQUEADO: 'Bloqueado',
-  NO_DISPONIBLE: 'No disponible',
-};
-
-const ESTATUS_COLORES = {
-  DISPONIBLE: { fill: 'rgba(34, 197, 94, 0.56)', stroke: '#15803d' },
-  APARTADO: { fill: 'rgba(250, 204, 21, 0.62)', stroke: '#a16207' },
-  EN_PROCESO: { fill: 'rgba(59, 130, 246, 0.48)', stroke: '#1d4ed8' },
-  VENDIDO: { fill: 'rgba(239, 68, 68, 0.52)', stroke: '#b91c1c' },
-  LIQUIDADO: { fill: 'rgba(20, 184, 166, 0.52)', stroke: '#0f766e' },
-  BLOQUEADO: { fill: 'rgba(156, 163, 175, 0.58)', stroke: '#4b5563' },
-  NO_DISPONIBLE: { fill: 'rgba(75, 85, 99, 0.62)', stroke: '#1f2937' },
-};
+const ESTATUS_LEYENDA = [
+  'DISPONIBLE',
+  'APARTADO',
+  'CONSTRUCCION',
+  'VENDIDO',
+  'LIQUIDADO',
+  'BLOQUEADO',
+  'NO_DISPONIBLE',
+];
+const PAINTABLE_SELECTOR = 'rect,path,polygon,polyline,circle,ellipse,line';
+const AREA_TAGS = new Set(['rect', 'path', 'polygon', 'circle', 'ellipse']);
 
 const SCRIPT_PROTOCOL = ['java', 'script:'].join('');
 
-const normalizeStatus = (status) =>
-  String(status || '')
-    .trim()
-    .toUpperCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '_');
+const normalizeStatus = normalizeProyectoStatus;
 
 const getStatusClass = (status) => `is-${normalizeStatus(status).toLowerCase()}`;
 
-const getStatusLabel = (status) => ESTATUS_LABELS[normalizeStatus(status)] || String(status || 'Sin estatus');
+const getStatusLabel = (status) => PROYECTO_ESTATUS_LABELS[normalizeStatus(status)] || String(status || 'Sin estatus');
+
+const getPaintableElements = (element) => {
+  const tagName = element?.tagName?.toLowerCase();
+  if (!tagName) return [];
+  if (tagName === 'g') return Array.from(element.querySelectorAll(PAINTABLE_SELECTOR));
+  if (element.matches?.(PAINTABLE_SELECTOR)) return [element];
+  return Array.from(element.querySelectorAll?.(PAINTABLE_SELECTOR) || []);
+};
+
+const applyProyectoUnitPaint = (element, unidad, colorConfig, selected) => {
+  const shapes = getPaintableElements(element);
+  const opacity = Math.min(Math.max(Number(colorConfig.opacity), 0), 1);
+
+  element.classList.add('proyecto-plano-unit', getStatusClass(unidad.estatus));
+  element.style.setProperty('--proyecto-unit-color', colorConfig.colorHex);
+  element.style.setProperty('--proyecto-unit-opacity', String(opacity));
+  element.style.setProperty('--proyecto-unit-hover-opacity', String(Math.min(1, opacity + 0.16)));
+  element.style.setProperty('--proyecto-unit-selected-opacity', String(Math.min(1, opacity + 0.24)));
+  element.style.setProperty('--proyecto-unit-stroke', colorConfig.colorTextoHex || colorConfig.colorHex);
+  if (selected) element.classList.add('is-selected');
+
+  shapes.forEach((shape) => {
+    const hasArea = AREA_TAGS.has(shape.tagName.toLowerCase());
+    shape.classList.add('proyecto-plano-unit-shape');
+    shape.removeAttribute('fill');
+    shape.style.setProperty('fill', hasArea ? 'var(--proyecto-unit-color)' : 'none', 'important');
+    shape.style.setProperty('fill-opacity', 'var(--proyecto-unit-current-opacity, var(--proyecto-unit-opacity))', 'important');
+    shape.style.setProperty('stroke', 'var(--proyecto-unit-current-stroke, var(--proyecto-unit-stroke))', 'important');
+    shape.style.setProperty('stroke-width', 'var(--proyecto-unit-stroke-width, 2)', 'important');
+    shape.style.setProperty('pointer-events', 'all', 'important');
+    shape.style.setProperty('cursor', 'pointer', 'important');
+  });
+};
 
 const ZOOM_MIN = 0.4;
 const ZOOM_MAX = 3;
@@ -95,6 +120,7 @@ const formatCurrency = (value) => {
 export default function ProyectoPlanoInteractivo({
   svgUrl,
   unidades = [],
+  coloresEstatus = [],
   selectedUnidadId,
   onUnidadSelect,
 }) {
@@ -201,25 +227,26 @@ export default function ProyectoPlanoInteractivo({
       const element = svg.querySelector(`#${escapeCssId(unidad.svgElementId)}`);
       if (!element) return;
 
-      const estatus = normalizeStatus(unidad.estatus);
-      const colores = ESTATUS_COLORES[estatus] || ESTATUS_COLORES.NO_DISPONIBLE;
-      element.classList.add('proyecto-plano-unit', getStatusClass(estatus));
-      if (String(selectedUnidadId || '') === String(unidad.id || unidad.unidadId)) {
-        element.classList.add('is-selected');
-      }
+      const selected = String(selectedUnidadId || '') === String(unidad.id || unidad.unidadId);
+      const colorConfig = getColorConfigByStatus(unidad.estatus, coloresEstatus);
 
       element.setAttribute('data-svg-element-id', unidad.svgElementId);
       element.setAttribute('data-unidad-id', unidad.id || unidad.unidadId);
       element.setAttribute('role', 'button');
       element.setAttribute('tabindex', '0');
-      element.style.fill = colores.fill;
-      element.style.stroke = colores.stroke;
-      element.style.strokeWidth = String(selectedUnidadId || '') === String(unidad.id || unidad.unidadId) ? '4' : '2';
-      element.style.cursor = 'pointer';
+      applyProyectoUnitPaint(element, unidad, colorConfig, selected);
     });
 
     return sanitizeSvg(svg.outerHTML);
-  }, [selectedUnidadId, svgMarkup, unidadesConSvg]);
+  }, [coloresEstatus, selectedUnidadId, svgMarkup, unidadesConSvg]);
+
+  const leyenda = useMemo(
+    () => ESTATUS_LEYENDA.map((estatus) => ({
+      estatus,
+      config: getColorConfigByStatus(estatus, coloresEstatus),
+    })),
+    [coloresEstatus]
+  );
 
   const getUnidadFromEvent = (event) => {
     const element = event.target?.closest?.('[data-svg-element-id]');
@@ -421,10 +448,17 @@ export default function ProyectoPlanoInteractivo({
   return (
     <div className="proyecto-plano">
       <div className="proyecto-plano-legend">
-        {Object.keys(ESTATUS_LABELS).map((estatus) => (
-          <span key={estatus} className={getStatusClass(estatus)}>
-            <i />
-            {ESTATUS_LABELS[estatus]}
+        {leyenda.map(({ estatus, config }) => (
+          <span
+            key={estatus}
+            className={getStatusClass(estatus)}
+            style={{
+              backgroundColor: hexToRgba(config.colorHex, 0.12),
+              color: config.colorTextoHex,
+            }}
+          >
+            <i style={{ backgroundColor: config.colorHex, borderColor: config.colorHex }} />
+            {getStatusLabel(estatus)}
           </span>
         ))}
       </div>

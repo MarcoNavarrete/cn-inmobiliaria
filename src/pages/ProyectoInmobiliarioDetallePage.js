@@ -1165,6 +1165,7 @@ export default function ProyectoInmobiliarioDetallePage() {
               <h2>Explora disponibilidad por unidad</h2>
             </div>
             <ProyectoPlanoInteractivo
+              coloresEstatus={plano?.coloresEstatus?.length ? plano.coloresEstatus : proyecto.coloresEstatus}
               svgUrl={plano.svgUrl}
               unidades={unidades}
               selectedUnidadId={unidadSeleccionada?.id || unidadSeleccionada?.unidadId}

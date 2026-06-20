@@ -270,6 +270,7 @@ export default function ProyectoInmobiliarioPlanoPage() {
 
           {plano?.svgUrl ? (
             <ProyectoPlanoInteractivo
+              coloresEstatus={plano?.coloresEstatus?.length ? plano.coloresEstatus : proyecto.coloresEstatus}
               svgUrl={plano.svgUrl}
               unidades={unidades}
               selectedUnidadId={unidadSeleccionada?.id || unidadSeleccionada?.unidadId}
