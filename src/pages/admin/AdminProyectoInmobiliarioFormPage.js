@@ -708,8 +708,9 @@ export default function AdminProyectoInmobiliarioFormPage() {
       if (!HEX_COLOR_REGEX.test(item.colorTextoHex)) {
         return `El color de texto de ${PROYECTO_ESTATUS_LABELS[item.estatus] || item.estatus} debe usar formato #RRGGBB.`;
       }
-      const opacity = Number(item.opacity);
-      if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1) {
+      const opacityValue = String(item.opacity ?? '').trim();
+      const opacity = Number(opacityValue);
+      if (!opacityValue || !Number.isFinite(opacity) || opacity < 0 || opacity > 1) {
         return `La opacidad de ${PROYECTO_ESTATUS_LABELS[item.estatus] || item.estatus} debe estar entre 0 y 1.`;
       }
     }
@@ -1112,6 +1113,47 @@ export default function AdminProyectoInmobiliarioFormPage() {
           </div>
         </section>
 
+
+        <section className="admin-proyecto-form-card">
+          <h2>Publicacion</h2>
+          <div className="admin-proyecto-form-grid">
+            <label>
+              <span>Estatus publicacion</span>
+              <select name="estatusPublicacion" value={form.estatusPublicacion} onChange={actualizarCampo}>
+                {ESTATUS_PUBLICACION.map((estatus) => <option key={estatus} value={estatus}>{estatus}</option>)}
+              </select>
+            </label>
+            <label className="admin-proyecto-form-check">
+              <input name="mostrarEnPublico" type="checkbox" checked={form.mostrarEnPublico} onChange={actualizarCampo} />
+              <span>Mostrar en publico</span>
+            </label>
+            {esEdicion ? (
+              <p className="admin-proyecto-form-help is-full">Estado actual: {form.activo ? 'Activo' : 'Inactivo'}. Puedes cambiarlo desde el listado.</p>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="admin-proyecto-form-actions">
+          <button type="submit" disabled={guardando || (!puedeCrearProyecto && !esEdicion)}>
+            {guardando ? 'Guardando...' : 'Guardar'}
+          </button>
+          <Link to="/admin/proyectos-inmobiliarios">Cancelar</Link>
+          {esEdicion ? (
+            <>
+              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/unidades`}>Unidades</Link>
+              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/modelos`}>Modelos</Link>
+              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/plano`}>Plano</Link>
+              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imágenes</Link>
+              <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyectoId}`}>Prospectos</Link>
+              <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyectoId}`}>Apartados</Link>
+              {form.slug ? (
+                <a href={`#/proyectos-inmobiliarios/${form.slug}`} target="_blank" rel="noopener noreferrer">Ver landing publica</a>
+              ) : null}
+            </>
+          ) : null}
+        </section>
+      </form>
+
         {esEdicion ? (
           <section className="admin-proyecto-form-card">
             <div className="admin-proyecto-colores-head">
@@ -1186,7 +1228,7 @@ export default function AdminProyectoInmobiliarioFormPage() {
                             type="number"
                             min="0"
                             max="1"
-                            step="0.05"
+                            step="0.01"
                             value={item.opacity}
                             onChange={(event) => actualizarColorEstatus(item.estatus, 'opacity', event.target.value)}
                           />
@@ -1223,45 +1265,6 @@ export default function AdminProyectoInmobiliarioFormPage() {
           </section>
         ) : null}
 
-        <section className="admin-proyecto-form-card">
-          <h2>Publicacion</h2>
-          <div className="admin-proyecto-form-grid">
-            <label>
-              <span>Estatus publicacion</span>
-              <select name="estatusPublicacion" value={form.estatusPublicacion} onChange={actualizarCampo}>
-                {ESTATUS_PUBLICACION.map((estatus) => <option key={estatus} value={estatus}>{estatus}</option>)}
-              </select>
-            </label>
-            <label className="admin-proyecto-form-check">
-              <input name="mostrarEnPublico" type="checkbox" checked={form.mostrarEnPublico} onChange={actualizarCampo} />
-              <span>Mostrar en publico</span>
-            </label>
-            {esEdicion ? (
-              <p className="admin-proyecto-form-help is-full">Estado actual: {form.activo ? 'Activo' : 'Inactivo'}. Puedes cambiarlo desde el listado.</p>
-            ) : null}
-          </div>
-        </section>
-
-        <section className="admin-proyecto-form-actions">
-          <button type="submit" disabled={guardando || (!puedeCrearProyecto && !esEdicion)}>
-            {guardando ? 'Guardando...' : 'Guardar'}
-          </button>
-          <Link to="/admin/proyectos-inmobiliarios">Cancelar</Link>
-          {esEdicion ? (
-            <>
-              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/unidades`}>Unidades</Link>
-              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/modelos`}>Modelos</Link>
-              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/plano`}>Plano</Link>
-              <Link to={`/admin/proyectos-inmobiliarios/${proyectoId}/imagenes`}>Imágenes</Link>
-              <Link to={`/admin/proyectos-inmobiliarios/prospectos?proyectoId=${proyectoId}`}>Prospectos</Link>
-              <Link to={`/admin/proyectos-inmobiliarios/apartados?proyectoId=${proyectoId}`}>Apartados</Link>
-              {form.slug ? (
-                <a href={`#/proyectos-inmobiliarios/${form.slug}`} target="_blank" rel="noopener noreferrer">Ver landing publica</a>
-              ) : null}
-            </>
-          ) : null}
-        </section>
-      </form>
     </main>
   );
 }
