@@ -1,4 +1,10 @@
 import { getJson, requestJson, resolveApiAssetUrl } from './apiClient';
+import {
+  formatPrecioOperacion,
+  getModalidadOperacionLabel,
+  getPrecioOperacionLineas,
+  normalizeModalidadOperacion,
+} from './inmueblesService';
 
 const normalizeList = (value) => {
   if (Array.isArray(value)) {
@@ -91,7 +97,13 @@ const adaptInmuebleAdmin = (inmueble) => ({
   asesorNombre: pickFirst(inmueble.asesorNombre, inmueble.AsesorNombre, ''),
   asesorEmail: pickFirst(inmueble.asesorEmail, inmueble.AsesorEmail, ''),
   tipoInmueble: inmueble.tipoInmuebleNombre || inmueble.tipoInmueble || 'Sin tipo',
-  precio: formatCurrency(inmueble.precio, inmueble.moneda),
+  modalidadOperacion: normalizeModalidadOperacion(inmueble.modalidadOperacion),
+  modalidadOperacionLabel: getModalidadOperacionLabel(inmueble.modalidadOperacion),
+  precioVenta: pickFirst(inmueble.precioVenta, inmueble.PrecioVenta, null),
+  rentaMensual: pickFirst(inmueble.rentaMensual, inmueble.RentaMensual, null),
+  etiquetaPrecio: inmueble.etiquetaPrecio || '',
+  precioLineas: getPrecioOperacionLineas(inmueble),
+  precio: formatPrecioOperacion(inmueble) || formatCurrency(inmueble.precio, inmueble.moneda),
   ubicacion: inmueble.ubicacion || buildUbicacion(inmueble),
   estatus: inmueble.estatus || (inmueble.activo === false ? 'INACTIVO' : 'DISPONIBLE'),
   destacado: inmueble.destacado === true || inmueble.esDestacado === true,

@@ -4,6 +4,7 @@ import useAuthSession from '../hooks/useAuthSession';
 import {
   actualizarInmueble,
   crearInmueble,
+  normalizeModalidadOperacion,
   obtenerInmuebleAdmin,
 } from '../services/inmueblesService';
 import {
@@ -19,6 +20,9 @@ const FORM_INICIAL = {
   titulo: '',
   descripcion: '',
   precio: '',
+  modalidadOperacion: 'VENTA',
+  precioVenta: '',
+  rentaMensual: '',
   recalcularPrecio: false,
   tipoInmueble: '',
   moneda: 'MXN',
@@ -36,6 +40,11 @@ const FORM_INICIAL = {
 };
 
 const MONEDAS = ['MXN', 'USD'];
+const MODALIDADES_OPERACION = [
+  { value: 'VENTA', label: 'Venta' },
+  { value: 'RENTA', label: 'Renta' },
+  { value: 'VENTA_RENTA', label: 'Venta y renta' },
+];
 const ESTATUS_INMUEBLE = ['BORRADOR', 'PENDIENTE_REVISION', 'DISPONIBLE', 'APARTADO', 'VENDIDO', 'RECHAZADO', 'INACTIVO'];
 const ROLES_ADMIN = ['ADMIN', 'SUPERADMIN'];
 
@@ -43,25 +52,41 @@ const toFormValue = (value) => (value === null || value === undefined ? '' : Str
 
 const pickFirst = (...values) => values.find((value) => value !== undefined && value !== null);
 
-const buildFormFromInmueble = (inmueble) => ({
-  titulo: inmueble?.titulo || '',
-  descripcion: inmueble?.descripcion || '',
-  precio: toFormValue(inmueble?.precio),
-  recalcularPrecio: pickFirst(inmueble?.recalcularPrecio, false) === true,
-  tipoInmueble: toFormValue(pickFirst(inmueble?.tipoInmueble, inmueble?.TipoInmueble)).trim(),
-  moneda: inmueble?.moneda || 'MXN',
-  superficieM2: toFormValue(inmueble?.superficieM2),
-  construccionM2: toFormValue(inmueble?.construccionM2),
-  estadoId: toFormValue(pickFirst(inmueble?.estadoId, inmueble?.EstadoId)),
-  municipioId: toFormValue(pickFirst(inmueble?.municipioId, inmueble?.poblacionId, inmueble?.MunicipioId, inmueble?.PoblacionId)),
-  localidadId: toFormValue(pickFirst(inmueble?.localidadId, inmueble?.LocalidadId)),
-  direccion: inmueble?.direccion || '',
-  referencia: inmueble?.referencia || '',
-  latitud: toFormValue(inmueble?.latitud),
-  longitud: toFormValue(inmueble?.longitud),
-  destacado: pickFirst(inmueble?.destacado, inmueble?.esDestacado, false) === true,
-  estatus: inmueble?.estatus || (pickFirst(inmueble?.activo, inmueble?.esActivo, true) === false ? 'INACTIVO' : 'DISPONIBLE'),
-});
+const toPositiveNumber = (value) => {
+  if (value === '' || value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : null;
+};
+
+const buildFormFromInmueble = (inmueble) => {
+  const modalidadOperacion = normalizeModalidadOperacion(inmueble?.modalidadOperacion);
+  const precioLegacy = pickFirst(inmueble?.precio, inmueble?.Precio);
+  const precioVenta = pickFirst(inmueble?.precioVenta, inmueble?.PrecioVenta, modalidadOperacion === 'VENTA' ? precioLegacy : null);
+  const rentaMensual = pickFirst(inmueble?.rentaMensual, inmueble?.RentaMensual, modalidadOperacion === 'RENTA' ? precioLegacy : null);
+
+  return {
+    titulo: inmueble?.titulo || '',
+    descripcion: inmueble?.descripcion || '',
+    precio: toFormValue(precioVenta || precioLegacy),
+    modalidadOperacion,
+    precioVenta: toFormValue(precioVenta),
+    rentaMensual: toFormValue(rentaMensual),
+    recalcularPrecio: pickFirst(inmueble?.recalcularPrecio, false) === true,
+    tipoInmueble: toFormValue(pickFirst(inmueble?.tipoInmueble, inmueble?.TipoInmueble)).trim(),
+    moneda: inmueble?.moneda || 'MXN',
+    superficieM2: toFormValue(inmueble?.superficieM2),
+    construccionM2: toFormValue(inmueble?.construccionM2),
+    estadoId: toFormValue(pickFirst(inmueble?.estadoId, inmueble?.EstadoId)),
+    municipioId: toFormValue(pickFirst(inmueble?.municipioId, inmueble?.poblacionId, inmueble?.MunicipioId, inmueble?.PoblacionId)),
+    localidadId: toFormValue(pickFirst(inmueble?.localidadId, inmueble?.LocalidadId)),
+    direccion: inmueble?.direccion || '',
+    referencia: inmueble?.referencia || '',
+    latitud: toFormValue(inmueble?.latitud),
+    longitud: toFormValue(inmueble?.longitud),
+    destacado: pickFirst(inmueble?.destacado, inmueble?.esDestacado, false) === true,
+    estatus: inmueble?.estatus || (pickFirst(inmueble?.activo, inmueble?.esActivo, true) === false ? 'INACTIVO' : 'DISPONIBLE'),
+  };
+};
 
 const getApiErrorMessage = (err) => {
   if (err.data?.mensaje) {
@@ -281,8 +306,28 @@ export default function AdminInmuebleFormPage() {
         siguiente.localidadId = '';
       }
 
+      if (name === 'precioVenta') {
+        siguiente.precio = value;
+      }
+
       return siguiente;
     });
+  };
+
+  const validarPrecios = () => {
+    const modalidad = normalizeModalidadOperacion(form.modalidadOperacion);
+    const precioVenta = toPositiveNumber(form.precioVenta);
+    const rentaMensual = toPositiveNumber(form.rentaMensual);
+
+    if ((modalidad === 'VENTA' || modalidad === 'VENTA_RENTA') && !precioVenta) {
+      return 'El precio de venta es requerido y debe ser mayor a 0.';
+    }
+
+    if ((modalidad === 'RENTA' || modalidad === 'VENTA_RENTA') && !rentaMensual) {
+      return 'La renta mensual es requerida y debe ser mayor a 0.';
+    }
+
+    return '';
   };
 
   const guardar = async (event) => {
@@ -292,8 +337,21 @@ export default function AdminInmuebleFormPage() {
     setError('');
 
     try {
+      const errorPrecios = validarPrecios();
+      if (errorPrecios) {
+        setError(errorPrecios);
+        return;
+      }
+
+      const modalidadOperacion = normalizeModalidadOperacion(form.modalidadOperacion);
+      const precioVenta = toPositiveNumber(form.precioVenta);
+      const rentaMensual = toPositiveNumber(form.rentaMensual);
       const payload = {
         ...form,
+        modalidadOperacion,
+        precioVenta: modalidadOperacion === 'RENTA' ? null : precioVenta,
+        rentaMensual: modalidadOperacion === 'VENTA' ? null : rentaMensual,
+        precio: modalidadOperacion === 'RENTA' ? null : precioVenta,
         estatus: !esEdicion && !esAdmin ? 'BORRADOR' : form.estatus,
       };
       const response = esEdicion
@@ -366,9 +424,24 @@ export default function AdminInmuebleFormPage() {
                 ))}
               </select>
             </Field>
-            <Field label="Precio">
-              <input name="precio" type="number" min="0" step="0.01" value={form.precio} onChange={actualizarCampo} required />
+            <Field label="Modalidad de operación">
+              <select name="modalidadOperacion" value={form.modalidadOperacion} onChange={actualizarCampo} required>
+                {MODALIDADES_OPERACION.map((modalidad) => (
+                  <option key={modalidad.value} value={modalidad.value}>{modalidad.label}</option>
+                ))}
+              </select>
             </Field>
+            {form.modalidadOperacion === 'VENTA' || form.modalidadOperacion === 'VENTA_RENTA' ? (
+              <Field label="Precio de venta">
+                <input name="precioVenta" type="number" min="0" step="0.01" value={form.precioVenta} onChange={actualizarCampo} required />
+              </Field>
+            ) : null}
+            {form.modalidadOperacion === 'RENTA' || form.modalidadOperacion === 'VENTA_RENTA' ? (
+              <Field label="Renta mensual">
+                <input name="rentaMensual" type="number" min="0" step="0.01" value={form.rentaMensual} onChange={actualizarCampo} required />
+                <small>Ingresa el monto mensual de renta.</small>
+              </Field>
+            ) : null}
             <label className="admin-inmueble-check">
               <input name="recalcularPrecio" type="checkbox" checked={form.recalcularPrecio} onChange={actualizarCampo} />
               <span>Recalcular precio</span>

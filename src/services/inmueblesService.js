@@ -16,6 +16,61 @@ const formatCurrency = (amount, currency = 'MXN') => {
   }
 };
 
+export const MODALIDADES_OPERACION = ['VENTA', 'RENTA', 'VENTA_RENTA'];
+
+export const MODALIDAD_OPERACION_LABELS = {
+  VENTA: 'En venta',
+  RENTA: 'En renta',
+  VENTA_RENTA: 'En venta y renta',
+};
+
+export const normalizeModalidadOperacion = (value) => {
+  const modalidad = toStringOrEmpty(value).trim().toUpperCase();
+  return MODALIDADES_OPERACION.includes(modalidad) ? modalidad : 'VENTA';
+};
+
+export const getModalidadOperacionLabel = (value) =>
+  MODALIDAD_OPERACION_LABELS[normalizeModalidadOperacion(value)] || MODALIDAD_OPERACION_LABELS.VENTA;
+
+const normalizePrecioOperacion = (inmueble = {}) => {
+  const modalidadOperacion = normalizeModalidadOperacion(inmueble.modalidadOperacion);
+  const precioLegacy = toNumberOrNull(inmueble.precio);
+  const precioVenta = toNumberOrNull(inmueble.precioVenta ?? (modalidadOperacion !== 'RENTA' ? inmueble.precio : null));
+  const rentaMensual = toNumberOrNull(inmueble.rentaMensual ?? (modalidadOperacion === 'RENTA' ? inmueble.precio : null));
+
+  return {
+    modalidadOperacion,
+    precioLegacy,
+    precioVenta,
+    rentaMensual,
+  };
+};
+
+export const getPrecioOperacionLineas = (inmueble = {}) => {
+  const moneda = inmueble.moneda || 'MXN';
+  const { modalidadOperacion, precioLegacy, precioVenta, rentaMensual } = normalizePrecioOperacion(inmueble);
+  const venta = precioVenta ?? precioLegacy;
+  const renta = rentaMensual ?? (modalidadOperacion === 'RENTA' ? precioLegacy : null);
+
+  if (modalidadOperacion === 'RENTA') {
+    return [{ key: 'renta', label: 'Renta', text: `${formatCurrency(renta, moneda)} / mes` }];
+  }
+
+  if (modalidadOperacion === 'VENTA_RENTA') {
+    return [
+      { key: 'venta', label: 'Venta', text: `Venta: ${formatCurrency(venta, moneda)}` },
+      { key: 'renta', label: 'Renta', text: `Renta: ${formatCurrency(renta, moneda)} / mes` },
+    ];
+  }
+
+  return [{ key: 'venta', label: 'Venta', text: formatCurrency(venta, moneda) }];
+};
+
+export const formatPrecioOperacion = (inmueble = {}) => {
+  const lineas = getPrecioOperacionLineas(inmueble).map((linea) => linea.text);
+  return lineas.length ? lineas.join('\n') : (inmueble.etiquetaPrecio || formatCurrency(inmueble.precio, inmueble.moneda));
+};
+
 const buildUbicacion = (inmueble) =>
   [
     inmueble.direccion,
@@ -193,10 +248,33 @@ const adaptInmueble = (inmueble) => {
     inmueble.localidadNombre ||
     'Ubicacion no disponible';
 
+  const modalidadOperacion = normalizeModalidadOperacion(inmueble.modalidadOperacion);
+  const precioVenta = toNumberOrNull(inmueble.precioVenta ?? (modalidadOperacion !== 'RENTA' ? inmueble.precio : null));
+  const rentaMensual = toNumberOrNull(inmueble.rentaMensual ?? (modalidadOperacion === 'RENTA' ? inmueble.precio : null));
+  const precioBase = toNumberOrNull(inmueble.precio);
+  const precioLineas = getPrecioOperacionLineas({
+    ...inmueble,
+    modalidadOperacion,
+    precioVenta,
+    rentaMensual,
+  });
+
   return {
     id: String(inmueble.inmuebleId ?? inmueble.id ?? ''),
     titulo: inmueble.titulo || 'Propiedad sin titulo',
-    precio: formatCurrency(inmueble.precio, inmueble.moneda),
+    modalidadOperacion,
+    modalidadOperacionLabel: getModalidadOperacionLabel(modalidadOperacion),
+    precioVenta,
+    rentaMensual,
+    precioValor: precioBase,
+    etiquetaPrecio: inmueble.etiquetaPrecio || '',
+    precioLineas,
+    precio: formatPrecioOperacion({
+      ...inmueble,
+      modalidadOperacion,
+      precioVenta,
+      rentaMensual,
+    }),
     ubicacion,
     descripcion: inmueble.descripcion || 'Sin descripcion disponible.',
     tipoInmueble,
@@ -243,25 +321,38 @@ export const obtenerDetalleInmueble = async (id, options = {}) => {
 export const obtenerInmuebleAdmin = async (id, options = {}) =>
   getJson(`/api/inmuebles/${id}/detalle`, options);
 
-const buildInmueblePayload = (inmueble) => ({
-  titulo: inmueble.titulo || '',
-  descripcion: inmueble.descripcion || '',
-  tipoInmueble: toStringOrEmpty(inmueble.tipoInmueble).trim(),
-  estadoId: toStringOrEmpty(pickFirst(inmueble.estadoId, inmueble.EstadoId)),
-  poblacionId: toStringOrEmpty(pickFirst(inmueble.poblacionId, inmueble.municipioId, inmueble.PoblacionId)),
-  localidadId: toStringOrEmpty(pickFirst(inmueble.localidadId, inmueble.LocalidadId)),
-  direccion: inmueble.direccion || '',
-  referencia: inmueble.referencia || '',
-  superficieM2: toNumberOrNull(inmueble.superficieM2),
-  construccionM2: toNumberOrNull(inmueble.construccionM2),
-  precio: toNumberOrNull(inmueble.precio),
-  recalcularPrecio: inmueble.recalcularPrecio === true || inmueble.recalcularPrecio === 'true',
-  moneda: inmueble.moneda || 'MXN',
-  estatus: normalizeEstatus(inmueble.estatus),
-  destacado: inmueble.destacado === true || inmueble.destacado === 'true',
-  latitud: toNumberOrNull(inmueble.latitud),
-  longitud: toNumberOrNull(inmueble.longitud),
-});
+const buildInmueblePayload = (inmueble) => {
+  const modalidadOperacion = normalizeModalidadOperacion(inmueble.modalidadOperacion);
+  const precioVenta = toNumberOrNull(inmueble.precioVenta);
+  const rentaMensual = toNumberOrNull(inmueble.rentaMensual);
+  const precio =
+    modalidadOperacion === 'RENTA'
+      ? null
+      : precioVenta;
+
+  return {
+    titulo: inmueble.titulo || '',
+    descripcion: inmueble.descripcion || '',
+    tipoInmueble: toStringOrEmpty(inmueble.tipoInmueble).trim(),
+    modalidadOperacion,
+    estadoId: toStringOrEmpty(pickFirst(inmueble.estadoId, inmueble.EstadoId)),
+    poblacionId: toStringOrEmpty(pickFirst(inmueble.poblacionId, inmueble.municipioId, inmueble.PoblacionId)),
+    localidadId: toStringOrEmpty(pickFirst(inmueble.localidadId, inmueble.LocalidadId)),
+    direccion: inmueble.direccion || '',
+    referencia: inmueble.referencia || '',
+    superficieM2: toNumberOrNull(inmueble.superficieM2),
+    construccionM2: toNumberOrNull(inmueble.construccionM2),
+    precioVenta: modalidadOperacion === 'RENTA' ? null : precioVenta,
+    rentaMensual: modalidadOperacion === 'VENTA' ? null : rentaMensual,
+    precio,
+    recalcularPrecio: inmueble.recalcularPrecio === true || inmueble.recalcularPrecio === 'true',
+    moneda: inmueble.moneda || 'MXN',
+    estatus: normalizeEstatus(inmueble.estatus),
+    destacado: inmueble.destacado === true || inmueble.destacado === 'true',
+    latitud: toNumberOrNull(inmueble.latitud),
+    longitud: toNumberOrNull(inmueble.longitud),
+  };
+};
 
 const logPayloadInDevelopment = (payload) => {
   if (process.env.NODE_ENV === 'development') {

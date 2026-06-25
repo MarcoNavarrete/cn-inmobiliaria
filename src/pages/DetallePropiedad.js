@@ -52,6 +52,18 @@ const copiarTexto = async (texto) => {
   document.body.removeChild(textarea);
 };
 
+const getMensajeInteresPropiedad = (propiedad) => {
+  if (propiedad?.modalidadOperacion === 'RENTA') {
+    return `Hola, me interesa rentar la propiedad ${propiedad.titulo}.`;
+  }
+
+  if (propiedad?.modalidadOperacion === 'VENTA_RENTA') {
+    return `Hola, me interesa conocer las opciones de venta o renta de la propiedad ${propiedad.titulo}.`;
+  }
+
+  return `Hola, me interesa conocer más sobre la propiedad en venta ${propiedad?.titulo || ''}.`;
+};
+
 export default function DetallePropiedad() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -178,7 +190,7 @@ export default function DetallePropiedad() {
     }
 
     if (propiedad.precio) {
-      detalles.push(`Precio: ${propiedad.precio}`);
+      detalles.push(propiedad.precio.replace(/\n/g, '. '));
     }
 
     const titulo = propiedad.titulo ? `: ${propiedad.titulo}` : '';
@@ -345,8 +357,9 @@ export default function DetallePropiedad() {
 
       const notas = [
         `Interesado en inmueble ${propiedad.id}: ${propiedad.titulo}.`,
+        `Operación: ${propiedad.modalidadOperacionLabel}.`,
         `Ubicacion: ${propiedad.ubicacion}.`,
-        formulario.mensaje ? `Mensaje: ${formulario.mensaje}` : '',
+        formulario.mensaje ? `Mensaje: ${formulario.mensaje}` : getMensajeInteresPropiedad(propiedad),
       ]
         .filter(Boolean)
         .join(' ');
@@ -511,7 +524,12 @@ export default function DetallePropiedad() {
           </button>
         </div>
         {mensajeFavorito ? <p className="mensaje-favorito">{mensajeFavorito}</p> : null}
-        <p className="precio">{propiedad.precio}</p>
+        <span className="detalle-operacion">{propiedad.modalidadOperacionLabel}</span>
+        <div className="detalle-precios">
+          {(propiedad.precioLineas?.length ? propiedad.precioLineas : [{ key: 'precio', text: propiedad.precio }]).map((linea) => (
+            <p key={linea.key || linea.text} className="precio">{linea.text}</p>
+          ))}
+        </div>
         <p className="ubicacion">{'\u{1F4CD}'} {propiedad.ubicacion}</p>
         <p className="propiedad-tipo-inmueble"><strong>Tipo de inmueble:</strong> {tipoInmuebleNombre}</p>
         <RichTextContent className="descripcion" value={propiedad.descripcion} />
@@ -714,7 +732,7 @@ export default function DetallePropiedad() {
                 value={formulario.mensaje}
                 onChange={actualizarFormulario}
                 disabled={enviandoProspecto}
-                placeholder="Cuentanos que te interesa de esta propiedad"
+                placeholder={getMensajeInteresPropiedad(propiedad)}
               ></textarea>
             </label>
 

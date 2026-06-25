@@ -11,6 +11,7 @@ const normalizarFiltrosBusqueda = (filtros = {}) => ({
   poblacionId: filtros.poblacionId || filtros.PoblacionId || '',
   localidadId: filtros.localidadId || filtros.LocalidadId || '',
   tipoInmueble: filtros.tipoInmueble || filtros.TipoInmueble || '',
+  modalidadOperacion: filtros.modalidadOperacion || filtros.operacion || '',
   precioMin: filtros.precioMin || filtros.PrecioMin || '',
   precioMax: filtros.precioMax || filtros.PrecioMax || '',
 });
@@ -202,7 +203,13 @@ export default function ListadoPropiedadesPublicas({
                 <div className="tarjeta-placeholder">Imagen no disponible</div>
               )}
               <h3>{prop.titulo}</h3>
-              <p>{`${prop.precio} - ${prop.ubicacion}`}</p>
+              <span className="tarjeta-operacion">{prop.modalidadOperacionLabel}</span>
+              <div className="tarjeta-precios">
+                {(prop.precioLineas?.length ? prop.precioLineas : [{ key: 'precio', text: prop.precio }]).map((linea) => (
+                  <strong key={linea.key || linea.text}>{linea.text}</strong>
+                ))}
+              </div>
+              <p>{prop.ubicacion}</p>
               <Link to={`/propiedad/${prop.id}`} className="btn-mas">Ver mas</Link>
             </div>
           ))}

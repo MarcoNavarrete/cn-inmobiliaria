@@ -251,6 +251,30 @@
   color: #59636e;
 }
 
+.admin-propiedades-pill.is-operacion-venta {
+  background: rgba(33, 99, 58, 0.12);
+  color: #21633a;
+}
+
+.admin-propiedades-pill.is-operacion-renta {
+  background: rgba(26, 61, 124, 0.12);
+  color: var(--azul-oscuro);
+}
+
+.admin-propiedades-pill.is-operacion-venta_renta {
+  background: rgba(203, 161, 53, 0.18);
+  color: #735817;
+}
+
+.admin-propiedades-price {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 150px;
+  color: var(--azul-oscuro);
+  font-weight: 800;
+  line-height: 1.3;
+}
+
 .admin-propiedades-actions {
   display: flex;
   gap: 0.45rem;

@@ -141,6 +141,34 @@
   line-height: 1.15;
 }
 
+.tarjeta-operacion {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  margin: 0 1rem 0.65rem;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  background: rgba(15, 27, 45, 0.08);
+  color: var(--cn-primary);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tarjeta-precios {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0 1rem 0.75rem;
+}
+
+.tarjeta-precios strong {
+  color: var(--cn-gold);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
 .tarjeta p {
   margin: 0 1rem 1rem;
   color: var(--cn-muted);

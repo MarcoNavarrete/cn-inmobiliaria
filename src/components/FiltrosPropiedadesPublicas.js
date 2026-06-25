@@ -11,6 +11,7 @@ export const FILTROS_INICIALES = {
   poblacionId: '',
   localidadId: '',
   tipoInmueble: '',
+  modalidadOperacion: '',
   precioMin: '',
   precioMax: '',
 };
@@ -29,6 +30,7 @@ const normalizarFiltros = (filtros = {}) => ({
   poblacionId: filtros.poblacionId || '',
   localidadId: filtros.localidadId || '',
   tipoInmueble: filtros.tipoInmueble || '',
+  modalidadOperacion: filtros.modalidadOperacion || '',
   precioMin: filtros.precioMin || '',
   precioMax: filtros.precioMax || '',
 });
@@ -169,6 +171,7 @@ export default function FiltrosPropiedadesPublicas({
       poblacionId: filtros.poblacionId,
       localidadId: filtros.localidadId,
       tipoInmueble: filtros.tipoInmueble,
+      modalidadOperacion: filtros.modalidadOperacion,
       precioMin: filtros.precioMin,
       precioMax: filtros.precioMax,
     });
@@ -252,6 +255,20 @@ export default function FiltrosPropiedadesPublicas({
                 {tipo.label}
               </option>
             ))}
+          </select>
+        </div>
+
+        <div className="campo-filtro">
+          <label htmlFor="modalidadOperacion">Operación</label>
+          <select
+            id="modalidadOperacion"
+            name="modalidadOperacion"
+            value={filtros.modalidadOperacion}
+            onChange={actualizarFiltro}
+          >
+            <option value="">Todas</option>
+            <option value="VENTA">Venta</option>
+            <option value="RENTA">Renta</option>
           </select>
         </div>
 

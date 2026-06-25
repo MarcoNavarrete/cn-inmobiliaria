@@ -299,6 +299,7 @@ export default function AdminPropiedadesPage() {
                     <th>Imagen</th>
                     <th>Titulo</th>
                     <th>Tipo</th>
+                    <th>Operación</th>
                     <th>Precio</th>
                     <th>Ubicacion</th>
                     <th>Asesor/Propietario</th>
@@ -319,7 +320,18 @@ export default function AdminPropiedadesPage() {
                       </td>
                       <td data-label="Titulo"><strong>{inmueble.titulo}</strong></td>
                       <td data-label="Tipo">{inmueble.tipoInmueble}</td>
-                      <td data-label="Precio">{inmueble.precio}</td>
+                      <td data-label="Operación">
+                        <span className={`admin-propiedades-pill is-operacion-${inmueble.modalidadOperacion.toLowerCase()}`}>
+                          {inmueble.modalidadOperacionLabel}
+                        </span>
+                      </td>
+                      <td data-label="Precio">
+                        <div className="admin-propiedades-price">
+                          {(inmueble.precioLineas?.length ? inmueble.precioLineas : [{ key: 'precio', text: inmueble.precio }]).map((linea) => (
+                            <span key={linea.key || linea.text}>{linea.text}</span>
+                          ))}
+                        </div>
+                      </td>
                       <td data-label="Ubicacion">{inmueble.ubicacion}</td>
                       <td data-label="Asesor/Propietario">
                         <div className="admin-propiedades-asesor">

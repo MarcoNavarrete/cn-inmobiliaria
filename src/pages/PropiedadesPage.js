@@ -10,6 +10,9 @@ const QUERY_TO_FORM = {
   PoblacionId: 'poblacionId',
   LocalidadId: 'localidadId',
   TipoInmueble: 'tipoInmueble',
+  modalidadOperacion: 'modalidadOperacion',
+  operacion: 'modalidadOperacion',
+  Operacion: 'modalidadOperacion',
   PrecioMin: 'precioMin',
   PrecioMax: 'precioMax',
 };
@@ -19,6 +22,7 @@ const FORM_TO_QUERY = {
   poblacionId: 'PoblacionId',
   localidadId: 'LocalidadId',
   tipoInmueble: 'TipoInmueble',
+  modalidadOperacion: 'modalidadOperacion',
   precioMin: 'PrecioMin',
   precioMax: 'PrecioMax',
 };
@@ -28,6 +32,7 @@ const buildFormFiltersFromSearchParams = (searchParams) => ({
   poblacionId: searchParams.get('PoblacionId') || '',
   localidadId: searchParams.get('LocalidadId') || '',
   tipoInmueble: searchParams.get('TipoInmueble') || '',
+  modalidadOperacion: (searchParams.get('modalidadOperacion') || searchParams.get('operacion') || '').toUpperCase(),
   precioMin: searchParams.get('PrecioMin') || '',
   precioMax: searchParams.get('PrecioMax') || '',
 });
@@ -39,7 +44,11 @@ const buildApiFiltersFromSearchParams = (searchParams) => {
     const value = searchParams.get(queryKey);
 
     if (value) {
-      filtros[queryKey] = value;
+      if (['operacion', 'Operacion'].includes(queryKey)) {
+        filtros.modalidadOperacion = value.toUpperCase();
+      } else {
+        filtros[queryKey] = value;
+      }
     }
   });
 
