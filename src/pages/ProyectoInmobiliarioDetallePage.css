@@ -258,6 +258,28 @@
   font-family: var(--fuente-titulos);
 }
 
+.proyecto-publico-paused-state {
+  margin-top: 3rem;
+}
+
+.proyecto-publico-paused-state span {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  background: rgba(26, 61, 124, 0.08);
+  color: var(--azul-oscuro);
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.proyecto-publico-paused-state p {
+  margin: 0;
+  color: var(--gris-elegante);
+  line-height: 1.6;
+}
+
 .proyecto-publico-intro {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;

@@ -51,6 +51,7 @@
 }
 
 .admin-proyectos-filtros,
+.admin-proyectos-help,
 .admin-proyectos-card {
   margin-bottom: 1.25rem;
   padding: 1rem;
@@ -58,6 +59,22 @@
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 10px 24px rgba(16, 35, 58, 0.08);
+}
+
+.admin-proyectos-help {
+  display: grid;
+  gap: 0.35rem;
+  background: rgba(26, 61, 124, 0.05);
+}
+
+.admin-proyectos-help p {
+  margin: 0;
+  color: var(--gris-elegante);
+  line-height: 1.5;
+}
+
+.admin-proyectos-help strong {
+  color: var(--azul-oscuro);
 }
 
 .admin-proyectos-filtros {
@@ -111,7 +128,7 @@
 
 .admin-proyectos-table {
   width: 100%;
-  min-width: 1180px;
+  min-width: 1240px;
   border-collapse: collapse;
 }
 
@@ -173,6 +190,12 @@
 .admin-proyectos-actions button.is-warning {
   border-color: rgba(203, 161, 53, 0.22);
   background: rgba(203, 161, 53, 0.12);
+}
+
+.admin-proyectos-actions button.is-success {
+  border-color: rgba(33, 99, 58, 0.2);
+  background: rgba(33, 99, 58, 0.1);
+  color: #21633a;
 }
 
 .admin-proyectos-actions button:disabled {

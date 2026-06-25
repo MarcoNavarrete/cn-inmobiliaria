@@ -11,6 +11,18 @@ import {
 import { normalizeProyectoColorConfig } from '../utils/proyectoColoresEstatus';
 
 const BASE_URL = '/api/admin/proyectos-inmobiliarios';
+const PROYECTO_PAUSADO_MENSAJE_DEFAULT =
+  'Proyecto pausado temporalmente. Estamos realizando ajustes para brindarte información actualizada.';
+
+const toApiBool = (value, fallback = false) => {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+  const text = String(value).trim().toLowerCase();
+  if (['true', '1', 'si', 'sí'].includes(text)) return true;
+  if (['false', '0', 'no'].includes(text)) return false;
+  return fallback;
+};
 
 const adaptProyectoResponse = (response) =>
   adaptProyectoInmobiliario(
@@ -34,6 +46,11 @@ const buildUbicacion = (item = {}) =>
 export const adaptProyectoInmobiliario = (item = {}) => {
   const id = toText(pickFirst(item.proyectoId, item.id, item.Id));
   const precioDesde = pickFirst(item.precioDesde, item.precioMinimo, item.precio);
+  const pausado = toApiBool(pickFirst(item.pausado, item.estaPausado), false);
+  const disponiblePublicamente = toApiBool(
+    pickFirst(item.disponiblePublicamente, item.disponible_publicamente),
+    !pausado
+  );
   const estatusPublicacion = toText(
     pickFirst(item.estatusPublicacion, item.estatus, item.status),
     'BORRADOR'
@@ -74,6 +91,9 @@ export const adaptProyectoInmobiliario = (item = {}) => {
     correoContacto: toText(pickFirst(item.correoContacto, item.emailContacto)),
     estatusPublicacion,
     mostrarEnPublico: toBool(pickFirst(item.mostrarEnPublico, item.publico, item.visiblePublico)),
+    pausado,
+    disponiblePublicamente,
+    mensajePausa: toText(item.mensajePausa, PROYECTO_PAUSADO_MENSAJE_DEFAULT),
     activo: item.activo !== false,
     fechaCreacion: formatDate(pickFirst(item.fechaCreacion, item.createdAt, item.creadoEn)),
   };
@@ -117,6 +137,12 @@ export const setProyectoPublicacion = (proyectoId, { estatusPublicacion, mostrar
   requestJson(`${BASE_URL}/${proyectoId}/publicacion`, {
     method: 'PATCH',
     body: { estatusPublicacion, mostrarEnPublico },
+  });
+
+export const setProyectoPausado = (proyectoId, pausado) =>
+  requestJson(`${BASE_URL}/${proyectoId}/pausado`, {
+    method: 'PATCH',
+    body: { pausado },
   });
 
 export const obtenerColoresEstatusProyecto = async (proyectoId, options = {}) => {

@@ -21,6 +21,8 @@ import { trackMetaCustomEvent, trackMetaEvent } from '../lib/metaPixel';
 import { resolveApiAssetUrl } from '../services/apiClient';
 import {
   crearProspectoPublico,
+  getProyectoPausadoMessage,
+  isProyectoPausadoError,
   listarImagenesPublicas,
   listarModelosPublicos,
   listarUnidadesPublicas,
@@ -31,6 +33,7 @@ import {
 import './ProyectoInmobiliarioDetallePage.css';
 
 const CN_LOGO = './assets/logo.png';
+const PROYECTOS_URL = '/proyectos-inmobiliarios';
 const UNIDADES_PAGE_SIZE = 12;
 const ESTATUS_UNIDAD = ['DISPONIBLE', 'APARTADO', 'EN_PROCESO', 'VENDIDO', 'LIQUIDADO', 'BLOQUEADO', 'NO_DISPONIBLE'];
 const TIPOS_UNIDAD = ['LOTE', 'CASA', 'DEPARTAMENTO', 'LOCAL', 'OFICINA', 'MACROLOTE', 'OTRO'];
@@ -206,6 +209,7 @@ export default function ProyectoInmobiliarioDetallePage() {
   const [modeloImagenModal, setModeloImagenModal] = useState(null);
   const [form, setForm] = useState(FORM_INICIAL);
   const [loading, setLoading] = useState(true);
+  const [proyectoPausado, setProyectoPausado] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
@@ -219,14 +223,34 @@ export default function ProyectoInmobiliarioDetallePage() {
     const cargar = async () => {
       setLoading(true);
       setError('');
+      setProyectoPausado(null);
 
       try {
         const proyectoData = await obtenerProyectoPublico(slug, { signal: controller.signal });
+        if (proyectoData?.pausado || proyectoData?.disponiblePublicamente === false) {
+          setProyecto(null);
+          setModelos([]);
+          setUnidades([]);
+          setPlano(null);
+          setImagenes([]);
+          setUnidadSeleccionada(null);
+          setProyectoPausado({
+            mensaje: getProyectoPausadoMessage(proyectoData),
+          });
+          return;
+        }
+
+        const ignorarErrorNoPausado = (fallback) => (err) => {
+          if (isProyectoPausadoError(err)) {
+            throw err;
+          }
+          return fallback;
+        };
         const [modelosData, unidadesData, planoData, imagenesData] = await Promise.all([
-          listarModelosPublicos(slug, { signal: controller.signal }).catch(() => []),
-          listarUnidadesPublicas(slug, { signal: controller.signal }).catch(() => []),
-          obtenerPlanoPublico(slug, { signal: controller.signal }).catch(() => null),
-          listarImagenesPublicas(slug, { signal: controller.signal }).catch(() => []),
+          listarModelosPublicos(slug, { signal: controller.signal }).catch(ignorarErrorNoPausado([])),
+          listarUnidadesPublicas(slug, { signal: controller.signal }).catch(ignorarErrorNoPausado([])),
+          obtenerPlanoPublico(slug, { signal: controller.signal }).catch(ignorarErrorNoPausado(null)),
+          listarImagenesPublicas(slug, { signal: controller.signal }).catch(ignorarErrorNoPausado([])),
         ]);
 
         setProyecto(proyectoData);
@@ -237,6 +261,18 @@ export default function ProyectoInmobiliarioDetallePage() {
       } catch (err) {
         if (err.name !== 'AbortError') {
           setProyecto(null);
+          setModelos([]);
+          setUnidades([]);
+          setPlano(null);
+          setImagenes([]);
+          setUnidadSeleccionada(null);
+          if (isProyectoPausadoError(err)) {
+            setProyectoPausado({
+              mensaje: getProyectoPausadoMessage(err.data),
+            });
+            setError('');
+            return;
+          }
           setError(err.status === 404 ? 'Proyecto no encontrado.' : getApiErrorMessage(err));
         }
       } finally {
@@ -252,7 +288,7 @@ export default function ProyectoInmobiliarioDetallePage() {
   }, [slug]);
 
   useEffect(() => {
-    if (!slug) return undefined;
+    if (!slug || loading || proyectoPausado || !proyecto) return undefined;
 
     const params = new URLSearchParams(location.search || '');
     const refFromUrl = String(params.get('ref') || '').trim();
@@ -290,7 +326,7 @@ export default function ProyectoInmobiliarioDetallePage() {
       });
 
     return () => controller.abort();
-  }, [location.search, slug]);
+  }, [loading, location.search, proyecto, proyectoPausado, slug]);
 
   useEffect(() => {
     if (!proyecto?.nombre) return undefined;
@@ -695,13 +731,27 @@ export default function ProyectoInmobiliarioDetallePage() {
     );
   }
 
+  if (proyectoPausado) {
+    return (
+      <main className="proyecto-publico-page">
+        <section className="proyecto-publico-empty proyecto-publico-paused-state">
+          <span>Proyecto pausado</span>
+          <h1>Proyecto pausado temporalmente</h1>
+          <p>{proyectoPausado.mensaje}</p>
+          <p>Estamos realizando ajustes para brindarte información actualizada. Te invitamos a consultar otros proyectos disponibles.</p>
+          <Link to={PROYECTOS_URL}>Ver otros proyectos</Link>
+        </section>
+      </main>
+    );
+  }
+
   if (error || !proyecto) {
     return (
       <main className="proyecto-publico-page">
         <section className="proyecto-publico-empty">
           <h1>Proyecto no encontrado</h1>
           <p>{error || 'El proyecto que buscas no esta disponible.'}</p>
-          <Link to="/">Volver al inicio</Link>
+          <Link to={PROYECTOS_URL}>Ver otros proyectos</Link>
         </section>
       </main>
     );

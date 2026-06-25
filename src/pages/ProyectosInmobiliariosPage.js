@@ -25,6 +25,8 @@ const FILTROS_INICIALES = {
 };
 
 const OTROS_PROYECTOS_KEY = '__otros_proyectos__';
+const MENSAJE_PAUSA_DEFAULT =
+  'Proyecto pausado temporalmente. Estamos realizando ajustes para brindarte información actualizada.';
 
 const formatAreaRange = (desde, hasta) => {
   const format = (value) => {
@@ -115,6 +117,12 @@ const getLogoVisible = (proyecto = {}) => {
 
   return proyecto.logoProyectoUrl || null;
 };
+
+const isProyectoPausado = (proyecto = {}) =>
+  proyecto.pausado === true || proyecto.disponiblePublicamente === false;
+
+const getMensajePausa = (proyecto = {}) =>
+  proyecto.mensajePausa || MENSAJE_PAUSA_DEFAULT;
 
 export default function ProyectosInmobiliariosPage() {
   const [proyectos, setProyectos] = useState([]);
@@ -247,9 +255,13 @@ export default function ProyectosInmobiliariosPage() {
                     {grupo.proyectos.map((proyecto) => {
                       const imageUrl = resolveApiAssetUrl(proyecto.imagenPrincipalUrl);
                       const logoVisibleUrl = resolveApiAssetUrl(getLogoVisible(proyecto));
+                      const estaPausado = isProyectoPausado(proyecto);
 
                       return (
-                        <article key={proyecto.id || proyecto.slug} className={`proyecto-publico-card ${logoVisibleUrl ? 'has-logo' : ''}`}>
+                        <article
+                          key={proyecto.id || proyecto.slug}
+                          className={`proyecto-publico-card ${logoVisibleUrl ? 'has-logo' : ''} ${estaPausado ? 'is-paused' : ''}`}
+                        >
                           {logoVisibleUrl ? (
                             <aside className="proyecto-publico-card-logo-panel" aria-label={`Logo de ${proyecto.empresaNombre || proyecto.nombre}`}>
                               <img src={logoVisibleUrl} alt={proyecto.empresaNombre || proyecto.nombre} />
@@ -264,12 +276,19 @@ export default function ProyectosInmobiliariosPage() {
                                 <div>Imagen proximamente</div>
                               )}
                               <span>{TIPO_LABELS[proyecto.tipoProyecto] || proyecto.tipoProyecto}</span>
+                              {estaPausado ? <strong className="proyecto-publico-card-paused-badge">Proyecto pausado</strong> : null}
                             </div>
                             <div className="proyecto-publico-card-body">
                               <div>
                                 <h2>{proyecto.nombre}</h2>
                                 <p>{proyecto.ubicacionTexto || proyecto.ubicacion}</p>
                               </div>
+                              {estaPausado ? (
+                                <div className="proyecto-publico-card-paused-note">
+                                  <strong>Pausado temporalmente</strong>
+                                  <p>{getMensajePausa(proyecto)}</p>
+                                </div>
+                              ) : null}
                               {proyecto.resumen ? <p className="proyecto-publico-card-summary">{proyecto.resumen}</p> : null}
                               <dl>
                                 <div><dt>Precio desde</dt><dd>{proyecto.precioDesdeTexto}</dd></div>
@@ -277,7 +296,19 @@ export default function ProyectosInmobiliariosPage() {
                                 <div><dt>Unidades</dt><dd>{proyecto.totalUnidades || 'Por confirmar'}</dd></div>
                               </dl>
                               {proyecto.empresaNombre ? <small>Por {proyecto.empresaNombre}</small> : null}
-                              <Link to={`/proyectos-inmobiliarios/${proyecto.slug}`}>Ver proyecto</Link>
+                              {estaPausado ? (
+                                <button
+                                  type="button"
+                                  className="proyecto-publico-card-disabled-action"
+                                  disabled
+                                  aria-disabled="true"
+                                  title="Este proyecto se encuentra temporalmente pausado."
+                                >
+                                  Proyecto pausado
+                                </button>
+                              ) : (
+                                <Link to={`/proyectos-inmobiliarios/${proyecto.slug}`}>Ver proyecto</Link>
+                              )}
                             </div>
                           </div>
                         </article>

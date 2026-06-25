@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   listarProyectos,
   setProyectoActivo,
+  setProyectoPausado,
   setProyectoPublicacion,
 } from '../../services/proyectosInmobiliariosService';
 import usePermisosEmpresa from '../../hooks/usePermisosEmpresa';
@@ -147,9 +148,9 @@ export default function AdminProyectosInmobiliariosPage() {
   const alternarPublicacion = async (proyecto) => {
     const estaPublicado = proyecto.estatusPublicacion === 'PUBLICADO';
     const siguiente = estaPublicado
-      ? { estatusPublicacion: 'PAUSADO', mostrarEnPublico: false }
+      ? { estatusPublicacion: 'BORRADOR', mostrarEnPublico: false }
       : { estatusPublicacion: 'PUBLICADO', mostrarEnPublico: true };
-    const accion = estaPublicado ? 'pausar' : 'publicar';
+    const accion = estaPublicado ? 'ocultar' : 'publicar';
 
     if (!window.confirm(`Deseas ${accion} el proyecto "${proyecto.nombre}"?`)) {
       return;
@@ -161,7 +162,36 @@ export default function AdminProyectosInmobiliariosPage() {
 
     try {
       await setProyectoPublicacion(proyecto.id, siguiente);
-      setMensaje(estaPublicado ? 'Proyecto pausado correctamente.' : 'Proyecto publicado correctamente.');
+      setMensaje(estaPublicado ? 'Proyecto ocultado correctamente.' : 'Proyecto publicado correctamente.');
+      await cargarProyectos();
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setAccionandoId('');
+    }
+  };
+
+  const alternarPausado = async (proyecto) => {
+    const siguientePausado = !proyecto.pausado;
+    const confirmacion = siguientePausado
+      ? `El proyecto "${proyecto.nombre}" seguirá visible en el listado público, pero no se podrá consultar ni recibir solicitudes hasta que lo reactives.`
+      : `El proyecto "${proyecto.nombre}" volverá a estar disponible públicamente para consulta y contacto.`;
+
+    if (!window.confirm(confirmacion)) {
+      return;
+    }
+
+    setAccionandoId(proyecto.id);
+    setError('');
+    setMensaje('');
+
+    try {
+      await setProyectoPausado(proyecto.id, siguientePausado);
+      setMensaje(
+        siguientePausado
+          ? 'Proyecto pausado correctamente. Seguirá visible, pero temporalmente no estará disponible para consulta.'
+          : 'Proyecto reactivado correctamente. Ya está disponible públicamente.'
+      );
       await cargarProyectos();
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -222,6 +252,11 @@ export default function AdminProyectosInmobiliariosPage() {
         <button type="button" onClick={limpiarFiltros}>Limpiar</button>
       </section>
 
+      <section className="admin-proyectos-help">
+        <p><strong>Pausar</strong> mantiene el proyecto visible, pero inhabilita temporalmente el acceso público y las solicitudes.</p>
+        <p><strong>Desactivar</strong> retira el proyecto del listado público.</p>
+      </section>
+
       {cargando ? <p className="admin-proyectos-feedback">Cargando proyectos...</p> : null}
       {mensaje ? <p className="admin-proyectos-feedback is-ok">{mensaje}</p> : null}
       {error ? <p className="admin-proyectos-feedback is-error">{error}</p> : null}
@@ -243,6 +278,7 @@ export default function AdminProyectosInmobiliariosPage() {
                     <th>Unidades</th>
                     <th>Publicacion</th>
                     <th>Publico</th>
+                    <th>Pausa</th>
                     <th>Activo</th>
                     <th>Creacion</th>
                     <th>Acciones</th>
@@ -274,6 +310,11 @@ export default function AdminProyectosInmobiliariosPage() {
                             {proyecto.mostrarEnPublico ? 'Publico' : 'Oculto'}
                           </span>
                         </td>
+                        <td data-label="Pausa">
+                          <span className={`admin-proyectos-pill ${proyecto.pausado ? 'is-pausado' : 'is-ok'}`}>
+                            {proyecto.pausado ? 'Pausado' : 'Disponible'}
+                          </span>
+                        </td>
                         <td data-label="Activo">
                           <span className={`admin-proyectos-pill ${proyecto.activo ? 'is-ok' : 'is-off'}`}>
                             {proyecto.activo ? 'Activo' : 'Inactivo'}
@@ -296,6 +337,15 @@ export default function AdminProyectosInmobiliariosPage() {
                               <>
                                 <button
                                   type="button"
+                                  className={proyecto.pausado ? 'is-success' : 'is-warning'}
+                                  onClick={() => alternarPausado(proyecto)}
+                                  disabled={disabled || !proyecto.activo}
+                                  title="Pausar mantiene el proyecto visible, pero inhabilita temporalmente el acceso público y las solicitudes."
+                                >
+                                  {disabled ? 'Procesando...' : proyecto.pausado ? 'Reactivar proyecto' : 'Pausar proyecto'}
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => alternarActivo(proyecto)}
                                   disabled={disabled}
                                 >
@@ -307,7 +357,7 @@ export default function AdminProyectosInmobiliariosPage() {
                                   onClick={() => alternarPublicacion(proyecto)}
                                   disabled={disabled}
                                 >
-                                  {proyecto.estatusPublicacion === 'PUBLICADO' ? 'Pausar' : 'Publicar'}
+                                  {proyecto.estatusPublicacion === 'PUBLICADO' ? 'Ocultar' : 'Publicar'}
                                 </button>
                               </>
                             ) : null}

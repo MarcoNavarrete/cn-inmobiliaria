@@ -15,6 +15,24 @@ import {
 import { normalizeProyectoColorConfig } from '../utils/proyectoColoresEstatus';
 
 const BASE_URL = '/api/proyectos-inmobiliarios';
+export const PROYECTO_PAUSADO_MENSAJE_DEFAULT =
+  'Proyecto pausado temporalmente. Estamos realizando ajustes para brindarte información actualizada.';
+
+const toApiBool = (value, fallback = false) => {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+  const text = String(value).trim().toLowerCase();
+  if (['true', '1', 'si', 'sí'].includes(text)) return true;
+  if (['false', '0', 'no'].includes(text)) return false;
+  return fallback;
+};
+
+export const isProyectoPausadoError = (err) =>
+  err?.status === 403 && (toApiBool(err?.data?.pausado) || toApiBool(err?.data?.disponiblePublicamente, true) === false);
+
+export const getProyectoPausadoMessage = (source = {}) =>
+  toText(source?.mensajePausa || source?.data?.mensajePausa, PROYECTO_PAUSADO_MENSAJE_DEFAULT);
 
 const toNumberValue = (value) => {
   if (value === null || value === undefined || value === '') return null;
@@ -39,6 +57,11 @@ const normalizeColoresEstatus = (value) =>
 export const adaptProyectoPublico = (item = {}) => {
   const id = toText(pickFirst(item.proyectoId, item.id, item.Id));
   const precioDesde = pickFirst(item.precioDesde, item.precioMinimo, item.precio);
+  const pausado = toApiBool(pickFirst(item.pausado, item.estaPausado), false);
+  const disponiblePublicamente = toApiBool(
+    pickFirst(item.disponiblePublicamente, item.disponible_publicamente),
+    !pausado
+  );
 
   return {
     id,
@@ -82,6 +105,9 @@ export const adaptProyectoPublico = (item = {}) => {
     telefonoContacto: toText(item.telefonoContacto),
     whatsappContacto: toText(item.whatsappContacto),
     correoContacto: toText(pickFirst(item.correoContacto, item.emailContacto)),
+    pausado,
+    disponiblePublicamente,
+    mensajePausa: getProyectoPausadoMessage(item),
     coloresEstatus: normalizeColoresEstatus(item.coloresEstatus),
     fechaCreacion: formatDate(pickFirst(item.fechaCreacion, item.createdAt, item.fechaAlta)),
   };
@@ -185,28 +211,28 @@ export const listarProyectosPublicos = (filtros = {}) => {
 };
 
 export const obtenerProyectoPublico = (slug, options = {}) =>
-  getJson(`${BASE_URL}/${slug}`, options).then(adaptProyectoPublico);
+  getJson(`${BASE_URL}/${slug}`, { ...options, suppressForbiddenAlert: true }).then(adaptProyectoPublico);
 
 export const listarModelosPublicos = (slug, options = {}) =>
-  getJson(`${BASE_URL}/${slug}/modelos`, options).then((data) =>
+  getJson(`${BASE_URL}/${slug}/modelos`, { ...options, suppressForbiddenAlert: true }).then((data) =>
     normalizeList(data).map(adaptModeloPublico)
   );
 
 export const listarUnidadesPublicas = (slug, options = {}) =>
-  getJson(`${BASE_URL}/${slug}/unidades`, options).then((data) =>
+  getJson(`${BASE_URL}/${slug}/unidades`, { ...options, suppressForbiddenAlert: true }).then((data) =>
     normalizeList(data).map(adaptUnidadPublica).filter((unidad) => unidad.visiblePublico)
   );
 
 export const obtenerPlanoPublico = (slug, options = {}) =>
-  getJson(`${BASE_URL}/${slug}/plano`, options).then(adaptPlanoPublico);
+  getJson(`${BASE_URL}/${slug}/plano`, { ...options, suppressForbiddenAlert: true }).then(adaptPlanoPublico);
 
 export const listarImagenesPublicas = (slug, options = {}) =>
-  getJson(`${BASE_URL}/${slug}/imagenes`, options).then((data) =>
+  getJson(`${BASE_URL}/${slug}/imagenes`, { ...options, suppressForbiddenAlert: true }).then((data) =>
     normalizeList(data).map(adaptImagenPublica).sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0))
   );
 
 export const crearProspectoPublico = (slug, data) =>
-  requestJson(`${BASE_URL}/${slug}/prospectos`, { method: 'POST', body: data });
+  requestJson(`${BASE_URL}/${slug}/prospectos`, { method: 'POST', body: data, suppressForbiddenAlert: true });
 
 export const obtenerAsesorPorReferencia = (codigoAsesor, options = {}) =>
   getJson(`/api/asesores/ref/${encodeURIComponent(codigoAsesor)}`, options).then((data = {}) => ({

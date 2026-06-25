@@ -4,6 +4,8 @@ import ProyectoPlanoInteractivo from '../components/proyectos/ProyectoPlanoInter
 import { getWhatsAppPhone } from '../config/contacto';
 import { resolveApiAssetUrl } from '../services/apiClient';
 import {
+  getProyectoPausadoMessage,
+  isProyectoPausadoError,
   listarUnidadesPublicas,
   obtenerAsesorPorReferencia,
   obtenerPlanoPublico,
@@ -12,6 +14,7 @@ import {
 import './ProyectoInmobiliarioPlanoPage.css';
 
 const CN_LOGO = './assets/logo.png';
+const PROYECTOS_URL = '/proyectos-inmobiliarios';
 
 const getApiErrorMessage = (err) =>
   err.data?.mensaje || err.data?.message || err.message || 'No se pudo cargar el plano interactivo.';
@@ -73,6 +76,7 @@ export default function ProyectoInmobiliarioPlanoPage() {
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [proyectoPausado, setProyectoPausado] = useState(null);
   const [error, setError] = useState('');
   const [codigoAsesorReferido, setCodigoAsesorReferido] = useState('');
   const [asesorReferido, setAsesorReferido] = useState(null);
@@ -83,6 +87,7 @@ export default function ProyectoInmobiliarioPlanoPage() {
     const cargar = async () => {
       setLoading(true);
       setNotFound(false);
+      setProyectoPausado(null);
       setError('');
 
       try {
@@ -97,9 +102,26 @@ export default function ProyectoInmobiliarioPlanoPage() {
           return;
         }
 
+        if (proyectoData?.pausado || proyectoData?.disponiblePublicamente === false) {
+          setProyecto(null);
+          setPlano(null);
+          setUnidades([]);
+          setUnidadSeleccionada(null);
+          setProyectoPausado({
+            mensaje: getProyectoPausadoMessage(proyectoData),
+          });
+          return;
+        }
+
+        const ignorarErrorNoPausado = (fallback) => (err) => {
+          if (isProyectoPausadoError(err)) {
+            throw err;
+          }
+          return fallback;
+        };
         const [planoData, unidadesData] = await Promise.all([
-          obtenerPlanoPublico(slug, { signal: controller.signal }).catch(() => null),
-          listarUnidadesPublicas(slug, { signal: controller.signal }).catch(() => []),
+          obtenerPlanoPublico(slug, { signal: controller.signal }).catch(ignorarErrorNoPausado(null)),
+          listarUnidadesPublicas(slug, { signal: controller.signal }).catch(ignorarErrorNoPausado([])),
         ]);
 
         setProyecto(proyectoData);
@@ -113,7 +135,12 @@ export default function ProyectoInmobiliarioPlanoPage() {
           setUnidades([]);
           setUnidadSeleccionada(null);
 
-          if (err.status === 404) {
+          if (isProyectoPausadoError(err)) {
+            setProyectoPausado({
+              mensaje: getProyectoPausadoMessage(err.data),
+            });
+            setError('');
+          } else if (err.status === 404) {
             setNotFound(true);
           } else {
             setError(getApiErrorMessage(err));
@@ -132,7 +159,7 @@ export default function ProyectoInmobiliarioPlanoPage() {
   }, [slug]);
 
   useEffect(() => {
-    if (!slug) return undefined;
+    if (!slug || loading || proyectoPausado || !proyecto) return undefined;
 
     const params = new URLSearchParams(location.search || '');
     const refFromUrl = String(params.get('ref') || '').trim();
@@ -172,7 +199,7 @@ export default function ProyectoInmobiliarioPlanoPage() {
       });
 
     return () => controller.abort();
-  }, [location.search, slug]);
+  }, [loading, location.search, proyecto, proyectoPausado, slug]);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -232,13 +259,27 @@ export default function ProyectoInmobiliarioPlanoPage() {
     );
   }
 
+  if (proyectoPausado) {
+    return (
+      <main className="proyecto-plano-page">
+        <section className="proyecto-plano-page-empty proyecto-plano-page-paused">
+          <span>Proyecto pausado</span>
+          <h1>Proyecto pausado temporalmente</h1>
+          <p>{proyectoPausado.mensaje}</p>
+          <p>Estamos realizando ajustes para brindarte información actualizada. Te invitamos a consultar otros proyectos disponibles.</p>
+          <Link to={PROYECTOS_URL}>Ver otros proyectos</Link>
+        </section>
+      </main>
+    );
+  }
+
   if (notFound || !proyecto) {
     return (
       <main className="proyecto-plano-page">
         <section className="proyecto-plano-page-empty">
           <h1>Proyecto no encontrado</h1>
           <p>No encontramos el proyecto solicitado o ya no está disponible.</p>
-          <Link to="/proyectos-inmobiliarios">Ver proyectos disponibles</Link>
+          <Link to={PROYECTOS_URL}>Ver proyectos disponibles</Link>
         </section>
       </main>
     );
